@@ -1,5 +1,6 @@
 import re
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -19,6 +20,13 @@ def test_subprocess(cmd: str):
 
 def test_version():
     assert re.match(r"\d+\.\d+\.\d+", polars_to_ibis.__version__)
+
+
+def test_readme():
+    root = Path(__file__).parent.parent
+    long = (root / "README.md").read_text().strip()
+    short = (root / "README-PYPI.md").read_text().strip()
+    assert short in long
 
 
 # @pytest.mark.parametrize(
