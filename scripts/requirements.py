@@ -33,13 +33,15 @@ def pip_compile_install(file_name):  # pragma: no cover
     # Abbreviate the path so it's not showing developer-specific details.
     # sed doesn't have exactly the same options on all platforms,
     # but this is good enough for now.
-    echo_check_call(f"sed -i '' 's:/.*/polars-to-ibis/:.../polars-to-ibis/:' {txt_file_name}")
+    echo_check_call(
+        f"sed -i '' 's:/.*/polars-to-ibis/:.../polars-to-ibis/:' {txt_file_name}"
+    )
 
 
 def parse_requirements(file_name):
     """
     >>> print(parse_requirements("requirements.txt"))
-    [...opendp...]
+    [...ibis...polars...]
     """
     cwd_root()
     lines = Path(file_name).read_text().splitlines()
@@ -53,11 +55,7 @@ def to_toml_array(file_name):
     This will format the array with one entry per line.
 
     >>> print(dumps(to_toml_array("requirements.txt")))
-    [
-    ...
-        "opendp[...]==...",
-    ...
-    ]
+    [...ibis...polars...]
     """
     toml_array = array()
     for dependency in parse_requirements(file_name):
@@ -76,8 +74,8 @@ def get_new_pyproject_toml():
     """
     cwd_root()
     pyproject = parse(Path("pyproject.toml").read_text())
-    pyproject["project"]["dependencies"] = to_toml_array("requirements.in")
-    pyproject["project"]["optional-dependencies"]["app"] = to_toml_array(
+    pyproject["project"]["dependencies"] = to_toml_array("requirements.in")  # type: ignore
+    pyproject["project"]["optional-dependencies"]["app"] = to_toml_array(  # type: ignore
         "requirements.txt"
     )
     return dumps(pyproject)

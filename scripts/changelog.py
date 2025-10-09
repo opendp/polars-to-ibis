@@ -40,7 +40,9 @@ def parse_log(lines):
         line = re.sub(r"^\w+\s+", "", line)  # Remove hash
         line = re.sub(r"^\([^)]+\)\s+", "", line)  # Remove tag
         line = re.sub(
-            r"\(#(\d+)\)", r"[#\1](https://github.com/opendp/polars-to-ibis/pull/\1)", line
+            r"\(#(\d+)\)",
+            r"[#\1](https://github.com/opendp/polars-to-ibis/pull/\1)",
+            line,
         )
         output_lines.append(f"- {line}")
     return "\n".join(output_lines)
