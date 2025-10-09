@@ -1,0 +1,19 @@
+# After making changes here, run scripts/requirements.py.
+
+# Developer tools:
+pip-tools
+flit
+flake8
+flake8-bugbear
+pre-commit
+tomlkit
+isort
+
+# Testing:
+pytest
+pyright
+pytest-cov
+pytest-xdist
+
+# App dependencies:
+-r requirements.in

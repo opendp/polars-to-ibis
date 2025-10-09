@@ -1,0 +1,14 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "polars_to_ibis"
+authors = [{name = "Chuck McCallum", email = "info@opendp.org"}]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+dynamic = ["version", "description"]
+
+[project.urls]
+Home = "https://github.com/opendp/polars-to-ibis"
