@@ -1,0 +1,4 @@
+# After making changes here, run scripts/requirements.py.
+
+polars
+ibis

@@ -9,6 +9,17 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 dynamic = ["version", "description"]
+dependencies = [
+    "ibis",
+    "polars",
+]
 
 [project.urls]
 Home = "https://github.com/opendp/polars-to-ibis"
+
+[project.optional-dependencies]
+app = [
+    "ibis==3.3.0",
+    "polars-runtime-32==1.34.0",
+    "polars==1.34.0",
+]
