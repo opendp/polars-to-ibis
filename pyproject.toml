@@ -4,10 +4,13 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "polars_to_ibis"
-authors = [{name = "Chuck McCallum", email = "info@opendp.org"}]
-readme = "README.md"
-license = "MIT"
-license-files = ["LICENSE"]
+authors = [{name = "The OpenDP Project", email = "info@opendp.org"}]
+readme = "README-PYPI.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
 dynamic = ["version", "description"]
 dependencies = [
     "ibis",
@@ -17,9 +20,18 @@ dependencies = [
 [project.urls]
 Home = "https://github.com/opendp/polars-to-ibis"
 
+[options]
+python_requires = ">=3.10"
+
 [project.optional-dependencies]
 app = [
     "ibis==3.3.0",
     "polars-runtime-32==1.34.0",
     "polars==1.34.0",
 ]
+
+[tool.pyright]
+include = ["dp_wizard"]
+
+[tool.isort]
+profile = "black"
