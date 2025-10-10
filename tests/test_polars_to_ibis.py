@@ -1,7 +1,7 @@
 import ibis
 import polars as pl
 
-from polars_to_ibis import polars_expr_to_ibis
+from polars_to_ibis import polars_to_ibis
 
 ibis.set_backend("polars")
 
@@ -13,15 +13,14 @@ data = {
 }
 
 polars_df = pl.DataFrame(data)
-ibis_table = ibis.memtable(polars_df)
+polars_lazy = polars_df.lazy()
 
 
 def test_head():
-    assert polars_df.head(1).to_dicts() == ibis_table.head(1).to_polars().to_dicts()
+    polars_lazy_expr = polars_lazy.head(1)
+    ibis_unbound_table = polars_to_ibis(polars_lazy_expr)
 
+    pl_con = ibis.polars.connect(tables={"unbound_table_0": polars_df})
+    df_via_ibis = pl_con.to_polars(ibis_unbound_table)
 
-def test_polars_expr_to_ibis():
-    pl_expr = pl.col("foo").sum().over("bar")
-    ibis_deferred = polars_expr_to_ibis(pl_expr)
-    assert type(ibis_deferred) is ibis.common.deferred.Deferred
-    assert str(ibis_deferred) == "_.group_by('bar').agg(foo=_.foo.sum())"
+    assert polars_lazy_expr.collect().to_dicts() == df_via_ibis.to_dicts()

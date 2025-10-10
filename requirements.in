@@ -1,4 +1,7 @@
 # After making changes here, run scripts/requirements.py.
 
 polars
-ibis-framework
+
+# Ibis examples will not work unless duckdb is pinned
+ibis-framework[duckdb,polars]==10.8.0
+duckdb==1.3.1

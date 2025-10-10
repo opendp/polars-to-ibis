@@ -13,7 +13,8 @@ classifiers = [
 ]
 dynamic = ["version", "description"]
 dependencies = [
-    "ibis-framework",
+    "duckdb==1.3.1",
+    "ibis-framework[duckdb,polars]==10.8.0",
     "polars",
 ]
 
@@ -26,11 +27,22 @@ python_requires = ">=3.10"
 [project.optional-dependencies]
 app = [
     "atpublic==6.0.2",
-    "ibis-framework==10.8.0",
+    "duckdb==1.3.1",
+    "ibis-framework[duckdb,polars]==10.8.0",
+    "markdown-it-py==4.0.0",
+    "mdurl==0.1.2",
+    "numpy==2.3.3",
+    "packaging==25.0",
+    "pandas==2.3.3",
     "parsy==2.2",
     "polars-runtime-32==1.34.0",
     "polars==1.34.0",
+    "pyarrow-hotfix==0.7",
+    "pyarrow==21.0.0",
+    "pygments==2.19.2",
     "python-dateutil==2.9.0.post0",
+    "pytz==2025.2",
+    "rich==14.2.0",
     "six==1.17.0",
     "sqlglot==27.25.2",
     "toolz==1.0.0",

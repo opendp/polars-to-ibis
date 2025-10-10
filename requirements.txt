@@ -6,15 +6,45 @@
 #
 atpublic==6.0.2
     # via ibis-framework
-ibis-framework==10.8.0
+duckdb==1.3.1
+    # via
+    #   -r requirements.in
+    #   ibis-framework
+ibis-framework[duckdb,polars]==10.8.0
     # via -r requirements.in
+markdown-it-py==4.0.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
+numpy==2.3.3
+    # via
+    #   ibis-framework
+    #   pandas
+packaging==25.0
+    # via ibis-framework
+pandas==2.3.3
+    # via ibis-framework
 parsy==2.2
     # via ibis-framework
 polars==1.34.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   ibis-framework
 polars-runtime-32==1.34.0
     # via polars
+pyarrow==21.0.0
+    # via ibis-framework
+pyarrow-hotfix==0.7
+    # via ibis-framework
+pygments==2.19.2
+    # via rich
 python-dateutil==2.9.0.post0
+    # via
+    #   ibis-framework
+    #   pandas
+pytz==2025.2
+    # via pandas
+rich==14.2.0
     # via ibis-framework
 six==1.17.0
     # via python-dateutil
@@ -25,4 +55,6 @@ toolz==1.0.0
 typing-extensions==4.15.0
     # via ibis-framework
 tzdata==2025.2
-    # via ibis-framework
+    # via
+    #   ibis-framework
+    #   pandas
