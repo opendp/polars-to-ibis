@@ -21,7 +21,12 @@ def xfail(param):
     return pytest.param(param, marks=pytest.mark.xfail(raises=AssertionError))
 
 
-expressions = ["polars_lazy.head(1)", "polars_lazy.head(2)", "polars_lazy.tail(3)"]
+expressions = [
+    "polars_lazy.head(1)",
+    "polars_lazy.head(2)",
+    "polars_lazy.tail(3)",
+    "polars_lazy[1:2]",
+]
 
 
 @pytest.mark.parametrize("expression", expressions)
