@@ -20,14 +20,25 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     # del pl_dict['Slice']["input"]["DataFrameScan"]["df"]
     # pl_json_clean = json.dumps(pl_dict)
 
-    ibis_schema = {
-        "ints": "int64",
-        "floats": "float64",
-        "strings": "string",
-        "bools": "boolean",
-    }
+    polars_schema = lf.collect_schema()
+    ibis_schema = _polars_schema_to_ibis(polars_schema)
+
+    # TODO: Make this more general!
     ibis_table = ibis.table(ibis_schema, name=table_name).head(1)
     return ibis_table
+
+
+_type_map = {
+    # TODO: Expand this!
+    pl.Int64: "int64",
+    pl.Float64: "float64",
+    pl.String: "string",
+    pl.Boolean: "boolean",
+}
+
+
+def _polars_schema_to_ibis(schema: pl.Schema):
+    return {k: _type_map[v] for k, v in schema.items()}
 
 
 # def polars_expr_to_ibis(pl_expr: pl.Expr) -> ibis.common.deferred.Deferred:
