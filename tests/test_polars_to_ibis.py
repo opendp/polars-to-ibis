@@ -22,21 +22,20 @@ def xfail(param):
 
 
 expressions = [
-    "polars_lazy.head(1)",
-    "polars_lazy.head(2)",
-    "polars_lazy.tail(3)",
-    "polars_lazy[1:2]",
+    polars_lazy.head(1),
+    polars_lazy.head(2),
+    polars_lazy.tail(3),
+    polars_lazy[1:2],
 ]
 
 
 @pytest.mark.parametrize("expression", expressions)
 def test_polars_to_ibis(expression):
-    polars_lazy_expr = eval(expression)
     table_name = "default_table"
-    ibis_unbound_table = polars_to_ibis(polars_lazy_expr, table_name=table_name)
+    ibis_unbound_table = polars_to_ibis(expression, table_name=table_name)
 
     # TODO: Connect to a backend other than polars.
     connection = ibis.polars.connect(tables={table_name: polars_df})
     via_ibis = connection.to_polars(ibis_unbound_table)
 
-    assert polars_lazy_expr.collect().to_dicts() == via_ibis.to_dicts()
+    assert expression.collect().to_dicts() == via_ibis.to_dicts()
