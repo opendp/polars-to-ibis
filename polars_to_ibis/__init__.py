@@ -8,10 +8,7 @@ import polars as pl
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
 
-TABLE_NAME = "from-polars"
-
-
-def polars_to_ibis(lf: pl.LazyFrame) -> ibis.Table:
+def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     # TODO:
     # - Serialize LazyFrame
     # - Read schema
@@ -29,7 +26,7 @@ def polars_to_ibis(lf: pl.LazyFrame) -> ibis.Table:
         "strings": "string",
         "bools": "boolean",
     }
-    ibis_table = ibis.table(ibis_schema, name=TABLE_NAME).head(1)
+    ibis_table = ibis.table(ibis_schema, name=table_name).head(1)
     return ibis_table
 
 

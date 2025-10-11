@@ -2,7 +2,7 @@ import ibis
 import polars as pl
 import pytest
 
-from polars_to_ibis import TABLE_NAME, polars_to_ibis
+from polars_to_ibis import polars_to_ibis
 
 ibis.set_backend("polars")
 
@@ -30,9 +30,11 @@ expressions = [
 @pytest.mark.parametrize("expression", expressions)
 def test_polars_to_ibis(expression):
     polars_lazy_expr = eval(expression)
-    ibis_unbound_table = polars_to_ibis(polars_lazy_expr)
+    table_name = "default_table"
+    ibis_unbound_table = polars_to_ibis(polars_lazy_expr, table_name=table_name)
 
-    connection = ibis.polars.connect(tables={TABLE_NAME: polars_df})
+    # TODO: Connect to a backend other than polars.
+    connection = ibis.polars.connect(tables={table_name: polars_df})
     via_ibis = connection.to_polars(ibis_unbound_table)
 
     assert polars_lazy_expr.collect().to_dicts() == via_ibis.to_dicts()
