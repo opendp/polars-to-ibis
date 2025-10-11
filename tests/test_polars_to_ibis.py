@@ -16,9 +16,14 @@ data = {
 polars_df = pl.DataFrame(data)
 polars_lazy = polars_df.lazy()
 
+
+def xfail(param):
+    return pytest.param(param, marks=pytest.mark.xfail(raises=AssertionError))
+
+
 expressions = [
     "polars_lazy.head(1)",
-    "polars_lazy.head(2)",  # Expected failure!
+    xfail("polars_lazy.head(2)"),
 ]
 
 
