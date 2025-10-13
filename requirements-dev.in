@@ -16,5 +16,5 @@ pyright
 pytest-cov
 pytest-xdist
 
-# App dependencies:
+# Package dependencies:
 -r requirements.in
