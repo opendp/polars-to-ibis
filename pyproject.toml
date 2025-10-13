@@ -25,7 +25,7 @@ Home = "https://github.com/opendp/polars-to-ibis"
 python_requires = ">=3.10"
 
 [tool.pyright]
-include = ["dp_wizard"]
+include = ["polars_to_ibis"]
 
 [tool.isort]
 profile = "black"
