@@ -20,17 +20,22 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     return _apply_polars_plan_to_ibis_table(polars_plan, ibis_table)
 
 
+class UnhandledPolarsException(Exception):
+    pass
+
+
 def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
     # TODO: More general!
     if "Slice" in polars_plan:
         slice_params = polars_plan["Slice"]
         return table.limit(slice_params["len"], offset=slice_params["offset"])
-    raise Exception("Unhandled polar plan")
+    raise UnhandledPolarsException("Unhandled polars plan")
 
 
 _type_map = {
     # TODO: Expand this!
     pl.Int64: "int64",
+    pl.UInt32: "uint32",
     pl.Float64: "float64",
     pl.String: "string",
     pl.Boolean: "boolean",
