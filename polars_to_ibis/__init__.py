@@ -46,13 +46,45 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
     params = polars_plan[operation]
     match operation:
         case "Slice":
-            _raise_unexpected_params(params, {"len", "offset", "input"})
+            _check_params(params, {"input", "len", "offset"})
             return table.limit(params["len"], offset=params["offset"])
+        case "Sort":
+            _check_params(params, {"input", "by_column", "slice", "sort_options"})
+            _check_falsy_params(params, {"slice"})
+            _check_falsy_params(
+                params["sort_options"],
+                {
+                    "descending",
+                    "nulls_last",
+                    "maintain_order",
+                    "limit",
+                },
+            )
+
+            by_column = params["by_column"]
+            assert len(by_column) == 1  # TODO: Loosen
+            _check_params(by_column[0], {"Column"})
+
+            return table.order_by(by_column[0]["Column"])
         case _:
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
-def _raise_unexpected_params(params, expected):
+def _check_params(params, expected):
     unexpected_params = params.keys() - expected
     if unexpected_params:  # pragma: no cover
         raise UnhandledPolarsException(f"Unhandled polars params: {unexpected_params}")
+
+
+def _check_falsy_params(params, should_be_falsy):
+    def falsy(value):
+        if not value:
+            return True
+        # This is broader that python's notion of falsy:
+        if isinstance(value, list) and all(falsy(inner) for inner in value):
+            return True
+        return False
+
+    not_falsy = {k for k in should_be_falsy if not falsy(params[k])}
+    if not_falsy:
+        raise UnhandledPolarsException(f"Unhandled non-none polars params: {not_falsy}")
