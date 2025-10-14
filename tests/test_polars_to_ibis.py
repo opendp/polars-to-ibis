@@ -17,12 +17,8 @@ polars_df = pl.DataFrame(data)
 polars_lazy = polars_df.lazy()
 
 
-def xfail_assertion(param):
-    return pytest.param(param, marks=pytest.mark.xfail(raises=AssertionError))
-
-
-def xfail_unhandled(param):
-    return pytest.param(param, marks=pytest.mark.xfail(raises=UnhandledPolarsException))
+def xfail(error, param):
+    return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
 @pytest.mark.parametrize(
@@ -38,26 +34,30 @@ def xfail_unhandled(param):
         # Sort:
         "polars_lazy.sort(by='ints')",
         "polars_lazy.sort(by=['ints', 'floats'])",
-        xfail_unhandled(
+        xfail(
+            UnhandledPolarsException,
             "polars_lazy.sort(by='ints', descending=True, "
-            "nulls_last=True, maintain_order=True, multithreaded=True)"
+            "nulls_last=True, maintain_order=True, multithreaded=True)",
         ),
         # MapFunction:
         "polars_lazy.max()",
-        xfail_unhandled("polars_lazy.min()"),
+        "polars_lazy.min()",
+        xfail(AttributeError, "polars_lazy.mean()"),
         # TODO:
         # Select:
-        xfail_unhandled("polars_lazy.count()"),
-        xfail_assertion("polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"),
-        xfail_unhandled("polars_lazy.drop(['ints'], strict=True)"),
+        xfail(UnhandledPolarsException, "polars_lazy.count()"),
+        xfail(
+            AssertionError, "polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"
+        ),
+        xfail(UnhandledPolarsException, "polars_lazy.drop(['ints'], strict=True)"),
         # HStack:
-        xfail_unhandled("polars_lazy.cast({'ints': pl.Float32})"),
+        xfail(UnhandledPolarsException, "polars_lazy.cast({'ints': pl.Float32})"),
     ],
 )
 def test_polars_to_ibis(str_expression):
     # Expressions as strings just for readability of test output.
     expression = eval(str_expression)
-    # Collect early, so if there's a typo we don't go any farther.
+    # Call collect() early, so if there's a typo we don't go any farther.
     expected = expression.collect().to_dicts()
 
     table_name = "default_table"

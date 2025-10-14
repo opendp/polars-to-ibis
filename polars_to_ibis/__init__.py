@@ -86,18 +86,13 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
 
             _check_params(function, {"Stats"})
             stats = function["Stats"]
-            if stats not in {"Max"}:
-                raise UnhandledPolarsException(f"Unhandled polars stat: {stats}")
+            if stats not in {"Max", "Min", "Mean"}:
+                raise UnhandledPolarsException(
+                    f"Unhandled polars stat: {stats}"
+                )  # pragma: no cover
 
             return table.aggregate(
-                [
-                    getattr(table, col).max()
-                    for col in table.columns
-                    # table.ints.max(),
-                    # table.floats.max(),
-                    # table.strings.max(),
-                    # table.bools.max(),
-                ]
+                [getattr(getattr(table, col), stats.lower())() for col in table.columns]
             ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
         case _:
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
@@ -120,4 +115,6 @@ def _check_falsy_params(params, should_be_falsy):
 
     not_falsy = {k for k in should_be_falsy if not falsy(params[k])}
     if not_falsy:
-        raise UnhandledPolarsException(f"Unhandled non-none polars params: {not_falsy}")
+        raise UnhandledPolarsException(
+            f"Unhandled not-falsy polars params: {not_falsy}"
+        )
