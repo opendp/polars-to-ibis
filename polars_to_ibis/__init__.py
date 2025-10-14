@@ -46,11 +46,13 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
     params = polars_plan[operation]
     match operation:
         case "Slice":
-            unexpected_params = params.keys() - {"len", "offset", "input"}
-            if unexpected_params:  # pragma: no cover
-                raise UnhandledPolarsException(
-                    f"Unhandled polars params: {unexpected_params}"
-                )
+            _raise_unexpected_params(params, {"len", "offset", "input"})
             return table.limit(params["len"], offset=params["offset"])
         case _:
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
+
+
+def _raise_unexpected_params(params, expected):
+    unexpected_params = params.keys() - expected
+    if unexpected_params:  # pragma: no cover
+        raise UnhandledPolarsException(f"Unhandled polars params: {unexpected_params}")

@@ -17,7 +17,7 @@ polars_df = pl.DataFrame(data)
 polars_lazy = polars_df.lazy()
 
 
-def xfail_assertion(param):  # pragma: no cover
+def xfail_assertion(param):
     return pytest.param(param, marks=pytest.mark.xfail(raises=AssertionError))
 
 
