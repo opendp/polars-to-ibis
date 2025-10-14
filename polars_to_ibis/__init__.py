@@ -25,8 +25,12 @@ class UnhandledPolarsException(Exception):
 
 
 def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
-    # TODO: More general!
     if "Slice" in polars_plan:
         slice_params = polars_plan["Slice"]
+        unexpected_params = slice_params.keys() - {"len", "offset", "input"}
+        if unexpected_params:  # pragma: no cover
+            raise UnhandledPolarsException(
+                f"Unhandled polars params: {unexpected_params}"
+            )
         return table.limit(slice_params["len"], offset=slice_params["offset"])
     raise UnhandledPolarsException("Unhandled polars plan")

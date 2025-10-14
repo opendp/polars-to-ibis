@@ -33,16 +33,23 @@ def xfail_unhandled(param):
         "polars_lazy.tail(3)",
         "polars_lazy[1:2]",
         xfail_unhandled("polars_lazy.count()"),
+        xfail_assertion("polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"),
+        xfail_unhandled("polars_lazy.cast({'ints': pl.Float32})"),
+        xfail_unhandled("polars_lazy.drop(['ints'], strict=True)"),
     ],
 )
 def test_polars_to_ibis(str_expression):
     # Expressions as strings just for readability of test output.
     expression = eval(str_expression)
+    # Collect early, so if there's a typo we don't go any farther.
+    expected = expression.collect().to_dicts()
+
     table_name = "default_table"
     ibis_unbound_table = polars_to_ibis(expression, table_name=table_name)
 
-    # TODO: Connect to a backend other than polars.
+    # TODO: Connect to a backend other than polars:
+    # https://github.com/opendp/polars-to-ibis/issues/7
     connection = ibis.polars.connect(tables={table_name: polars_df})
     via_ibis = connection.to_polars(ibis_unbound_table)
 
-    assert expression.collect().to_dicts() == via_ibis.to_dicts()
+    assert via_ibis.to_dicts() == expected
