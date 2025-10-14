@@ -19,11 +19,11 @@ Convert Polars expressions to Ibis expressions
 >>> polars_lazy = polars_df.lazy().head(1)
 
 >>> ibis_unbound_table = polars_to_ibis(polars_lazy, table_name="my_table")
->>> ibis_unbound_table
-r0 := UnboundTable: my_table
-  ints int64
-<BLANKLINE>
-Limit[r0, n=1]
+>>> print(ibis_unbound_table.to_sql())
+SELECT
+  *
+FROM "my_table" AS "t0"
+LIMIT 1
 
 ```
 

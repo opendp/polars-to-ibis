@@ -89,13 +89,14 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
             if stats not in {"Max"}:
                 raise UnhandledPolarsException(f"Unhandled polars stat: {stats}")
 
-            # TODO: iterate over columns
             return table.aggregate(
                 [
-                    table.ints.max(),
-                    table.floats.max(),
-                    table.strings.max(),
-                    table.bools.max(),
+                    getattr(table, col).max()
+                    for col in table.columns
+                    # table.ints.max(),
+                    # table.floats.max(),
+                    # table.strings.max(),
+                    # table.bools.max(),
                 ]
             ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
         case _:
