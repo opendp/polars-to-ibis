@@ -2,7 +2,8 @@
 
 [![pypi](https://img.shields.io/pypi/v/polars_to_ibis)](https://pypi.org/project/polars_to_ibis/)
 
-Convert Polars expressions to Ibis expressions
+Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/lazyframe/index.html)
+to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expression#unbound-tables)
 
 ## Usage
 
