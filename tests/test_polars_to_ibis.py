@@ -33,6 +33,7 @@ def xfail_unhandled(param):
         "polars_lazy.tail(3)",
         "polars_lazy[1:2]",
         "polars_lazy.sort(by='ints')",
+        "polars_lazy.sort(by=['ints', 'floats'])",
         xfail_unhandled(
             "polars_lazy.sort(by='ints', descending=True, "
             "nulls_last=True, maintain_order=True, multithreaded=True)"

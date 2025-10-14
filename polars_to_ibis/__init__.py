@@ -51,6 +51,17 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
         case "Sort":
             _check_params(params, {"input", "by_column", "slice", "sort_options"})
             _check_falsy_params(params, {"slice"})
+
+            _check_params(
+                params["sort_options"],
+                {
+                    "multithreaded",  # defaults to True: ignored.
+                    "descending",
+                    "nulls_last",
+                    "maintain_order",
+                    "limit",
+                },
+            )
             _check_falsy_params(
                 params["sort_options"],
                 {
@@ -62,10 +73,11 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
             )
 
             by_column = params["by_column"]
-            assert len(by_column) == 1  # TODO: Loosen
-            _check_params(by_column[0], {"Column"})
+            for col in by_column:
+                _check_params(col, {"Column"})
 
-            return table.order_by(by_column[0]["Column"])
+            args = [col["Column"] for col in by_column]
+            return table.order_by(*args)
         case _:
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
