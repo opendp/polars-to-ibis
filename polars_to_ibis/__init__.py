@@ -1,6 +1,7 @@
 """Convert Polars expressions to Ibis expressions"""
 
 import json
+import re
 from pathlib import Path
 
 import ibis
@@ -52,8 +53,9 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
             _check_params(params, {"input", "by_column", "slice", "sort_options"})
             _check_falsy_params(params, {"slice"})
 
+            sort_options = params["sort_options"]
             _check_params(
-                params["sort_options"],
+                sort_options,
                 {
                     "multithreaded",  # defaults to True: ignored.
                     "descending",
@@ -63,7 +65,7 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
                 },
             )
             _check_falsy_params(
-                params["sort_options"],
+                sort_options,
                 {
                     "descending",
                     "nulls_last",
@@ -78,6 +80,24 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
 
             args = [col["Column"] for col in by_column]
             return table.order_by(*args)
+        case "MapFunction":
+            _check_params(params, {"input", "function"})
+            function = params["function"]
+
+            _check_params(function, {"Stats"})
+            stats = function["Stats"]
+            if stats not in {"Max"}:
+                raise UnhandledPolarsException(f"Unhandled polars stat: {stats}")
+
+            # TODO: iterate over columns
+            return table.aggregate(
+                [
+                    table.ints.max(),
+                    table.floats.max(),
+                    table.strings.max(),
+                    table.bools.max(),
+                ]
+            ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
         case _:
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 

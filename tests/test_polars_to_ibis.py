@@ -32,16 +32,19 @@ def xfail_unhandled(param):
         "polars_lazy.head(2)",
         "polars_lazy.tail(3)",
         "polars_lazy[1:2]",
+        "polars_lazy.first()",
+        "polars_lazy.last()",
         "polars_lazy.sort(by='ints')",
         "polars_lazy.sort(by=['ints', 'floats'])",
         xfail_unhandled(
             "polars_lazy.sort(by='ints', descending=True, "
             "nulls_last=True, maintain_order=True, multithreaded=True)"
         ),
-        xfail_unhandled("polars_lazy.count()"),
+        "polars_lazy.max()",
+        xfail_unhandled("polars_lazy.count()"),  # Uses "Select"
         xfail_assertion("polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"),
-        xfail_unhandled("polars_lazy.cast({'ints': pl.Float32})"),
-        xfail_unhandled("polars_lazy.drop(['ints'], strict=True)"),
+        xfail_unhandled("polars_lazy.cast({'ints': pl.Float32})"),  # Uses "HStack"
+        xfail_unhandled("polars_lazy.drop(['ints'], strict=True)"),  # Uses "Select"
     ],
 )
 def test_polars_to_ibis(str_expression):
