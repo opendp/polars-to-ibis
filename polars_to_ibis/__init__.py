@@ -39,7 +39,7 @@ class UnhandledPolarsException(Exception):
 def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
     polars_plan_keys = list(polars_plan.keys())
     if len(polars_plan_keys) != 1:
-        raise UnexpectedPolarsException(
+        raise UnexpectedPolarsException(  # pragma: no cover
             f"Expected only a single key, not: {polars_plan_keys}"
         )
     operation = polars_plan_keys[0]
