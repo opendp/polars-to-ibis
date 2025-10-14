@@ -20,17 +20,37 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     return _apply_polars_plan_to_ibis_table(polars_plan, ibis_table)
 
 
+class UnexpectedPolarsException(Exception):
+    """
+    JSON structure is not what we expected.
+    """
+
+    pass
+
+
 class UnhandledPolarsException(Exception):
+    """
+    JSON structure is not unexpected, but we just don't handle it yet.
+    """
+
     pass
 
 
 def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
-    if "Slice" in polars_plan:
-        slice_params = polars_plan["Slice"]
-        unexpected_params = slice_params.keys() - {"len", "offset", "input"}
-        if unexpected_params:  # pragma: no cover
-            raise UnhandledPolarsException(
-                f"Unhandled polars params: {unexpected_params}"
-            )
-        return table.limit(slice_params["len"], offset=slice_params["offset"])
-    raise UnhandledPolarsException("Unhandled polars plan")
+    polars_plan_keys = list(polars_plan.keys())
+    if len(polars_plan_keys) != 1:
+        raise UnexpectedPolarsException(
+            f"Expected only a single key, not: {polars_plan_keys}"
+        )
+    operation = polars_plan_keys[0]
+    params = polars_plan[operation]
+    match operation:
+        case "Slice":
+            unexpected_params = params.keys() - {"len", "offset", "input"}
+            if unexpected_params:  # pragma: no cover
+                raise UnhandledPolarsException(
+                    f"Unhandled polars params: {unexpected_params}"
+                )
+            return table.limit(params["len"], offset=params["offset"])
+        case _:
+            raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")

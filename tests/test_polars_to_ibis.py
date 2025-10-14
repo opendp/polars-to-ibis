@@ -32,6 +32,10 @@ def xfail_unhandled(param):
         "polars_lazy.head(2)",
         "polars_lazy.tail(3)",
         "polars_lazy[1:2]",
+        xfail_unhandled(
+            "polars_lazy.sort(by='ints', descending=True, "
+            "nulls_last=True, maintain_order=True, multithreaded=True)"
+        ),
         xfail_unhandled("polars_lazy.count()"),
         xfail_assertion("polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"),
         xfail_unhandled("polars_lazy.cast({'ints': pl.Float32})"),
