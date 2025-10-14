@@ -1,6 +1,7 @@
 """Convert Polars expressions to Ibis expressions"""
 
 import json
+import re
 from pathlib import Path
 
 import ibis
@@ -14,33 +15,106 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     polars_plan = json.loads(polars_json)
 
     polars_schema = lf.collect_schema()
-    ibis_schema = _polars_schema_to_ibis(polars_schema)
+    ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
     ibis_table = ibis.table(ibis_schema, name=table_name)
 
     return _apply_polars_plan_to_ibis_table(polars_plan, ibis_table)
 
 
+class UnexpectedPolarsException(Exception):
+    """
+    JSON structure is not what we expected.
+    """
+
+    pass
+
+
 class UnhandledPolarsException(Exception):
+    """
+    JSON structure is not unexpected, but we just don't handle it yet.
+    """
+
     pass
 
 
 def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
-    # TODO: More general!
-    if "Slice" in polars_plan:
-        slice_params = polars_plan["Slice"]
-        return table.limit(slice_params["len"], offset=slice_params["offset"])
-    raise UnhandledPolarsException("Unhandled polars plan")
+    polars_plan_keys = list(polars_plan.keys())
+    if len(polars_plan_keys) != 1:
+        raise UnexpectedPolarsException(  # pragma: no cover
+            f"Expected only a single key, not: {polars_plan_keys}"
+        )
+    operation = polars_plan_keys[0]
+    params = polars_plan[operation]
+    match operation:
+        case "Slice":
+            _check_params(params, {"input", "len", "offset"})
+            return table.limit(params["len"], offset=params["offset"])
+        case "Sort":
+            _check_params(params, {"input", "by_column", "slice", "sort_options"})
+            _check_falsy_params(params, {"slice"})
+
+            sort_options = params["sort_options"]
+            _check_params(
+                sort_options,
+                {
+                    "multithreaded",  # defaults to True: ignored.
+                    "descending",
+                    "nulls_last",
+                    "maintain_order",
+                    "limit",
+                },
+            )
+            _check_falsy_params(
+                sort_options,
+                {
+                    "descending",
+                    "nulls_last",
+                    "maintain_order",
+                    "limit",
+                },
+            )
+
+            by_column = params["by_column"]
+            for col in by_column:
+                _check_params(col, {"Column"})
+
+            args = [col["Column"] for col in by_column]
+            return table.order_by(*args)
+        case "MapFunction":
+            _check_params(params, {"input", "function"})
+            function = params["function"]
+
+            _check_params(function, {"Stats"})
+            stats = function["Stats"]
+            if stats not in {"Max", "Min", "Mean"}:
+                raise UnhandledPolarsException(
+                    f"Unhandled polars stat: {stats}"
+                )  # pragma: no cover
+
+            return table.aggregate(
+                [getattr(getattr(table, col), stats.lower())() for col in table.columns]
+            ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
+        case _:
+            raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
-_type_map = {
-    # TODO: Expand this!
-    pl.Int64: "int64",
-    pl.UInt32: "uint32",
-    pl.Float64: "float64",
-    pl.String: "string",
-    pl.Boolean: "boolean",
-}
+def _check_params(params, expected):
+    unexpected_params = params.keys() - expected
+    if unexpected_params:  # pragma: no cover
+        raise UnhandledPolarsException(f"Unhandled polars params: {unexpected_params}")
 
 
-def _polars_schema_to_ibis(schema: pl.Schema):
-    return {k: _type_map[v] for k, v in schema.items()}
+def _check_falsy_params(params, should_be_falsy):
+    def falsy(value):
+        if not value:
+            return True
+        # This is broader that python's notion of falsy:
+        if isinstance(value, list) and all(falsy(inner) for inner in value):
+            return True
+        return False
+
+    not_falsy = {k for k in should_be_falsy if not falsy(params[k])}
+    if not_falsy:
+        raise UnhandledPolarsException(
+            f"Unhandled not-falsy polars params: {not_falsy}"
+        )
