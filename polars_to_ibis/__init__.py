@@ -3,14 +3,24 @@
 import json
 import re
 from pathlib import Path
+from warnings import warn
 
 import ibis
 import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
+_tested_polars = {"1.34.0"}
+
 
 def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
+    if pl.__version__ not in _tested_polars:
+        warn(
+            PolarsToIbisWarning(
+                f"Polars {pl.__version__} has not been tested! "
+                f"Supported versions: {', '.join(_tested_polars)}"
+            )
+        )
     polars_json = lf.serialize(format="json")
     polars_plan = json.loads(polars_json)
 
@@ -19,6 +29,10 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     ibis_table = ibis.table(ibis_schema, name=table_name)
 
     return _apply_polars_plan_to_ibis_table(polars_plan, ibis_table)
+
+
+class PolarsToIbisWarning(Warning):
+    pass
 
 
 class UnexpectedPolarsException(Exception):
