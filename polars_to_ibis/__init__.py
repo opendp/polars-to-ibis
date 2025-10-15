@@ -3,14 +3,31 @@
 import json
 import re
 from pathlib import Path
+from warnings import warn
 
 import ibis
 import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
+# We are primarily interested in supporting the version pinned by OpenDP,
+# but if we can support a wider range without much work, great!
+_min_polars = "1.25.2"
+_max_polars = "1.34.0"
+
 
 def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
+    if not (
+        _min_polars.split(".")  # Oldest supported
+        <= pl.__version__.split(".")  # Installed
+        <= _max_polars.split(".")  # Newest supported
+    ):
+        warn(  # pragma: no cover
+            PolarsToIbisWarning(
+                f"Polars {pl.__version__} has not been tested! "
+                f"Try {_min_polars} to {_max_polars}."
+            )
+        )
     polars_json = lf.serialize(format="json")
     polars_plan = json.loads(polars_json)
 
@@ -19,6 +36,10 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     ibis_table = ibis.table(ibis_schema, name=table_name)
 
     return _apply_polars_plan_to_ibis_table(polars_plan, ibis_table)
+
+
+class PolarsToIbisWarning(Warning):
+    pass
 
 
 class UnexpectedPolarsException(Exception):

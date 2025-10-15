@@ -7,6 +7,12 @@ to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expre
 
 ## Usage
 
+Besides installing this library, you will also need to install the ibis-framework extra for your target database. For example, if you wanted to target SQLite:
+
+```
+pip install polars-to-ibis ibis-framework[sqlite]
+```
+
 **🚧 Under Construction! 🚧**
 
 ```python

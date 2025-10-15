@@ -30,7 +30,7 @@ docutils==0.22.2
     # via flit
 duckdb==1.3.1
     # via
-    #   -r requirements.in
+    #   -r requirements-dev.in
     #   ibis-framework
 exceptiongroup==1.3.0
     # via pytest
@@ -49,7 +49,9 @@ flit==3.12.0
 flit-core==3.12.0
     # via flit
 ibis-framework[duckdb,polars,sqlite]==10.8.0
-    # via -r requirements.in
+    # via
+    #   -r requirements-dev.in
+    #   -r requirements.in
 identify==2.6.15
     # via pre-commit
 idna==3.10
@@ -140,7 +142,9 @@ pytokens==0.1.10
 pytz==2025.2
     # via pandas
 pyyaml==6.0.3
-    # via pre-commit
+    # via
+    #   -r requirements-dev.in
+    #   pre-commit
 regex==2025.9.18
     # via ibis-framework
 requests==2.32.5

@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 import polars_to_ibis
 
@@ -27,6 +28,16 @@ def test_readme():
     long = (root / "README.md").read_text().strip()
     short = (root / "README-PYPI.md").read_text().strip()
     assert short in long
+
+
+def test_polars_versions():
+    test_workflow = yaml.safe_load(
+        (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
+    )
+    ci_matrix = test_workflow["jobs"]["test"]["strategy"]["matrix"]["polars-version"]
+    from polars_to_ibis import _max_polars, _min_polars
+
+    assert ci_matrix == [_min_polars, _max_polars]
 
 
 # @pytest.mark.parametrize(

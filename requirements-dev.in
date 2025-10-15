@@ -1,5 +1,12 @@
 # After making changes here, run scripts/requirements.py.
 
+# End users only need a subset:
+ibis-framework[duckdb,polars,sqlite]
+
+# Ibis examples will not work unless duckdb is pinned.
+# https://github.com/ibis-project/ibis/issues/11668
+duckdb==1.3.1
+
 # Developer tools:
 pip-tools
 flit
@@ -9,6 +16,7 @@ pre-commit
 tomlkit
 isort
 black
+pyyaml
 
 # Testing:
 pytest
