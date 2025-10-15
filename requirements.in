@@ -1,8 +1,8 @@
 # After making changes here, run scripts/requirements.py.
 
 polars
+ibis-framework[duckdb,polars,sqlite]
 
 # Ibis examples will not work unless duckdb is pinned.
 # https://github.com/ibis-project/ibis/issues/11668
-ibis-framework[duckdb,polars,sqlite]==10.8.0
 duckdb==1.3.1

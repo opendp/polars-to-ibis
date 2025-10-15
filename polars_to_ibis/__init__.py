@@ -15,7 +15,7 @@ _tested_polars = {"1.34.0"}
 
 def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     if pl.__version__ not in _tested_polars:
-        warn(
+        warn(  # pragma: no covers
             PolarsToIbisWarning(
                 f"Polars {pl.__version__} has not been tested! "
                 f"Supported versions: {', '.join(_tested_polars)}"
