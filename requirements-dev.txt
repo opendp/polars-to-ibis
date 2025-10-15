@@ -140,7 +140,9 @@ pytokens==0.1.10
 pytz==2025.2
     # via pandas
 pyyaml==6.0.3
-    # via pre-commit
+    # via
+    #   -r requirements-dev.in
+    #   pre-commit
 regex==2025.9.18
     # via ibis-framework
 requests==2.32.5
