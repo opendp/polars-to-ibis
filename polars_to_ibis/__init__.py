@@ -12,7 +12,7 @@ __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
 # We are primarily interested in supporting the version pinned by OpenDP,
 # but if we can support a wider range without much work, great!
-_min_polars = "1.24.3"
+_min_polars = "1.25.2"
 _max_polars = "1.34.0"
 
 
