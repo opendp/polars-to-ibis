@@ -53,34 +53,16 @@ expressions = [
 ]
 
 
-def connect_to_polars(table_name, df):
-    connection = ibis.polars.connect()
-    connection.create_table(table_name, df)
-    return connection
-
-
-def connect_to_sqlite(table_name, df):
-    connection = ibis.sqlite.connect()
-    connection.create_table(table_name, df)
-    return connection
-
-
-def connect_to_duckdb(table_name, df):
-    connection = ibis.duckdb.connect()
-    connection.create_table(table_name, df)
-    return connection
-
-
-connect_tos = [
-    connect_to_polars,
-    connect_to_sqlite,
-    connect_to_duckdb,
-]
-
-
 @pytest.mark.parametrize("str_expression", expressions)
-@pytest.mark.parametrize("connect", connect_tos)
-def test_polars_to_ibis(str_expression, connect):
+@pytest.mark.parametrize(
+    "backend",
+    [
+        "polars",
+        "sqlite",
+        "duckdb",
+    ],
+)
+def test_polars_to_ibis(str_expression, backend):
     # Expressions as strings just for readability of test output.
     polars_expression = eval(str_expression)
     # Call collect() early, so if there's a typo we don't go any farther.
@@ -89,8 +71,9 @@ def test_polars_to_ibis(str_expression, connect):
     table_name = "default_table"
     ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
 
-    via_ibis = (
-        connect(table_name, df).to_pandas(ibis_unbound_table).to_dict(orient="records")
-    )
+    connection = getattr(ibis, backend).connect()
+    connection.create_table(table_name, df)
+
+    via_ibis = connection.to_pandas(ibis_unbound_table).to_dict(orient="records")
 
     assert via_ibis == expected
