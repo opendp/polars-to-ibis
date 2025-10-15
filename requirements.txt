@@ -10,7 +10,7 @@ duckdb==1.3.1
     # via
     #   -r requirements.in
     #   ibis-framework
-ibis-framework[duckdb,polars]==10.8.0
+ibis-framework[duckdb,polars,sqlite]==10.8.0
     # via -r requirements.in
 markdown-it-py==4.0.0
     # via rich
@@ -44,6 +44,8 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via pandas
+regex==2025.9.18
+    # via ibis-framework
 rich==14.2.0
     # via ibis-framework
 six==1.17.0

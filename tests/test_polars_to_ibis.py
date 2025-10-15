@@ -13,59 +13,73 @@ data = {
     "bools": [True, True, False, False],
 }
 
-polars_df = pl.DataFrame(data)
-polars_lazy = polars_df.lazy()
+df = pl.DataFrame(data)
+lf = df.lazy()
 
 
 def xfail(error, param):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
+expressions = [
+    # Slice:
+    # TODO: Non deterministic without order_by.
+    # Different behavior with different back-ends.
+    # "lf.head(1)",
+    # "lf.head(2)",
+    # "lf.tail(3)",
+    # "lf[1:2]",
+    # "lf.first()",
+    # "lf.last()",
+    # Sort:
+    "lf.sort(by='ints')",
+    "lf.sort(by=['ints', 'floats'])",
+    xfail(
+        UnhandledPolarsException,
+        "lf.sort(by='ints', descending=True, "
+        "nulls_last=True, maintain_order=True, multithreaded=True)",
+    ),
+    # MapFunction:
+    "lf.max()",
+    "lf.min()",
+    xfail(AttributeError, "lf.mean()"),
+    # TODO:
+    # Select:
+    xfail(UnhandledPolarsException, "lf.count()"),
+    xfail(AssertionError, "lf.bottom_k(1, by=pl.col('ints'), reverse=True)"),
+    xfail(UnhandledPolarsException, "lf.drop(['ints'], strict=True)"),
+    # HStack:
+    xfail(UnhandledPolarsException, "lf.cast({'ints': pl.Float32})"),
+]
+
+
+@pytest.mark.parametrize("str_expression", expressions)
 @pytest.mark.parametrize(
-    "str_expression",
+    "backend",
     [
-        # Slice:
-        "polars_lazy.head(1)",
-        "polars_lazy.head(2)",
-        "polars_lazy.tail(3)",
-        "polars_lazy[1:2]",
-        "polars_lazy.first()",
-        "polars_lazy.last()",
-        # Sort:
-        "polars_lazy.sort(by='ints')",
-        "polars_lazy.sort(by=['ints', 'floats'])",
-        xfail(
-            UnhandledPolarsException,
-            "polars_lazy.sort(by='ints', descending=True, "
-            "nulls_last=True, maintain_order=True, multithreaded=True)",
-        ),
-        # MapFunction:
-        "polars_lazy.max()",
-        "polars_lazy.min()",
-        xfail(AttributeError, "polars_lazy.mean()"),
-        # TODO:
-        # Select:
-        xfail(UnhandledPolarsException, "polars_lazy.count()"),
-        xfail(
-            AssertionError, "polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"
-        ),
-        xfail(UnhandledPolarsException, "polars_lazy.drop(['ints'], strict=True)"),
-        # HStack:
-        xfail(UnhandledPolarsException, "polars_lazy.cast({'ints': pl.Float32})"),
+        "polars",
+        "sqlite",
+        "duckdb",
     ],
 )
-def test_polars_to_ibis(str_expression):
+def test_polars_to_ibis(str_expression, backend):
     # Expressions as strings just for readability of test output.
-    expression = eval(str_expression)
+    polars_expression = eval(str_expression)
     # Call collect() early, so if there's a typo we don't go any farther.
-    expected = expression.collect().to_dicts()
+    expected = polars_expression.collect().to_dicts()
 
     table_name = "default_table"
-    ibis_unbound_table = polars_to_ibis(expression, table_name=table_name)
+    ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
 
-    # TODO: Connect to a backend other than polars:
-    # https://github.com/opendp/polars-to-ibis/issues/7
-    connection = ibis.polars.connect(tables={table_name: polars_df})
-    via_ibis = connection.to_polars(ibis_unbound_table)
+    connection = getattr(ibis, backend).connect()
+    connection.create_table(table_name, df)
 
-    assert via_ibis.to_dicts() == expected
+    # Could use to_polars() here, but we want to be extra sure
+    # that the path through Ibis does not depend on Polars.
+    via_ibis = connection.to_pandas(ibis_unbound_table).to_dict(orient="records")
+
+    assert via_ibis == expected
+
+    # SQLite on Python 3.13, but not 3.10, complains if we don't clean up.
+    if hasattr(connection, "disconnect"):  # pragma: no cover
+        connection.disconnect()
