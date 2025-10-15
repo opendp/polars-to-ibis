@@ -48,7 +48,7 @@ flit==3.12.0
     # via -r requirements-dev.in
 flit-core==3.12.0
     # via flit
-ibis-framework[duckdb,polars]==10.8.0
+ibis-framework[duckdb,polars,sqlite]==10.8.0
     # via -r requirements.in
 identify==2.6.15
     # via pre-commit
@@ -141,6 +141,8 @@ pytz==2025.2
     # via pandas
 pyyaml==6.0.3
     # via pre-commit
+regex==2025.9.18
+    # via ibis-framework
 requests==2.32.5
     # via flit
 rich==14.2.0
