@@ -74,6 +74,8 @@ def test_polars_to_ibis(str_expression, backend):
     connection = getattr(ibis, backend).connect()
     connection.create_table(table_name, df)
 
+    # Could use to_polars() here, but we want to be extra sure
+    # that the path through Ibis does not depend on Polars.
     via_ibis = connection.to_pandas(ibis_unbound_table).to_dict(orient="records")
 
     assert via_ibis == expected
