@@ -13,8 +13,8 @@ data = {
     "bools": [True, True, False, False],
 }
 
-polars_df = pl.DataFrame(data)
-polars_lazy = polars_df.lazy()
+df = pl.DataFrame(data)
+lf = df.lazy()
 
 
 def xfail(error, param):
@@ -25,31 +25,31 @@ expressions = [
     # Slice:
     # TODO: Non deterministic without order_by.
     # Different behavior with different back-ends.
-    # "polars_lazy.head(1)",
-    # "polars_lazy.head(2)",
-    # "polars_lazy.tail(3)",
-    # "polars_lazy[1:2]",
-    # "polars_lazy.first()",
-    # "polars_lazy.last()",
+    # "lf.head(1)",
+    # "lf.head(2)",
+    # "lf.tail(3)",
+    # "lf[1:2]",
+    # "lf.first()",
+    # "lf.last()",
     # Sort:
-    "polars_lazy.sort(by='ints')",
-    "polars_lazy.sort(by=['ints', 'floats'])",
+    "lf.sort(by='ints')",
+    "lf.sort(by=['ints', 'floats'])",
     xfail(
         UnhandledPolarsException,
-        "polars_lazy.sort(by='ints', descending=True, "
+        "lf.sort(by='ints', descending=True, "
         "nulls_last=True, maintain_order=True, multithreaded=True)",
     ),
     # MapFunction:
-    "polars_lazy.max()",
-    "polars_lazy.min()",
-    xfail(AttributeError, "polars_lazy.mean()"),
+    "lf.max()",
+    "lf.min()",
+    xfail(AttributeError, "lf.mean()"),
     # TODO:
     # Select:
-    xfail(UnhandledPolarsException, "polars_lazy.count()"),
-    xfail(AssertionError, "polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"),
-    xfail(UnhandledPolarsException, "polars_lazy.drop(['ints'], strict=True)"),
+    xfail(UnhandledPolarsException, "lf.count()"),
+    xfail(AssertionError, "lf.bottom_k(1, by=pl.col('ints'), reverse=True)"),
+    xfail(UnhandledPolarsException, "lf.drop(['ints'], strict=True)"),
     # HStack:
-    xfail(UnhandledPolarsException, "polars_lazy.cast({'ints': pl.Float32})"),
+    xfail(UnhandledPolarsException, "lf.cast({'ints': pl.Float32})"),
 ]
 
 
@@ -70,41 +70,7 @@ connect_tos = [
 ]
 
 
-@pytest.mark.parametrize(
-    "str_expression",
-    [
-        # Slice:
-        # TODO: Non deterministic without order_by.
-        # Different behavior with different back-ends.
-        # "polars_lazy.head(1)",
-        # "polars_lazy.head(2)",
-        # "polars_lazy.tail(3)",
-        # "polars_lazy[1:2]",
-        # "polars_lazy.first()",
-        # "polars_lazy.last()",
-        # Sort:
-        "polars_lazy.sort(by='ints')",
-        "polars_lazy.sort(by=['ints', 'floats'])",
-        xfail(
-            UnhandledPolarsException,
-            "polars_lazy.sort(by='ints', descending=True, "
-            "nulls_last=True, maintain_order=True, multithreaded=True)",
-        ),
-        # MapFunction:
-        "polars_lazy.max()",
-        "polars_lazy.min()",
-        xfail(AttributeError, "polars_lazy.mean()"),
-        # TODO:
-        # Select:
-        xfail(UnhandledPolarsException, "polars_lazy.count()"),
-        xfail(
-            AssertionError, "polars_lazy.bottom_k(1, by=pl.col('ints'), reverse=True)"
-        ),
-        xfail(UnhandledPolarsException, "polars_lazy.drop(['ints'], strict=True)"),
-        # HStack:
-        xfail(UnhandledPolarsException, "polars_lazy.cast({'ints': pl.Float32})"),
-    ],
-)
+@pytest.mark.parametrize("str_expression", expressions)
 @pytest.mark.parametrize("connect", connect_tos)
 def test_polars_to_ibis(str_expression, connect):
     # Expressions as strings just for readability of test output.
@@ -116,9 +82,7 @@ def test_polars_to_ibis(str_expression, connect):
     ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
 
     via_ibis = (
-        connect(table_name, polars_df)
-        .to_pandas(ibis_unbound_table)
-        .to_dict(orient="records")
+        connect(table_name, df).to_pandas(ibis_unbound_table).to_dict(orient="records")
     )
 
     assert via_ibis == expected
