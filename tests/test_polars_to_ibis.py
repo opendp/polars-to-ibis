@@ -53,20 +53,28 @@ expressions = [
 ]
 
 
-def connect_to_polars(table_name, polars_df):
-    connection = ibis.polars.connect(tables={table_name: polars_df})
+def connect_to_polars(table_name, df):
+    connection = ibis.polars.connect()
+    connection.create_table(table_name, df)
     return connection
 
 
-def connect_to_sqlite(table_name, polars_df):
+def connect_to_sqlite(table_name, df):
     connection = ibis.sqlite.connect()
-    connection.create_table(table_name, polars_df)
+    connection.create_table(table_name, df)
+    return connection
+
+
+def connect_to_duckdb(table_name, df):
+    connection = ibis.duckdb.connect()
+    connection.create_table(table_name, df)
     return connection
 
 
 connect_tos = [
     connect_to_polars,
     connect_to_sqlite,
+    connect_to_duckdb,
 ]
 
 
