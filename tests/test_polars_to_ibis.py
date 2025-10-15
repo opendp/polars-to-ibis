@@ -79,3 +79,7 @@ def test_polars_to_ibis(str_expression, backend):
     via_ibis = connection.to_pandas(ibis_unbound_table).to_dict(orient="records")
 
     assert via_ibis == expected
+
+    # SQLite on Python 3.13, but not 3.10, complains if we don't clean up.
+    if hasattr(connection, "disconnect"):  # pragma: no cover
+        connection.disconnect()
