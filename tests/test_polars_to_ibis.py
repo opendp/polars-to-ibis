@@ -25,12 +25,14 @@ def xfail(error, param):
     "str_expression",
     [
         # Slice:
-        "polars_lazy.head(1)",
-        "polars_lazy.head(2)",
-        "polars_lazy.tail(3)",
-        "polars_lazy[1:2]",
-        "polars_lazy.first()",
-        "polars_lazy.last()",
+        # TODO: Non deterministic without order_by.
+        # Different behavior with different back-ends.
+        # "polars_lazy.head(1)",
+        # "polars_lazy.head(2)",
+        # "polars_lazy.tail(3)",
+        # "polars_lazy[1:2]",
+        # "polars_lazy.first()",
+        # "polars_lazy.last()",
         # Sort:
         "polars_lazy.sort(by='ints')",
         "polars_lazy.sort(by=['ints', 'floats'])",
@@ -63,9 +65,15 @@ def test_polars_to_ibis(str_expression):
     table_name = "default_table"
     ibis_unbound_table = polars_to_ibis(expression, table_name=table_name)
 
-    # TODO: Connect to a backend other than polars:
-    # https://github.com/opendp/polars-to-ibis/issues/7
-    connection = ibis.polars.connect(tables={table_name: polars_df})
+    # connection = ibis.polars.connect(tables={table_name: polars_df})
+    # via_ibis = connection.to_polars(ibis_unbound_table)
+
+    connection = ibis.sqlite.connect()
+    connection.create_table(table_name, polars_df)
     via_ibis = connection.to_polars(ibis_unbound_table)
 
     assert via_ibis.to_dicts() == expected
+
+
+# def as_set(list_of_dicts):
+#     return {json.dumps(d) for d in list_of_dicts}
