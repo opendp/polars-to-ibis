@@ -10,15 +10,22 @@ import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
-_tested_polars = {"1.34.0"}
+# We are primarily interested in supporting the version pinned by OpenDP,
+# but if we can support a wider range without much work, great!
+_min_polars = "1.24.3"
+_max_polars = "1.34.0"
 
 
 def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
-    if pl.__version__ not in _tested_polars:
-        warn(  # pragma: no covers
+    if not (
+        _min_polars.split(".")  # Oldest supported
+        <= pl.__version__.split(".")  # Installed
+        <= _max_polars.split(".")  # Newest supported
+    ):
+        warn(  # pragma: no cover
             PolarsToIbisWarning(
                 f"Polars {pl.__version__} has not been tested! "
-                f"Supported versions: {', '.join(_tested_polars)}"
+                f"Try {_min_polars} to {_max_polars}."
             )
         )
     polars_json = lf.serialize(format="json")
