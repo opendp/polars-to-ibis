@@ -1,3 +1,5 @@
+import json
+
 import ibis
 import polars as pl
 import pytest
@@ -70,10 +72,12 @@ def test_polars_to_ibis(str_expression):
 
     connection = ibis.sqlite.connect()
     connection.create_table(table_name, polars_df)
-    via_ibis = connection.to_polars(ibis_unbound_table)
 
-    assert via_ibis.to_dicts() == expected
+    via_ibis = connection.to_pandas(ibis_unbound_table).to_dict(orient="records")
+
+    assert via_ibis == expected
 
 
+# import json
 # def as_set(list_of_dicts):
 #     return {json.dumps(d) for d in list_of_dicts}
