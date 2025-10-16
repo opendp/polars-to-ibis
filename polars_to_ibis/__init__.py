@@ -70,7 +70,7 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
     if "input" not in params:
         return table
 
-    input_polars_plan = params["input"]
+    input_polars_plan = params.pop("input")
     input_table = _apply_polars_plan_to_ibis_table(input_polars_plan, table)
 
     return _apply_operation_params_to_ibis_table(operation, params, input_table)
@@ -81,10 +81,10 @@ def _apply_operation_params_to_ibis_table(
 ):
     match operation:
         case "Slice":
-            _check_params(params, {"input", "len", "offset"})
+            _check_params(params, {"len", "offset"})
             return table.limit(params["len"], offset=params["offset"])
         case "Sort":
-            _check_params(params, {"input", "by_column", "slice", "sort_options"})
+            _check_params(params, {"by_column", "slice", "sort_options"})
             _check_falsy_params(params, {"slice"})
 
             sort_options = params["sort_options"]
@@ -113,7 +113,7 @@ def _apply_operation_params_to_ibis_table(
             args = [col["Column"] for col in by_column]
             return table.order_by(*args)
         case "MapFunction":
-            _check_params(params, {"input", "function"})
+            _check_params(params, {"function"})
             function = params["function"]
 
             _check_params(function, {"Stats"})
