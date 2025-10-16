@@ -66,6 +66,19 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
         )
     operation = polars_plan_keys[0]
     params = polars_plan[operation]
+
+    if "input" not in params:
+        return table
+
+    input_polars_plan = params["input"]
+    input_table = _apply_polars_plan_to_ibis_table(input_polars_plan, table)
+
+    return _apply_operation_params_to_ibis_table(operation, params, input_table)
+
+
+def _apply_operation_params_to_ibis_table(
+    operation: str, params: dict, table: ibis.Table
+):
     match operation:
         case "Slice":
             _check_params(params, {"input", "len", "offset"})
@@ -88,8 +101,6 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
             _check_falsy_params(
                 sort_options,
                 {
-                    "descending",
-                    "nulls_last",
                     "maintain_order",
                     "limit",
                 },
