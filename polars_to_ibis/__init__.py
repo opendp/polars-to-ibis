@@ -81,14 +81,14 @@ def _apply_operation_params_to_ibis_table(
 ):
     match operation:
         case "Slice":
-            _check_params(params, {"len", "offset"})
+            _confirm_no_extra_params(params, {"len", "offset"})
             return table.limit(params["len"], offset=params["offset"])
         case "Sort":
-            _check_params(params, {"by_column", "slice", "sort_options"})
+            _confirm_no_extra_params(params, {"by_column", "slice", "sort_options"})
             _check_falsy_params(params, {"slice"})
 
             sort_options = params["sort_options"]
-            _check_params(
+            _confirm_no_extra_params(
                 sort_options,
                 {
                     "multithreaded",  # defaults to True: ignored.
@@ -108,15 +108,15 @@ def _apply_operation_params_to_ibis_table(
 
             by_column = params["by_column"]
             for col in by_column:
-                _check_params(col, {"Column"})
+                _confirm_no_extra_params(col, {"Column"})
 
             args = [col["Column"] for col in by_column]
             return table.order_by(*args)
         case "MapFunction":
-            _check_params(params, {"function"})
+            _confirm_no_extra_params(params, {"function"})
             function = params["function"]
 
-            _check_params(function, {"Stats"})
+            _confirm_no_extra_params(function, {"Stats"})
             stats = function["Stats"]
             if stats not in {"Max", "Min", "Mean"}:
                 raise UnhandledPolarsException(
@@ -130,7 +130,7 @@ def _apply_operation_params_to_ibis_table(
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
-def _check_params(params, expected):
+def _confirm_no_extra_params(params, expected):
     unexpected_params = params.keys() - expected
     if unexpected_params:  # pragma: no cover
         raise UnhandledPolarsException(f"Unhandled polars params: {unexpected_params}")
