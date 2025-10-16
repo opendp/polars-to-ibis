@@ -39,6 +39,13 @@ def test_polars_versions():
 
     assert ci_matrix == [_min_polars, _max_polars]
 
+    requirements_in = (Path(__file__).parent.parent / "requirements.in").read_text()
+    polars_requirement = [
+        line for line in requirements_in.splitlines() if "polars" in line
+    ]
+    assert len(polars_requirement) == 1
+    assert f">={_min_polars}" in polars_requirement[0]
+
 
 # @pytest.mark.parametrize(
 #     "rel_path",

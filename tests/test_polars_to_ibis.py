@@ -21,39 +21,37 @@ def xfail(error, param):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
-expressions = [
+expressions_rows_cols = [
     # Slice:
-    # TODO: Non deterministic without order_by.
-    # Different behavior with different back-ends.
-    # "lf.head(1)",
-    # "lf.head(2)",
-    # "lf.tail(3)",
-    # "lf[1:2]",
-    # "lf.first()",
-    # "lf.last()",
+    # NOTE: Non-deterministic on some backends without sort().
+    ("lf.sort(by='ints').head(1)", 1, 4),
+    ("lf.sort(by='ints').head(2)", 2, 4),
+    # ("lf.tail(3)", 3, 4), # Fails sqlite and duckdb
+    ("lf.sort(by='ints')[1:3]", 2, 4),
+    ("lf.sort(by='ints').first()", 1, 4),
+    # ("lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
     # Sort:
-    "lf.sort(by='ints')",
-    "lf.sort(by=['ints', 'floats'])",
-    xfail(
-        UnhandledPolarsException,
-        "lf.sort(by='ints', descending=True, "
-        "nulls_last=True, maintain_order=True, multithreaded=True)",
-    ),
+    ("lf.sort(by='ints')", 4, 4),
+    ("lf.sort(by=['ints', 'floats'])", 4, 4),
     # MapFunction:
-    "lf.max()",
-    "lf.min()",
-    xfail(AttributeError, "lf.mean()"),
+    ("lf.max()", 1, 4),
+    ("lf.min()", 1, 4),
+    xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
     # TODO:
     # Select:
-    xfail(UnhandledPolarsException, "lf.count()"),
-    xfail(AssertionError, "lf.bottom_k(1, by=pl.col('ints'), reverse=True)"),
-    xfail(UnhandledPolarsException, "lf.drop(['ints'], strict=True)"),
+    xfail(
+        UnhandledPolarsException, ("lf.count()", 0, 0)
+    ),  # Ibis returns a single number; Polars returns a DF with a count in each column
+    # xfail(AssertionError, ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
+    xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
     # HStack:
-    xfail(UnhandledPolarsException, "lf.cast({'ints': pl.Float32})"),
+    xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
 ]
 
 
-@pytest.mark.parametrize("str_expression", expressions)
+@pytest.mark.parametrize(
+    "expression_rows_cols", expressions_rows_cols, ids=lambda triple: triple[0]
+)
 @pytest.mark.parametrize(
     "backend",
     [
@@ -62,8 +60,13 @@ expressions = [
         "duckdb",
     ],
 )
-def test_polars_to_ibis(str_expression, backend):
+def test_polars_to_ibis(expression_rows_cols, backend):
     # Expressions as strings just for readability of test output.
+    (
+        str_expression,
+        rows,
+        cols,
+    ) = expression_rows_cols
     polars_expression = eval(str_expression)
     # Call collect() early, so if there's a typo we don't go any farther.
     expected = polars_expression.collect().to_dicts()
@@ -76,9 +79,11 @@ def test_polars_to_ibis(str_expression, backend):
 
     # Could use to_polars() here, but we want to be extra sure
     # that the path through Ibis does not depend on Polars.
-    via_ibis = connection.to_pandas(ibis_unbound_table).to_dict(orient="records")
+    via_ibis_df = connection.to_pandas(ibis_unbound_table)
 
-    assert via_ibis == expected
+    assert via_ibis_df.shape == (rows, cols)
+    via_ibis_dicts = via_ibis_df.to_dict(orient="records")
+    assert via_ibis_dicts == expected
 
     # SQLite on Python 3.13, but not 3.10, complains if we don't clean up.
     if hasattr(connection, "disconnect"):  # pragma: no cover
