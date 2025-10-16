@@ -14,7 +14,7 @@ classifiers = [
 dynamic = ["version", "description"]
 dependencies = [
     "ibis-framework",
-    "polars",
+    "polars>=1.33.0",
 ]
 
 [project.urls]
