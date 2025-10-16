@@ -36,11 +36,11 @@ expressions_rows_cols = [
     # MapFunction:
     ("lf.max()", 1, 4),
     ("lf.min()", 1, 4),
-    xfail(AttributeError, ("lf.mean()", 1, 4)),
+    xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
     # TODO:
     # Select:
     xfail(UnhandledPolarsException, ("lf.count()", 0, 0)),
-    xfail(AssertionError, ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
+    # xfail(AssertionError, ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
     xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
     # HStack:
     xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),

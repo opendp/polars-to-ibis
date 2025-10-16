@@ -3,7 +3,6 @@
 import json
 import re
 from pathlib import Path
-from warnings import warn
 
 import ibis
 import polars as pl
@@ -16,17 +15,24 @@ _min_polars = "1.25.2"
 _max_polars = "1.34.0"
 
 
+def _warn(message):
+    # It's hard to remember to use the wrapping class,
+    # so do it by default,
+    # and keep "warn" out of the global namespace.
+    from warnings import warn
+
+    warn(PolarsToIbisWarning(message))
+
+
 def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     if not (
         _min_polars.split(".")  # Oldest supported
         <= pl.__version__.split(".")  # Installed
         <= _max_polars.split(".")  # Newest supported
     ):
-        warn(  # pragma: no cover
-            PolarsToIbisWarning(
-                f"Polars {pl.__version__} has not been tested! "
-                f"Try {_min_polars} to {_max_polars}."
-            )
+        _warn(  # pragma: no cover
+            f"Polars {pl.__version__} has not been tested! "
+            f"Try {_min_polars} to {_max_polars}."
         )
     polars_json = lf.serialize(format="json")
     polars_plan = json.loads(polars_json)
@@ -86,31 +92,31 @@ def _apply_operation_params_to_ibis_table(
         case "Slice":
             length = params.pop("len")
             offset = params.pop("offset")
-            assert not params
+            _assert_empty(params)
             return table.limit(length, offset=offset)
         case "Sort":
             by_column = params.pop("by_column")
             slice = params.pop("slice")
             sort_options = params.pop("sort_options")
-            assert not params
-            assert _falsy(slice)
+            _assert_empty(params)
+            _assert_falsy(slice)
 
             multithreaded = sort_options.pop("multithreaded")
-            assert multithreaded
-            assert _falsy(sort_options)
+            assert isinstance(multithreaded, bool)  # Unused
+            _assert_falsy(sort_options)
 
             args = []
             for col in by_column:
                 args.append(col.pop("Column"))
-                assert not col
+                _assert_empty(col)
 
             return table.order_by(*args)
         case "MapFunction":
             function = params.pop("function")
-            assert not params
+            _assert_empty(params)
 
             stats = function.pop("Stats")
-            assert not function
+            _assert_empty(function)
 
             return table.aggregate(
                 [getattr(getattr(table, col), stats.lower())() for col in table.columns]
@@ -119,13 +125,22 @@ def _apply_operation_params_to_ibis_table(
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
-def _falsy(value):
-    if not value:
-        return True
-    # This is broader that python's notion of falsy:
-    if isinstance(value, list) and all(_falsy(inner) for inner in value):
-        return True
-    if isinstance(value, dict) and all(_falsy(inner) for inner in value.values()):
-        return True
+def _assert_empty(params):
+    if len(params):
+        _warn(f"Params not empty: {params}")
 
-    return False
+
+def _assert_falsy(value):
+    if not value:
+        return
+    # This is broader that python's notion of falsy:
+    if isinstance(value, list):
+        values = value
+    elif isinstance(value, dict):
+        values = value.values()
+    else:
+        _warn(f"Value not falsy: {value}")
+        return
+
+    for v in values:
+        _assert_falsy(v)
