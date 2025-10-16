@@ -15,7 +15,7 @@ _min_polars = "1.33.0"  # Even at 1.32 there are failing tests.
 _max_polars = "1.34.0"
 
 
-def _warn(message):
+def _warn(message):  # pragma: no cover
     # It's hard to remember to use the wrapping class,
     # so do it by default,
     # and keep "warn" out of the global namespace.
@@ -128,7 +128,7 @@ def _apply_operation_params_to_ibis_table(
                     raise UnhandledPolarsException(
                         f"Unhandled operation: {inner_operation}"
                     )
-                case _:
+                case _:  # pragma: no cover
                     raise UnexpectedPolarsException(
                         f"Unexpected operation: {inner_operation}"
                     )
@@ -168,7 +168,7 @@ def _apply_operation_params_to_ibis_table(
 
 
 def _assert_empty(params):
-    if len(params):
+    if len(params):  # pragma: no cover
         _warn(f"Params not empty: {params}")
 
 
@@ -180,7 +180,7 @@ def _assert_falsy(value):
         values = value
     elif isinstance(value, dict):
         values = value.values()
-    else:
+    else:  # pragma: no cover
         _warn(f"Value not falsy: {value}")
         return
 
