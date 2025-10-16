@@ -89,6 +89,49 @@ def _apply_operation_params_to_ibis_table(
     # so we'll pop() from param, and if the local is unused,
     # linting will catch it.
     match operation:
+        case "Select":
+            # TODO: Only handling one particular case!
+            options = params.pop("options")
+            expr = params.pop("expr")
+            _assert_empty(params)
+
+            assert isinstance(options.pop("run_parallel"), bool)
+            assert isinstance(options.pop("duplicate_check"), bool)
+            assert isinstance(options.pop("should_broadcast"), bool)
+            _assert_empty(options)
+
+            # TODO: This is the same structure as at the top-level.
+            assert len(expr) == 1
+            assert len(expr[0]) == 1
+
+            inner_operation, inner_params = list(expr[0].items())[0]
+
+            match inner_operation:
+                case "Agg":
+                    count = inner_params.pop("Count")
+                    _assert_empty(inner_params)
+
+                    input = count.pop("input")
+                    _assert_falsy(count)
+
+                    selector = input.pop("Selector")
+                    assert selector == "Wildcard"
+
+                    # TODO: table.count() returns an int,
+                    # but Polars returns a dataframe.
+                    # Can we do something else to get ibis
+                    # results that will match polars?
+                    raise UnhandledPolarsException(
+                        f"Unhandled operation: {inner_operation}"
+                    )
+                case "Selector":
+                    raise UnhandledPolarsException(
+                        f"Unhandled operation: {inner_operation}"
+                    )
+                case _:
+                    raise UnexpectedPolarsException(
+                        f"Unexpected operation: {inner_operation}"
+                    )
         case "Slice":
             length = params.pop("len")
             offset = params.pop("offset")
@@ -101,8 +144,7 @@ def _apply_operation_params_to_ibis_table(
             _assert_empty(params)
             _assert_falsy(slice)
 
-            multithreaded = sort_options.pop("multithreaded")
-            assert isinstance(multithreaded, bool)  # Unused
+            assert isinstance(sort_options.pop("multithreaded"), bool)
             _assert_falsy(sort_options)
 
             args = []

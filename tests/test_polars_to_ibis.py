@@ -39,7 +39,9 @@ expressions_rows_cols = [
     xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
     # TODO:
     # Select:
-    xfail(UnhandledPolarsException, ("lf.count()", 0, 0)),
+    xfail(
+        UnhandledPolarsException, ("lf.count()", 0, 0)
+    ),  # Ibis returns a single number; Polars returns a DF with a count in each column
     # xfail(AssertionError, ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
     xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
     # HStack:
@@ -78,8 +80,8 @@ def test_polars_to_ibis(expression_rows_cols, backend):
     # Could use to_polars() here, but we want to be extra sure
     # that the path through Ibis does not depend on Polars.
     via_ibis_df = connection.to_pandas(ibis_unbound_table)
-    assert via_ibis_df.shape == (rows, cols)
 
+    assert via_ibis_df.shape == (rows, cols)
     via_ibis_dicts = via_ibis_df.to_dict(orient="records")
     assert via_ibis_dicts == expected
 
