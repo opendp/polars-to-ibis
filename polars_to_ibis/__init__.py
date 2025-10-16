@@ -79,49 +79,38 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
 def _apply_operation_params_to_ibis_table(
     operation: str, params: dict, table: ibis.Table
 ):
+    # We want to be sure that there are no unused parameters,
+    # so we'll pop() from param, and if the local is unused,
+    # linting will catch it.
     match operation:
         case "Slice":
-            _confirm_no_extra_params(params, {"len", "offset"})
-            return table.limit(params["len"], offset=params["offset"])
+            length = params.pop("len")
+            offset = params.pop("offset")
+            assert not params
+            return table.limit(length, offset=offset)
         case "Sort":
-            _confirm_no_extra_params(params, {"by_column", "slice", "sort_options"})
-            _check_falsy_params(params, {"slice"})
+            by_column = params.pop("by_column")
+            slice = params.pop("slice")
+            sort_options = params.pop("sort_options")
+            assert not params
+            assert _falsy(slice)
 
-            sort_options = params["sort_options"]
-            _confirm_no_extra_params(
-                sort_options,
-                {
-                    "multithreaded",  # defaults to True: ignored.
-                    "descending",
-                    "nulls_last",
-                    "maintain_order",
-                    "limit",
-                },
-            )
-            _check_falsy_params(
-                sort_options,
-                {
-                    "maintain_order",
-                    "limit",
-                },
-            )
+            multithreaded = sort_options.pop("multithreaded")
+            assert multithreaded
+            assert _falsy(sort_options)
 
-            by_column = params["by_column"]
+            args = []
             for col in by_column:
-                _confirm_no_extra_params(col, {"Column"})
+                args.append(col.pop("Column"))
+                assert not col
 
-            args = [col["Column"] for col in by_column]
             return table.order_by(*args)
         case "MapFunction":
-            _confirm_no_extra_params(params, {"function"})
-            function = params["function"]
+            function = params.pop("function")
+            assert not params
 
-            _confirm_no_extra_params(function, {"Stats"})
-            stats = function["Stats"]
-            if stats not in {"Max", "Min", "Mean"}:
-                raise UnhandledPolarsException(
-                    f"Unhandled polars stat: {stats}"
-                )  # pragma: no cover
+            stats = function.pop("Stats")
+            assert not function
 
             return table.aggregate(
                 [getattr(getattr(table, col), stats.lower())() for col in table.columns]
@@ -130,23 +119,13 @@ def _apply_operation_params_to_ibis_table(
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
-def _confirm_no_extra_params(params, expected):
-    unexpected_params = params.keys() - expected
-    if unexpected_params:  # pragma: no cover
-        raise UnhandledPolarsException(f"Unhandled polars params: {unexpected_params}")
+def _falsy(value):
+    if not value:
+        return True
+    # This is broader that python's notion of falsy:
+    if isinstance(value, list) and all(_falsy(inner) for inner in value):
+        return True
+    if isinstance(value, dict) and all(_falsy(inner) for inner in value.values()):
+        return True
 
-
-def _check_falsy_params(params, should_be_falsy):
-    def falsy(value):
-        if not value:
-            return True
-        # This is broader that python's notion of falsy:
-        if isinstance(value, list) and all(falsy(inner) for inner in value):
-            return True
-        return False
-
-    not_falsy = {k for k in should_be_falsy if not falsy(params[k])}
-    if not_falsy:
-        raise UnhandledPolarsException(
-            f"Unhandled not-falsy polars params: {not_falsy}"
-        )
+    return False

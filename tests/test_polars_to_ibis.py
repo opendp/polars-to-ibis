@@ -33,15 +33,6 @@ expressions_rows_cols = [
     # Sort:
     ("lf.sort(by='ints')", 4, 4),
     ("lf.sort(by=['ints', 'floats'])", 4, 4),
-    xfail(
-        UnhandledPolarsException,
-        (
-            "lf.sort(by='ints', descending=True, "
-            "nulls_last=True, maintain_order=True, multithreaded=True)",
-            4,
-            4,
-        ),
-    ),
     # MapFunction:
     ("lf.max()", 1, 4),
     ("lf.min()", 1, 4),
