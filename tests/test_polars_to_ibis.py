@@ -25,11 +25,11 @@ expressions_rows_cols = [
     # Slice:
     # NOTE: Non-deterministic on some backends without sort().
     ("lf.sort(by='ints').head(1)", 1, 4),
-    # "lf.sort(by='ints').head(2)",
-    # "lf.tail(3)",
-    # "lf[1:2]",
-    # "lf.first()",
-    # "lf.last()",
+    ("lf.sort(by='ints').head(2)", 2, 4),
+    # ("lf.tail(3)", 3, 4), # Fails sqlite and duckdb
+    ("lf.sort(by='ints')[1:3]", 2, 4),
+    ("lf.sort(by='ints').first()", 1, 4),
+    # ("lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
     # Sort:
     ("lf.sort(by='ints')", 4, 4),
     ("lf.sort(by=['ints', 'floats'])", 4, 4),
