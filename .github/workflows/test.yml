@@ -22,6 +22,7 @@ jobs:
       - name: Start databases
         run: |
           sudo systemctl start postgresql.service
+          sudo systemctl is-active postgresql.service
           createuser --echo --createdb $USER
           createdb -U $USER $USER
 
