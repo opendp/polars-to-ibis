@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: macos-14 # So DB startup works the same in CI as locally.
     strategy:
       matrix:
         python-version:
@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Start databases
+        run: scripts/setup.sh
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
