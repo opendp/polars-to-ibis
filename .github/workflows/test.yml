@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: macos-14 # So DB startup works the same in CI as locally.
     strategy:
       matrix:
         python-version:
@@ -21,10 +21,9 @@ jobs:
     steps:
       - name: Start databases
         run: |
-          sudo systemctl start postgresql.service
-          sudo systemctl is-active postgresql.service
-          createuser --echo --createdb $USER
-          createdb -U $USER $USER
+          brew install postgresql
+          brew services run postgresql
+          createdb $USER
 
       - name: Checkout repository
         uses: actions/checkout@v4
