@@ -22,7 +22,8 @@ jobs:
       - name: Start databases
         run: |
           sudo systemctl start postgresql.service
-          createdb $USER
+          createuser --echo --createdb $USER
+          createdb -U $USER $USER
 
       - name: Checkout repository
         uses: actions/checkout@v4
