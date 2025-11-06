@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+
 # PostgreSQL:
 brew install postgresql
 brew services run postgresql
@@ -12,3 +13,17 @@ do
   createdb $USER && break || echo 'Try again...'
   sleep 1
 done
+
+
+# MySQL:
+brew install mysql
+brew services run mysql
+
+while true
+do
+  mysql -u root -e "CREATE USER $USER" && break || echo 'Try again...'
+  sleep 1
+done
+# Tests will create and drop "default_table" in this database:
+mysql -u root -e "CREATE DATABASE $USER"
+mysql -u root -e "GRANT ALL ON $USER.* TO '$USER'@'%'"

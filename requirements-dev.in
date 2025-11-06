@@ -1,7 +1,7 @@
 # After making changes here, run scripts/requirements.py.
 
 # End users only need a subset:
-ibis-framework[duckdb,polars,sqlite,postgres]
+ibis-framework[duckdb,polars,sqlite,postgres,mysql]
 
 # Ibis examples will not work unless duckdb is pinned.
 # https://github.com/ibis-project/ibis/issues/11668
