@@ -58,6 +58,7 @@ expressions_rows_cols = [
         "polars",
         "sqlite",
         "duckdb",
+        pytest.param("postgres", marks=pytest.mark.extra_install),
     ],
 )
 def test_polars_to_ibis(expression_rows_cols, backend):
@@ -85,6 +86,7 @@ def test_polars_to_ibis(expression_rows_cols, backend):
     via_ibis_dicts = via_ibis_df.to_dict(orient="records")
     assert via_ibis_dicts == expected
 
-    # SQLite on Python 3.13, but not 3.10, complains if we don't clean up.
+    # Not all databases require cleanup:
+    connection.drop_table(table_name)
     if hasattr(connection, "disconnect"):  # pragma: no cover
         connection.disconnect()

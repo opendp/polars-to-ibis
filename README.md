@@ -58,7 +58,16 @@ $ pip install --editable .
 
 ### Testing
 
-Tests should pass, and code coverage should be complete (except blocks we explicitly ignore):
+In-memory databases are handled by python and pip, but other databases covered by the tests will require installation and startup. (If you don't want to install extra database engines right now, they can be skipped during test runs: `pytest -k 'not extra_install'`)
+
+For PostgreSQL on MacOS we recommend:
+```shell
+$ brew install postgresql
+$ brew services run postgresql # Or start on boot: brew services start postgresql
+$ createdb $USER # Tests will create and drop "default_table" in this database.
+```
+
+At this point, tests should pass, and code coverage should be complete (except blocks we explicitly ignore):
 ```shell
 $ scripts/ci.sh
 ```
