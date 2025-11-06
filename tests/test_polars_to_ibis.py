@@ -1,3 +1,5 @@
+from os import environ
+
 import ibis
 import polars as pl
 import pytest
@@ -59,6 +61,7 @@ expressions_rows_cols = [
         "sqlite",
         "duckdb",
         pytest.param("postgres", marks=pytest.mark.extra_install),
+        pytest.param("mysql", marks=pytest.mark.extra_install),
     ],
 )
 def test_polars_to_ibis(expression_rows_cols, backend):
@@ -75,7 +78,16 @@ def test_polars_to_ibis(expression_rows_cols, backend):
     table_name = "default_table"
     ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
 
-    connection = getattr(ibis, backend).connect()
+    kwargs = (
+        {
+            "user": environ["USER"],
+            "password": "",
+            "database": environ["USER"],
+        }
+        if backend == "mysql"
+        else {}
+    )
+    connection = getattr(ibis, backend).connect(**kwargs)
     connection.create_table(table_name, df)
 
     # Could use to_polars() here, but we want to be extra sure
