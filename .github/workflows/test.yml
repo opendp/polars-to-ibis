@@ -19,14 +19,11 @@ jobs:
           - '1.34.0'
 
     steps:
-      - name: Start databases
-        run: |
-          brew install postgresql
-          brew services run postgresql
-          createdb $USER
-
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Start databases
+        run: scripts/setup.sh
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
