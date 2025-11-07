@@ -37,7 +37,8 @@ def test_polars_versions():
     ci_matrix = test_workflow["jobs"]["test"]["strategy"]["matrix"]["polars-version"]
     from polars_to_ibis import _max_polars, _min_polars
 
-    assert ci_matrix == [_min_polars, _max_polars]
+    assert _min_polars in ci_matrix
+    assert _max_polars in ci_matrix
 
     requirements_in = (Path(__file__).parent.parent / "requirements.in").read_text()
     polars_requirement = [

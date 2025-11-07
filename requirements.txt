@@ -6,21 +6,21 @@
 #
 atpublic==6.0.2
     # via ibis-framework
-ibis-framework==10.8.0
+ibis-framework==11.0.0
     # via -r requirements.in
 parsy==2.2
     # via ibis-framework
-polars==1.34.0
+polars==1.35.1
     # via -r requirements.in
-polars-runtime-32==1.34.0
+polars-runtime-32==1.35.1
     # via polars
 python-dateutil==2.9.0.post0
     # via ibis-framework
 six==1.17.0
     # via python-dateutil
-sqlglot==27.25.2
+sqlglot==27.29.0
     # via ibis-framework
-toolz==1.0.0
+toolz==1.1.0
     # via ibis-framework
 typing-extensions==4.15.0
     # via ibis-framework

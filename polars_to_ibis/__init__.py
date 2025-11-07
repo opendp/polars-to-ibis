@@ -9,9 +9,10 @@ import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
-# We are primarily interested in supporting the version pinned by OpenDP,
-# but if we can support a wider range without much work, great!
-_min_polars = "1.33.0"  # Even at 1.32 there are failing tests.
+# Polars 1.32 is needed to support OpenDP 0.14.1:
+_min_polars = "1.32.0"
+# TODO: When we drop Polars 1.32 support, we could simplify things.
+# _min_polars = "1.33.0"
 _max_polars = "1.34.0"
 
 

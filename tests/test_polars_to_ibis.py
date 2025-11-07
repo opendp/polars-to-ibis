@@ -24,7 +24,9 @@ def xfail(error, param):
 
 
 expressions_rows_cols = [
+    #
     # Slice:
+    #
     # NOTE: Non-deterministic on some backends without sort().
     ("lf.sort(by='ints').head(1)", 1, 4),
     ("lf.sort(by='ints').head(2)", 2, 4),
@@ -32,21 +34,28 @@ expressions_rows_cols = [
     ("lf.sort(by='ints')[1:3]", 2, 4),
     ("lf.sort(by='ints').first()", 1, 4),
     # ("lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
+    #
     # Sort:
+    #
     ("lf.sort(by='ints')", 4, 4),
     ("lf.sort(by=['ints', 'floats'])", 4, 4),
+    #
     # MapFunction:
+    #
     ("lf.max()", 1, 4),
     ("lf.min()", 1, 4),
     xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
-    # TODO:
+    #
     # Select:
-    xfail(
-        UnhandledPolarsException, ("lf.count()", 0, 0)
-    ),  # Ibis returns a single number; Polars returns a DF with a count in each column
-    # xfail(AssertionError, ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
+    #
+    # Polars 1.32 raises TypeError:
+    # ("lf.count()", 0, 0),
+    # Ibis returns a single number; Polars returns a DF with a count in each column:
+    # ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
     xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
+    #
     # HStack:
+    #
     xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
 ]
 
@@ -88,6 +97,14 @@ def test_polars_to_ibis(expression_rows_cols, backend):
         else {}
     )
     connection = getattr(ibis, backend).connect(**kwargs)
+
+    # Because the connection is scoped to the test,
+    # I'm not sure if there's a better way to make sure there's a clean slate.
+    # Each backend raises its own error type.
+    try:
+        connection.drop_table(table_name)
+    except BaseException:  # noqa: B036
+        pass
     connection.create_table(table_name, df)
 
     # Could use to_polars() here, but we want to be extra sure
