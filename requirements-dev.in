@@ -18,7 +18,6 @@ pyyaml
 pytest
 pyright
 pytest-cov
-pytest-xdist
 
 # OpenDP is not necessary at runtime,
 # but it is used in tests as an example of a Polars plugin.
