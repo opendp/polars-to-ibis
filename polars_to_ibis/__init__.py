@@ -41,6 +41,7 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     _check_version()
 
     # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
+    # TODO: Understand whether the schema or the plan is changing.
     polars_plan = json.loads(lf.serialize(format="json"))
     polars_schema = lf.collect_schema()
 
@@ -130,6 +131,10 @@ def _apply_operation_params_to_ibis_table(
                     raise UnhandledPolarsException(
                         f"Unhandled select operation: {select_operation}"
                     )
+                case "Column":  # pragma: no cover
+                    # TODO: Not working!
+                    assert isinstance(inner_params, str)
+                    return table.select(inner_params)
                 case "Selector":
                     raise UnhandledPolarsException(
                         f"Unhandled select operation: {select_operation}"

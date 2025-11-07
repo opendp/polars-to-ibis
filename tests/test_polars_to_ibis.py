@@ -48,7 +48,9 @@ expressions_rows_cols = [
     #
     # Column:
     #
-    # TODO:("lf.select('ints')", 4, 1),
+    # TODO: Not working!
+    # ("lf.select('ints')", 4, 1),
+    #
     # Polars 1.32 raises TypeError:
     # ("lf.count()", 0, 0),
     # Ibis returns a single number; Polars returns a DF with a count in each column:
