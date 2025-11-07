@@ -90,6 +90,7 @@ def cwd_root():
 def main():  # pragma: no cover
     pip_compile_install("requirements.in")
     pip_compile_install("requirements-dev.in")
+    pip_compile_install("requirements-opendp-dev.in")
     rewrite_pyproject_toml()
 
 

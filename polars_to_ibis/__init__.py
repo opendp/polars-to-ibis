@@ -9,9 +9,10 @@ import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
-# We are primarily interested in supporting the version pinned by OpenDP,
-# but if we can support a wider range without much work, great!
-_min_polars = "1.33.0"  # Even at 1.32 there are failing tests.
+# Polars 1.32 is needed to support OpenDP 0.14.1:
+_min_polars = "1.32.0"
+# TODO: When we drop Polars 1.32 support, we could simplify things.
+# _min_polars = "1.33.0"
 _max_polars = "1.34.0"
 
 
@@ -24,7 +25,7 @@ def _warn(message):  # pragma: no cover
     warn(PolarsToIbisWarning(message))
 
 
-def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
+def _check_version():
     if not (
         _min_polars.split(".")  # Oldest supported
         <= pl.__version__.split(".")  # Installed
@@ -34,10 +35,16 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
             f"Polars {pl.__version__} has not been tested! "
             f"Try {_min_polars} to {_max_polars}."
         )
-    polars_json = lf.serialize(format="json")
-    polars_plan = json.loads(polars_json)
 
+
+def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
+    _check_version()
+
+    # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
+    # TODO: Understand whether the schema or the plan is changing.
+    polars_plan = json.loads(lf.serialize(format="json"))
     polars_schema = lf.collect_schema()
+
     ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
     ibis_table = ibis.table(ibis_schema, name=table_name)
 
@@ -73,7 +80,7 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
     operation = polars_plan_keys[0]
     params = polars_plan[operation]
 
-    if "input" not in params:
+    if operation == "DataFrameScan":
         return table
 
     input_polars_plan = params.pop("input")
@@ -104,10 +111,10 @@ def _apply_operation_params_to_ibis_table(
             assert len(expr) == 1
             assert len(expr[0]) == 1
 
-            inner_operation, inner_params = list(expr[0].items())[0]
+            select_operation, inner_params = list(expr[0].items())[0]
 
-            match inner_operation:
-                case "Agg":
+            match select_operation:
+                case "Agg":  # pragma: no cover
                     count = inner_params.pop("Count")
                     _assert_empty(inner_params)
 
@@ -122,15 +129,19 @@ def _apply_operation_params_to_ibis_table(
                     # Can we do something else to get ibis
                     # results that will match polars?
                     raise UnhandledPolarsException(
-                        f"Unhandled operation: {inner_operation}"
+                        f"Unhandled select operation: {select_operation}"
                     )
+                case "Column":  # pragma: no cover
+                    # TODO: Not working!
+                    assert isinstance(inner_params, str)
+                    return table.select(inner_params)
                 case "Selector":
                     raise UnhandledPolarsException(
-                        f"Unhandled operation: {inner_operation}"
+                        f"Unhandled select operation: {select_operation}"
                     )
                 case _:  # pragma: no cover
                     raise UnexpectedPolarsException(
-                        f"Unexpected operation: {inner_operation}"
+                        f"Unexpected select operation: {select_operation}"
                     )
         case "Slice":
             length = params.pop("len")
