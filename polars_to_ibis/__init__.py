@@ -108,7 +108,7 @@ def _apply_operation_params_to_ibis_table(
             inner_operation, inner_params = list(expr[0].items())[0]
 
             match inner_operation:
-                case "Agg":
+                case "Agg":  # pragma: no cover
                     count = inner_params.pop("Count")
                     _assert_empty(inner_params)
 
