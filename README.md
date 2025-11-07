@@ -9,8 +9,8 @@ to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expre
 
 Besides installing this library, you will also need to install the ibis-framework extra for your target database. For example, if you wanted to target SQLite:
 
-```
-pip install polars-to-ibis ibis-framework[sqlite]
+```shell
+pip install 'ibis-framework[sqlite]'
 ```
 
 **🚧 Under Construction! 🚧**
@@ -19,17 +19,16 @@ pip install polars-to-ibis ibis-framework[sqlite]
 >>> import polars as pl
 >>> from polars_to_ibis import polars_to_ibis
 
->>> data = {
-...     "ints": [1, 2, 3, 4],
-... }
->>> polars_df = pl.DataFrame(data)
->>> polars_lazy = polars_df.lazy().head(1)
+>>> polars_lazy = pl.LazyFrame(schema=pl.Schema({"ints": pl.Int32}))
+>>> polars_query = polars_lazy.sort(by="ints").head(1)
 
->>> ibis_unbound_table = polars_to_ibis(polars_lazy, table_name="my_table")
+>>> ibis_unbound_table = polars_to_ibis(polars_query, table_name="my_table")
 >>> print(ibis_unbound_table.to_sql())
 SELECT
   *
 FROM "my_table" AS "t0"
+ORDER BY
+  "t0"."ints" ASC
 LIMIT 1
 
 ```
