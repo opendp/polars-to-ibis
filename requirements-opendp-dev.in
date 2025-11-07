@@ -4,5 +4,5 @@
 # but it is used in tests as an example of a Polars plugin.
 opendp[polars]==0.14.1
 
-# Package dependencies:
+# Non-OpenDP developer dependencies:
 -r requirements-dev.in

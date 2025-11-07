@@ -46,8 +46,9 @@ expressions_rows_cols = [
     ("lf.min()", 1, 4),
     xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
     #
-    # Select:
+    # Column:
     #
+    # TODO:("lf.select('ints')", 4, 1),
     # Polars 1.32 raises TypeError:
     # ("lf.count()", 0, 0),
     # Ibis returns a single number; Polars returns a DF with a count in each column:
@@ -58,6 +59,30 @@ expressions_rows_cols = [
     #
     xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
 ]
+
+
+def get_connection_table_name(backend: str):
+    kwargs = (
+        {
+            "user": environ["USER"],
+            "password": "",
+            "database": environ["USER"],
+        }
+        if backend == "mysql"
+        else {}
+    )
+    connection = getattr(ibis, backend).connect(**kwargs)
+    table_name = "default_table"
+
+    # Ensure a clean slate.
+    # Each backend raises its own error type.
+    try:
+        connection.drop_table(table_name)
+    except BaseException:  # noqa: B036
+        pass
+    connection.create_table(table_name, df)
+
+    return (connection, table_name)
 
 
 @pytest.mark.parametrize(
@@ -81,31 +106,10 @@ def test_polars_to_ibis(expression_rows_cols, backend):
         cols,
     ) = expression_rows_cols
     polars_expression = eval(str_expression)
-    # Call collect() early, so if there's a typo we don't go any farther.
-    expected = polars_expression.collect().to_dicts()
+    expected_dicts = polars_expression.collect().to_dicts()
 
-    table_name = "default_table"
+    connection, table_name = get_connection_table_name(backend)
     ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
-
-    kwargs = (
-        {
-            "user": environ["USER"],
-            "password": "",
-            "database": environ["USER"],
-        }
-        if backend == "mysql"
-        else {}
-    )
-    connection = getattr(ibis, backend).connect(**kwargs)
-
-    # Because the connection is scoped to the test,
-    # I'm not sure if there's a better way to make sure there's a clean slate.
-    # Each backend raises its own error type.
-    try:
-        connection.drop_table(table_name)
-    except BaseException:  # noqa: B036
-        pass
-    connection.create_table(table_name, df)
 
     # Could use to_polars() here, but we want to be extra sure
     # that the path through Ibis does not depend on Polars.
@@ -113,9 +117,8 @@ def test_polars_to_ibis(expression_rows_cols, backend):
 
     assert via_ibis_df.shape == (rows, cols)
     via_ibis_dicts = via_ibis_df.to_dict(orient="records")
-    assert via_ibis_dicts == expected
+    assert via_ibis_dicts == expected_dicts
 
-    # Not all databases require cleanup:
-    connection.drop_table(table_name)
-    if hasattr(connection, "disconnect"):  # pragma: no cover
-        connection.disconnect()
+    # Cleanup:
+    if hasattr(connection, "disconnect"):
+        connection.disconnect()  # pragma: no cover
