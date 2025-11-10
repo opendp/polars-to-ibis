@@ -20,7 +20,6 @@ mixed_data = {
     "bools": [True, True, False, False],
 }
 mixed_df = pl.DataFrame(mixed_data)
-mixed_lf = mixed_df.lazy()
 
 
 mixed_expressions_rows_cols = [
@@ -63,7 +62,7 @@ mixed_expressions_rows_cols = [
 ]
 
 
-def get_connection_table_name(backend: str):
+def get_connection_table_name(df, backend: str):
     kwargs = (
         {
             "user": environ["USER"],
@@ -82,22 +81,23 @@ def get_connection_table_name(backend: str):
         connection.drop_table(table_name)
     except BaseException:  # noqa: B036
         pass
-    connection.create_table(table_name, mixed_df)
+    connection.create_table(table_name, df)
 
     return (connection, table_name)
 
 
-def assert_polars_to_ibis(lf, expression_rows_cols, backend):
+def assert_polars_to_ibis(df, expression_rows_cols, backend):
     # Expressions as strings just for readability of test output.
     (
         str_expression,
         rows,
         cols,
     ) = expression_rows_cols
+    lf = df.lazy()  # noqa: F841; "lf" is used in eval()
     polars_expression = eval(str_expression)
     expected_dicts = polars_expression.collect().to_dicts()
 
-    connection, table_name = get_connection_table_name(backend)
+    connection, table_name = get_connection_table_name(df, backend)
     ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
 
     # Could use to_polars() here, but we want to be extra sure
@@ -129,4 +129,4 @@ def assert_polars_to_ibis(lf, expression_rows_cols, backend):
     ],
 )
 def test_mixed_polars_to_ibis(mixed_expression_rows_cols, backend):
-    assert_polars_to_ibis(mixed_lf, mixed_expression_rows_cols, backend)
+    assert_polars_to_ibis(mixed_df, mixed_expression_rows_cols, backend)
