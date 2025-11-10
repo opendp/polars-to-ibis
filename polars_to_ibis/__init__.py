@@ -118,6 +118,17 @@ def _apply_operation_params_to_ibis_table(
                     count = inner_params.pop("Count")
                     _assert_empty(inner_params)
 
+                    # breakpoint()
+                    # `pytest -k count`:
+                    # pl.__version__ == '1.32.0'
+                    # count == [{'Selector': 'Wildcard'}, False]
+
+                    # pl.__version__ == '1.33.0'
+                    # count == {
+                    #   'input': {'Selector': 'Wildcard'},
+                    #   'include_nulls': False
+                    # }
+
                     input = count.pop("input")
                     _assert_falsy(count)
 

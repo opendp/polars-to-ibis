@@ -8,22 +8,88 @@ from polars_to_ibis import UnhandledPolarsException, polars_to_ibis
 
 ibis.set_backend("polars")
 
-data = {
-    "ints": [1, 2, 3, 4],
-    "floats": [0.1, 0.2, 0.3, 0.4],
-    "strings": ["a", "b", "c", "d"],
-    "bools": [True, True, False, False],
-}
+#
+# Utilities
+#
 
-df = pl.DataFrame(data)
-lf = df.lazy()
+
+def get_connection_table_name(df, backend: str):
+    kwargs = (
+        {
+            "user": environ["USER"],
+            "password": "",
+            "database": environ["USER"],
+        }
+        if backend == "mysql"
+        else {}
+    )
+    connection = getattr(ibis, backend).connect(**kwargs)
+    table_name = "default_table"
+
+    # Ensure a clean slate.
+    # Each backend raises its own error type.
+    try:
+        connection.drop_table(table_name)
+    except BaseException:  # noqa: B036
+        pass
+    connection.create_table(table_name, df)
+
+    return (connection, table_name)
+
+
+def assert_polars_to_ibis(df, expression_rows_cols, backend):
+    # Expressions as strings just for readability of test output.
+    (
+        str_expression,
+        rows,
+        cols,
+    ) = expression_rows_cols
+    lf = df.lazy()  # noqa: F841; "lf" is used in eval()
+    polars_expression = eval(str_expression)
+    expected_dicts = polars_expression.collect().to_dicts()
+
+    connection, table_name = get_connection_table_name(df, backend)
+    ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
+
+    # Could use to_polars() here, but we want to be extra sure
+    # that the path through Ibis does not depend on Polars.
+    via_ibis_df = connection.to_pandas(ibis_unbound_table)
+
+    assert via_ibis_df.shape == (rows, cols)
+    via_ibis_dicts = via_ibis_df.to_dict(orient="records")
+    assert via_ibis_dicts == expected_dicts
+
+    # Cleanup:
+    if hasattr(connection, "disconnect"):
+        connection.disconnect()  # pragma: no cover
 
 
 def xfail(error, param):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
-expressions_rows_cols = [
+#
+# Test Fixtures
+#
+
+
+mixed_data = {
+    "ints": [1, 2, 3, 4],
+    "floats": [0.1, 0.2, 0.3, 0.4],
+    "strings": ["a", "b", "c", "d"],
+    "bools": [True, True, False, False],
+}
+mixed_df = pl.DataFrame(mixed_data)
+
+
+numeric_data = {
+    "ints": [1, 2, 3, 4],
+    "floats": [0.1, 0.2, 0.3, 0.4],
+}
+numeric_df = pl.DataFrame(numeric_data)
+
+
+mixed_expressions_rows_cols = [
     #
     # Slice:
     #
@@ -61,66 +127,51 @@ expressions_rows_cols = [
     #
     xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
 ]
+numeric_expressions_rows_cols = [
+    # All of the methods listed on:
+    # https://docs.pola.rs/api/python/stable/reference/lazyframe/aggregation.html
+    # ("lf.count()", 1, 2),
+    ("lf.max()", 1, 2),
+    ("lf.mean()", 1, 2),
+    # ("lf.median()", 1, 2),
+    ("lf.min()", 1, 2),
+    # ("lf.null_count()", 1, 2),
+    # ("lf.quantile(quantile[, interpolation])
+    # ("lf.std([ddof])
+    ("lf.sum()", 1, 2),
+    # ("lf.var([ddof])
+]
 
 
-def get_connection_table_name(backend: str):
-    kwargs = (
-        {
-            "user": environ["USER"],
-            "password": "",
-            "database": environ["USER"],
-        }
-        if backend == "mysql"
-        else {}
-    )
-    connection = getattr(ibis, backend).connect(**kwargs)
-    table_name = "default_table"
+backends = [
+    "polars",
+    "sqlite",
+    "duckdb",
+    pytest.param("postgres", marks=pytest.mark.extra_install),
+    pytest.param("mysql", marks=pytest.mark.extra_install),
+]
 
-    # Ensure a clean slate.
-    # Each backend raises its own error type.
-    try:
-        connection.drop_table(table_name)
-    except BaseException:  # noqa: B036
-        pass
-    connection.create_table(table_name, df)
 
-    return (connection, table_name)
+#
+# Tests
+#
 
 
 @pytest.mark.parametrize(
-    "expression_rows_cols", expressions_rows_cols, ids=lambda triple: triple[0]
+    "mixed_expressions_rows_cols",
+    mixed_expressions_rows_cols,
+    ids=lambda triple: triple[0],
 )
+@pytest.mark.parametrize("backend", backends)
+def test_mixed_polars_to_ibis(mixed_expressions_rows_cols, backend):
+    assert_polars_to_ibis(mixed_df, mixed_expressions_rows_cols, backend)
+
+
 @pytest.mark.parametrize(
-    "backend",
-    [
-        "polars",
-        "sqlite",
-        "duckdb",
-        pytest.param("postgres", marks=pytest.mark.extra_install),
-        pytest.param("mysql", marks=pytest.mark.extra_install),
-    ],
+    "numeric_expressions_rows_cols",
+    numeric_expressions_rows_cols,
+    ids=lambda triple: triple[0],
 )
-def test_polars_to_ibis(expression_rows_cols, backend):
-    # Expressions as strings just for readability of test output.
-    (
-        str_expression,
-        rows,
-        cols,
-    ) = expression_rows_cols
-    polars_expression = eval(str_expression)
-    expected_dicts = polars_expression.collect().to_dicts()
-
-    connection, table_name = get_connection_table_name(backend)
-    ibis_unbound_table = polars_to_ibis(polars_expression, table_name=table_name)
-
-    # Could use to_polars() here, but we want to be extra sure
-    # that the path through Ibis does not depend on Polars.
-    via_ibis_df = connection.to_pandas(ibis_unbound_table)
-
-    assert via_ibis_df.shape == (rows, cols)
-    via_ibis_dicts = via_ibis_df.to_dict(orient="records")
-    assert via_ibis_dicts == expected_dicts
-
-    # Cleanup:
-    if hasattr(connection, "disconnect"):
-        connection.disconnect()  # pragma: no cover
+@pytest.mark.parametrize("backend", backends)
+def test_numeric_polars_to_ibis(numeric_expressions_rows_cols, backend):
+    assert_polars_to_ibis(numeric_df, numeric_expressions_rows_cols, backend)
