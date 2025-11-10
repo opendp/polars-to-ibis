@@ -8,22 +8,22 @@ from polars_to_ibis import UnhandledPolarsException, polars_to_ibis
 
 ibis.set_backend("polars")
 
-data = {
-    "ints": [1, 2, 3, 4],
-    "floats": [0.1, 0.2, 0.3, 0.4],
-    "strings": ["a", "b", "c", "d"],
-    "bools": [True, True, False, False],
-}
-
-df = pl.DataFrame(data)
-lf = df.lazy()
-
 
 def xfail(error, param):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
-expressions_rows_cols = [
+mixed_data = {
+    "ints": [1, 2, 3, 4],
+    "floats": [0.1, 0.2, 0.3, 0.4],
+    "strings": ["a", "b", "c", "d"],
+    "bools": [True, True, False, False],
+}
+mixed_df = pl.DataFrame(mixed_data)
+mixed_lf = mixed_df.lazy()
+
+
+mixed_expressions_rows_cols = [
     #
     # Slice:
     #
@@ -82,25 +82,12 @@ def get_connection_table_name(backend: str):
         connection.drop_table(table_name)
     except BaseException:  # noqa: B036
         pass
-    connection.create_table(table_name, df)
+    connection.create_table(table_name, mixed_df)
 
     return (connection, table_name)
 
 
-@pytest.mark.parametrize(
-    "expression_rows_cols", expressions_rows_cols, ids=lambda triple: triple[0]
-)
-@pytest.mark.parametrize(
-    "backend",
-    [
-        "polars",
-        "sqlite",
-        "duckdb",
-        pytest.param("postgres", marks=pytest.mark.extra_install),
-        pytest.param("mysql", marks=pytest.mark.extra_install),
-    ],
-)
-def test_polars_to_ibis(expression_rows_cols, backend):
+def assert_polars_to_ibis(lf, expression_rows_cols, backend):
     # Expressions as strings just for readability of test output.
     (
         str_expression,
@@ -124,3 +111,22 @@ def test_polars_to_ibis(expression_rows_cols, backend):
     # Cleanup:
     if hasattr(connection, "disconnect"):
         connection.disconnect()  # pragma: no cover
+
+
+@pytest.mark.parametrize(
+    "mixed_expression_rows_cols",
+    mixed_expressions_rows_cols,
+    ids=lambda triple: triple[0],
+)
+@pytest.mark.parametrize(
+    "backend",
+    [
+        "polars",
+        "sqlite",
+        "duckdb",
+        pytest.param("postgres", marks=pytest.mark.extra_install),
+        pytest.param("mysql", marks=pytest.mark.extra_install),
+    ],
+)
+def test_mixed_polars_to_ibis(mixed_expression_rows_cols, backend):
+    assert_polars_to_ibis(mixed_lf, mixed_expression_rows_cols, backend)
