@@ -128,7 +128,18 @@ mixed_expressions_rows_cols = [
     xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
 ]
 numeric_expressions_rows_cols = [
+    # All of the methods listed on:
+    # https://docs.pola.rs/api/python/stable/reference/lazyframe/aggregation.html
+    # ("lf.count()", 1, 2),
+    ("lf.max()", 1, 2),
     ("lf.mean()", 1, 2),
+    # ("lf.median()", 1, 2),
+    ("lf.min()", 1, 2),
+    # ("lf.null_count()", 1, 2),
+    # ("lf.quantile(quantile[, interpolation])
+    # ("lf.std([ddof])
+    ("lf.sum()", 1, 2),
+    # ("lf.var([ddof])
 ]
 
 
