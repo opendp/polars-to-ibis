@@ -113,20 +113,20 @@ def assert_polars_to_ibis(df, expression_rows_cols, backend):
         connection.disconnect()  # pragma: no cover
 
 
+backends = [
+    "polars",
+    "sqlite",
+    "duckdb",
+    pytest.param("postgres", marks=pytest.mark.extra_install),
+    pytest.param("mysql", marks=pytest.mark.extra_install),
+]
+
+
 @pytest.mark.parametrize(
-    "mixed_expression_rows_cols",
+    "expression_rows_cols",
     mixed_expressions_rows_cols,
     ids=lambda triple: triple[0],
 )
-@pytest.mark.parametrize(
-    "backend",
-    [
-        "polars",
-        "sqlite",
-        "duckdb",
-        pytest.param("postgres", marks=pytest.mark.extra_install),
-        pytest.param("mysql", marks=pytest.mark.extra_install),
-    ],
-)
-def test_mixed_polars_to_ibis(mixed_expression_rows_cols, backend):
-    assert_polars_to_ibis(mixed_df, mixed_expression_rows_cols, backend)
+@pytest.mark.parametrize("backend", backends)
+def test_mixed_polars_to_ibis(expression_rows_cols, backend):
+    assert_polars_to_ibis(mixed_df, expression_rows_cols, backend)
