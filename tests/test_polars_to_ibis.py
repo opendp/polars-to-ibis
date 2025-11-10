@@ -8,58 +8,9 @@ from polars_to_ibis import UnhandledPolarsException, polars_to_ibis
 
 ibis.set_backend("polars")
 
-
-def xfail(error, param):
-    return pytest.param(param, marks=pytest.mark.xfail(raises=error))
-
-
-mixed_data = {
-    "ints": [1, 2, 3, 4],
-    "floats": [0.1, 0.2, 0.3, 0.4],
-    "strings": ["a", "b", "c", "d"],
-    "bools": [True, True, False, False],
-}
-mixed_df = pl.DataFrame(mixed_data)
-
-
-mixed_expressions_rows_cols = [
-    #
-    # Slice:
-    #
-    # NOTE: Non-deterministic on some backends without sort().
-    ("lf.sort(by='ints').head(1)", 1, 4),
-    ("lf.sort(by='ints').head(2)", 2, 4),
-    # ("lf.tail(3)", 3, 4), # Fails sqlite and duckdb
-    ("lf.sort(by='ints')[1:3]", 2, 4),
-    ("lf.sort(by='ints').first()", 1, 4),
-    # ("lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
-    #
-    # Sort:
-    #
-    ("lf.sort(by='ints')", 4, 4),
-    ("lf.sort(by=['ints', 'floats'])", 4, 4),
-    #
-    # MapFunction:
-    #
-    ("lf.max()", 1, 4),
-    ("lf.min()", 1, 4),
-    xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
-    #
-    # Column:
-    #
-    # TODO: Not working!
-    # ("lf.select('ints')", 4, 1),
-    #
-    # Polars 1.32 raises TypeError:
-    # ("lf.count()", 0, 0),
-    # Ibis returns a single number; Polars returns a DF with a count in each column:
-    # ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
-    xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
-    #
-    # HStack:
-    #
-    xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
-]
+#
+# Utilities
+#
 
 
 def get_connection_table_name(df, backend: str):
@@ -113,6 +64,74 @@ def assert_polars_to_ibis(df, expression_rows_cols, backend):
         connection.disconnect()  # pragma: no cover
 
 
+def xfail(error, param):
+    return pytest.param(param, marks=pytest.mark.xfail(raises=error))
+
+
+#
+# Test Fixtures
+#
+
+
+mixed_data = {
+    "ints": [1, 2, 3, 4],
+    "floats": [0.1, 0.2, 0.3, 0.4],
+    "strings": ["a", "b", "c", "d"],
+    "bools": [True, True, False, False],
+}
+mixed_df = pl.DataFrame(mixed_data)
+
+
+numeric_data = {
+    "ints": [1, 2, 3, 4],
+    "floats": [0.1, 0.2, 0.3, 0.4],
+}
+numeric_df = pl.DataFrame(numeric_data)
+
+
+mixed_expressions_rows_cols = [
+    #
+    # Slice:
+    #
+    # NOTE: Non-deterministic on some backends without sort().
+    ("lf.sort(by='ints').head(1)", 1, 4),
+    ("lf.sort(by='ints').head(2)", 2, 4),
+    # ("lf.tail(3)", 3, 4), # Fails sqlite and duckdb
+    ("lf.sort(by='ints')[1:3]", 2, 4),
+    ("lf.sort(by='ints').first()", 1, 4),
+    # ("lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
+    #
+    # Sort:
+    #
+    ("lf.sort(by='ints')", 4, 4),
+    ("lf.sort(by=['ints', 'floats'])", 4, 4),
+    #
+    # MapFunction:
+    #
+    ("lf.max()", 1, 4),
+    ("lf.min()", 1, 4),
+    xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
+    #
+    # Column:
+    #
+    # TODO: Not working!
+    # ("lf.select('ints')", 4, 1),
+    #
+    # Polars 1.32 raises TypeError:
+    # ("lf.count()", 0, 0),
+    # Ibis returns a single number; Polars returns a DF with a count in each column:
+    # ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
+    xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
+    #
+    # HStack:
+    #
+    xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
+]
+numeric_expressions_rows_cols = [
+    ("lf.mean()", 1, 2),
+]
+
+
 backends = [
     "polars",
     "sqlite",
@@ -122,11 +141,26 @@ backends = [
 ]
 
 
+#
+# Tests
+#
+
+
 @pytest.mark.parametrize(
-    "expression_rows_cols",
+    "mixed_expressions_rows_cols",
     mixed_expressions_rows_cols,
     ids=lambda triple: triple[0],
 )
 @pytest.mark.parametrize("backend", backends)
-def test_mixed_polars_to_ibis(expression_rows_cols, backend):
-    assert_polars_to_ibis(mixed_df, expression_rows_cols, backend)
+def test_mixed_polars_to_ibis(mixed_expressions_rows_cols, backend):
+    assert_polars_to_ibis(mixed_df, mixed_expressions_rows_cols, backend)
+
+
+@pytest.mark.parametrize(
+    "numeric_expressions_rows_cols",
+    numeric_expressions_rows_cols,
+    ids=lambda triple: triple[0],
+)
+@pytest.mark.parametrize("backend", backends)
+def test_numeric_polars_to_ibis(numeric_expressions_rows_cols, backend):
+    assert_polars_to_ibis(numeric_df, numeric_expressions_rows_cols, backend)
