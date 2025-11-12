@@ -183,11 +183,27 @@ def _apply_operation_params_to_ibis_table(
             stats = function.pop("Stats")
             _assert_empty(function)
 
-            return table.aggregate(
-                [getattr(getattr(table, col), stats.lower())() for col in table.columns]
-            ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
+            if isinstance(stats, str):
+                return _aggregate(table, stats)
+
+            if isinstance(stats, dict):
+                items = list(stats.items())  # type: ignore
+                assert len(items) == 1  # type: ignore
+                key, value = items[0]  # type: ignore
+                return _aggregate(table, key)  # type: ignore
+
+            raise UnhandledPolarsException(
+                f"Unhandled polars map function: {stats}"
+            )  # pragma: no cover
+
         case _:
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
+
+
+def _aggregate(table: ibis.Table, function_name: str) -> ibis.Table:
+    return table.aggregate(
+        [getattr(getattr(table, col), function_name.lower())() for col in table.columns]
+    ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
 
 
 def _assert_empty(params: Any):

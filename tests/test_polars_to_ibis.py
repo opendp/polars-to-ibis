@@ -139,9 +139,10 @@ numeric_expressions_rows_cols = [
     ("lf.min()", 1, 2),
     # ("lf.null_count()", 1, 2),
     # ("lf.quantile(quantile[, interpolation])
-    # ("lf.std([ddof])
+    ("lf.std()", 1, 2),
+    # TODO: ("lf.std(2)", 1, 2),
     ("lf.sum()", 1, 2),
-    # ("lf.var([ddof])
+    # TODO: Almost! ("lf.var()", 1, 2),
 ]
 
 
