@@ -35,7 +35,8 @@ def test_polars_versions():
         (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
     )
     ci_matrix = test_workflow["jobs"]["test"]["strategy"]["matrix"]["polars-version"]
-    from polars_to_ibis import _max_polars, _min_polars
+    from polars_to_ibis import _max_polars  # pyright: ignore[reportPrivateUsage]
+    from polars_to_ibis import _min_polars  # pyright: ignore[reportPrivateUsage]
 
     assert _min_polars in ci_matrix
     assert _max_polars in ci_matrix

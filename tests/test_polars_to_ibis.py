@@ -1,6 +1,6 @@
 from os import environ
 
-import ibis
+import ibis  # pyright: ignore[reportMissingTypeStubs]
 import polars as pl
 import pytest
 
@@ -13,7 +13,7 @@ ibis.set_backend("polars")
 #
 
 
-def get_connection_table_name(df, backend: str):
+def get_connection_table_name(df: pl.DataFrame, backend: str):
     kwargs = (
         {
             "user": environ["USER"],
@@ -37,14 +37,16 @@ def get_connection_table_name(df, backend: str):
     return (connection, table_name)
 
 
-def assert_polars_to_ibis(df, expression_rows_cols, backend):
+def assert_polars_to_ibis(
+    df: pl.DataFrame, expression_rows_cols: tuple[str, int, int], backend: str
+):
     # Expressions as strings just for readability of test output.
     (
         str_expression,
         rows,
         cols,
     ) = expression_rows_cols
-    lf = df.lazy()  # noqa: F841; "lf" is used in eval()
+    lf = df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
     polars_expression = eval(str_expression)
     expected_dicts = polars_expression.collect().to_dicts()
 
@@ -64,7 +66,7 @@ def assert_polars_to_ibis(df, expression_rows_cols, backend):
         connection.disconnect()  # pragma: no cover
 
 
-def xfail(error, param):
+def xfail(error: type[BaseException], param: tuple[str, int, int]):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
@@ -137,9 +139,10 @@ numeric_expressions_rows_cols = [
     ("lf.min()", 1, 2),
     # ("lf.null_count()", 1, 2),
     # ("lf.quantile(quantile[, interpolation])
-    # ("lf.std([ddof])
+    ("lf.std()", 1, 2),
+    # TODO: ("lf.std(2)", 1, 2),
     ("lf.sum()", 1, 2),
-    # ("lf.var([ddof])
+    # TODO: Almost! ("lf.var()", 1, 2),
 ]
 
 
@@ -163,7 +166,9 @@ backends = [
     ids=lambda triple: triple[0],
 )
 @pytest.mark.parametrize("backend", backends)
-def test_mixed_polars_to_ibis(mixed_expressions_rows_cols, backend):
+def test_mixed_polars_to_ibis(
+    mixed_expressions_rows_cols: tuple[str, int, int], backend: str
+):
     assert_polars_to_ibis(mixed_df, mixed_expressions_rows_cols, backend)
 
 
@@ -173,5 +178,7 @@ def test_mixed_polars_to_ibis(mixed_expressions_rows_cols, backend):
     ids=lambda triple: triple[0],
 )
 @pytest.mark.parametrize("backend", backends)
-def test_numeric_polars_to_ibis(numeric_expressions_rows_cols, backend):
+def test_numeric_polars_to_ibis(
+    numeric_expressions_rows_cols: tuple[str, int, int], backend: str
+):
     assert_polars_to_ibis(numeric_df, numeric_expressions_rows_cols, backend)
