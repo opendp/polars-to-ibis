@@ -25,6 +25,7 @@ python_requires = ">=3.10"
 
 [tool.pyright]
 include = ["polars_to_ibis"]
+strict = ["**"]
 
 [tool.isort]
 profile = "black"

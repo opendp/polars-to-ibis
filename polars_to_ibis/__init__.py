@@ -3,8 +3,9 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
-import ibis
+import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
@@ -16,7 +17,7 @@ _min_polars = "1.32.0"
 _max_polars = "1.34.0"
 
 
-def _warn(message):  # pragma: no cover
+def _warn(message: str):  # pragma: no cover
     # It's hard to remember to use the wrapping class,
     # so do it by default,
     # and keep "warn" out of the global namespace.
@@ -71,7 +72,7 @@ class UnhandledPolarsException(Exception):
     pass
 
 
-def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
+def _apply_polars_plan_to_ibis_table(polars_plan: dict[str, Any], table: ibis.Table):
     polars_plan_keys = list(polars_plan.keys())
     if len(polars_plan_keys) != 1:
         raise UnexpectedPolarsException(  # pragma: no cover
@@ -90,7 +91,7 @@ def _apply_polars_plan_to_ibis_table(polars_plan: dict, table: ibis.Table):
 
 
 def _apply_operation_params_to_ibis_table(
-    operation: str, params: dict, table: ibis.Table
+    operation: str, params: dict[str, Any], table: ibis.Table
 ):
     # We want to be sure that there are no unused parameters,
     # so we'll pop() from param, and if the local is unused,
@@ -169,7 +170,7 @@ def _apply_operation_params_to_ibis_table(
             assert isinstance(sort_options.pop("multithreaded"), bool)
             _assert_falsy(sort_options)
 
-            args = []
+            args: list[str] = []
             for col in by_column:
                 args.append(col.pop("Column"))
                 _assert_empty(col)
@@ -189,22 +190,22 @@ def _apply_operation_params_to_ibis_table(
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
-def _assert_empty(params):
+def _assert_empty(params: Any):
     if len(params):  # pragma: no cover
         _warn(f"Params not empty: {params}")
 
 
-def _assert_falsy(value):
+def _assert_falsy(value: Any):
     if not value:
         return
     # This is broader that python's notion of falsy:
     if isinstance(value, list):
-        values = value
+        values = value  # pyright: ignore[reportUnknownVariableType]
     elif isinstance(value, dict):
-        values = value.values()
+        values = value.values()  # pyright: ignore[reportUnknownVariableType]
     else:  # pragma: no cover
         _warn(f"Value not falsy: {value}")
         return
 
-    for v in values:
+    for v in values:  # pyright: ignore[reportUnknownVariableType]
         _assert_falsy(v)
