@@ -59,7 +59,14 @@ def assert_polars_to_ibis(
 
     assert via_ibis_df.shape == (rows, cols)
     via_ibis_dicts = via_ibis_df.to_dict(orient="records")
-    assert via_ibis_dicts == expected_dicts
+
+    if rows == 1:
+        # PosgreSQL shows differences in the last digit of var(),
+        # so a slightly looser test:
+        # (approx() doesn't work with deeper data structures.)
+        assert via_ibis_dicts[0] == pytest.approx(expected_dicts[0])  # type: ignore
+    else:
+        assert via_ibis_dicts == expected_dicts
 
     # Cleanup:
     if hasattr(connection, "disconnect"):
@@ -142,7 +149,7 @@ numeric_expressions_rows_cols = [
     ("lf.std()", 1, 2),
     # TODO: ("lf.std(2)", 1, 2),
     ("lf.sum()", 1, 2),
-    # TODO: Almost! ("lf.var()", 1, 2),
+    ("lf.var()", 1, 2),
 ]
 
 
