@@ -207,7 +207,7 @@ def _apply_operation_params_to_ibis_table(
 
             raise UnhandledPolarsException(f"Unhandled expression: {expr}")
 
-        case _:
+        case _:  # pragma: no cover
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 
