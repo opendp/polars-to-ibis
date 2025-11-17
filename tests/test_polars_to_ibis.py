@@ -113,8 +113,14 @@ class DemoOperations:  # type: ignore
     def no_op(self) -> pl.LazyFrame:
         return self._lf
 
+    def zero(self) -> pl.LazyFrame:
+        return self._lf.with_columns(pl.lit(0))
 
-namespace_expressions_rows_cols = [("lf.demo.no_op()", 4, 1)]
+
+namespace_expressions_rows_cols = [
+    ("lf.demo.no_op()", 4, 1),
+    xfail(UnhandledPolarsException, ("lf.demo.zero()", 4, 1)),
+]
 mixed_expressions_rows_cols = [
     #
     # Slice:
