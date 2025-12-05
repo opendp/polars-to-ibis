@@ -195,8 +195,19 @@ def _apply_operation_params_to_ibis_table(
             raise UnhandledPolarsException(
                 f"Unhandled polars map function: {stats}"
             )  # pragma: no cover
+        case "HStack":
+            options = params.pop("options")
 
-        case _:
+            exprs = params.pop("exprs")
+            _assert_empty(params)
+            expr = exprs.pop()
+            _assert_empty(exprs)
+
+            assert len(expr) == 1
+
+            raise UnhandledPolarsException(f"Unhandled expression: {expr}")
+
+        case _:  # pragma: no cover
             raise UnhandledPolarsException(f"Unhandled polars operation: {operation}")
 
 

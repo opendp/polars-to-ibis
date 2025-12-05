@@ -47,6 +47,7 @@ def assert_polars_to_ibis(
         cols,
     ) = expression_rows_cols
     lf = df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
+
     polars_expression = eval(str_expression)
     expected_dicts = polars_expression.collect().to_dicts()
 
@@ -82,6 +83,12 @@ def xfail(error: type[BaseException], param: tuple[str, int, int]):
 #
 
 
+namespace_data = {
+    "ints": [1, 2, 3, 4],
+    # TODO: Add more columns, once polars namespace works on at least one
+}
+namespace_df = pl.DataFrame(namespace_data)
+
 mixed_data = {
     "ints": [1, 2, 3, 4],
     "floats": [0.1, 0.2, 0.3, 0.4],
@@ -98,6 +105,22 @@ numeric_data = {
 numeric_df = pl.DataFrame(numeric_data)
 
 
+@pl.api.register_lazyframe_namespace("demo")
+class DemoOperations:  # type: ignore
+    def __init__(self, lf: pl.LazyFrame) -> None:
+        self._lf = lf
+
+    def no_op(self) -> pl.LazyFrame:
+        return self._lf
+
+    def zero(self) -> pl.LazyFrame:
+        return self._lf.with_columns(pl.lit(0))
+
+
+namespace_expressions_rows_cols = [
+    ("lf.demo.no_op()", 4, 1),
+    xfail(UnhandledPolarsException, ("lf.demo.zero()", 4, 1)),
+]
 mixed_expressions_rows_cols = [
     #
     # Slice:
@@ -165,6 +188,18 @@ backends = [
 #
 # Tests
 #
+
+
+@pytest.mark.parametrize(
+    "namespace_expressions_rows_cols",
+    namespace_expressions_rows_cols,
+    ids=lambda triple: triple[0],
+)
+@pytest.mark.parametrize("backend", backends)
+def test_namespace_polars_to_ibis(
+    namespace_expressions_rows_cols: tuple[str, int, int], backend: str
+):
+    assert_polars_to_ibis(namespace_df, namespace_expressions_rows_cols, backend)
 
 
 @pytest.mark.parametrize(
