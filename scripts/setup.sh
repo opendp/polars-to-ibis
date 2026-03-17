@@ -4,8 +4,15 @@ set -euo pipefail
 
 
 # PostgreSQL:
-brew install postgresql
-brew services run postgresql
+# pl/python is not part of the default homebrew install,
+# so we'll use a third-party.
+# This is used as the example for "brew tab",
+# so seems trust-worthy, if a bit behind main.
+brew tap petere/postgresql
+brew install petere/postgresql/postgresql@16
+
+psql postgres \
+  -c 'create extension plpython3u'
 
 while true
 do
