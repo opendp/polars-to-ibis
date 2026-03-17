@@ -28,8 +28,8 @@ class Serialization:
                 f"Expected only a single key, not: {self.keys()}"
             )
 
-    def __getitem__(self, name: str):
-        return self._serial[name]
+    # def __getitem__(self, name: str):
+    #     return self._serial[name]
 
     def keys(self):  # type: ignore
         return self._serial.keys()  # type: ignore
