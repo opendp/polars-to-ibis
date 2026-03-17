@@ -74,13 +74,8 @@ class UnhandledPolarsException(Exception):
 
 
 def _apply_polars_plan_to_ibis_table(polars_plan: Serialization, table: ibis.Table):
-    polars_plan_keys = list(polars_plan.keys())
-    if len(polars_plan_keys) != 1:
-        raise UnexpectedPolarsException(  # pragma: no cover
-            f"Expected only a single key, not: {polars_plan_keys}"
-        )
-    operation = polars_plan_keys[0]
-    params = polars_plan[operation]
+    operation = list(polars_plan.keys())[0]
+    params = list(polars_plan.values())[0]
 
     if operation == "DataFrameScan":
         return table
