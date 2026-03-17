@@ -1,12 +1,13 @@
 """Convert Polars expressions to Ibis expressions"""
 
-import json
 import re
 from pathlib import Path
 from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
+
+from polars_to_ibis.serializer import Serialization
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
@@ -43,7 +44,7 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
 
     # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
     # TODO: Understand whether the schema or the plan is changing.
-    polars_plan = json.loads(lf.serialize(format="json"))
+    polars_plan = Serialization(lf)
     polars_schema = lf.collect_schema()
 
     ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
@@ -72,7 +73,7 @@ class UnhandledPolarsException(Exception):
     pass
 
 
-def _apply_polars_plan_to_ibis_table(polars_plan: dict[str, Any], table: ibis.Table):
+def _apply_polars_plan_to_ibis_table(polars_plan: Serialization, table: ibis.Table):
     polars_plan_keys = list(polars_plan.keys())
     if len(polars_plan_keys) != 1:
         raise UnexpectedPolarsException(  # pragma: no cover
