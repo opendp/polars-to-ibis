@@ -27,12 +27,16 @@ MY_PRE=$( brew --prefix $MY )/bin
 
 for i in {1..$RETRIES}
 do
-  echo "Create mysql user..."
-  $MY_PRE/mysql -u root -e "CREATE USER $USER" && break || echo 'Try again...'
+  CMD="CREATE USER $USER"
+  echo "Create mysql user: $CMD"
+  $MY_PRE/mysql -u root -e "$CMD" && break || echo 'Try again...'
   sleep 1
 done
 # Tests will create and drop "default_table" in this database:
-echo "Create database..."
-$MY_PRE/mysql -u root -e "CREATE DATABASE $USER"
-echo "Grant privs..."
-$MY_PRE/mysql -u root -e "GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
+CMD="CREATE DATABASE $USER"
+echo "Create database: $CMD"
+$MY_PRE/mysql -u root -e "$CMD"
+
+CMD="GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
+echo "Grant privs: $CMD"
+$MY_PRE/mysql -u root -e "$CMD"
