@@ -4,10 +4,11 @@ set -euo pipefail
 
 
 # PostgreSQL:
-brew install postgresql
+brew install postgresql@16
 brew services run postgresql
 
-for i in {1..10}; do
+for i in {1..10}
+do
   # Tests will create and drop "default_table" in this database:
   createdb $USER && break || echo 'Try again...'
   sleep 1
@@ -18,7 +19,8 @@ done
 brew install mysql
 brew services run mysql
 
-for i in {1..10}; do
+for i in {1..10}
+do
   mysql -u root -e "CREATE USER $USER" && break || echo 'Try again...'
   sleep 1
 done
