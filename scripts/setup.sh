@@ -20,6 +20,10 @@ done
 
 
 # MySQL:
+# "pkg-config" is required by Python connector:
+# https://github.com/PyMySQL/mysqlclient/blob/main/README.md#macos-homebrew
+brew install pkg-config
+
 MY='mysql@8.4'
 brew install $MY
 brew services stop $MY || echo "$MY not already running? Continue..."
