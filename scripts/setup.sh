@@ -10,9 +10,9 @@ brew install $PG
 brew services start $PG
 PG_PRE=$( brew --prefix $PG )/bin
 
-for i in {1..$RETRIES}
+for I in {1..$RETRIES}
 do
-  echo "Create postgres user..."
+  echo "$I: Create postgres user..."
   # Tests will create and drop "default_table" in this database:
   $PG_PRE/createdb $USER && break || echo 'Try again...'
   sleep 1
@@ -25,10 +25,10 @@ brew install $MY
 brew services start $MY
 MY_PRE=$( brew --prefix $MY )/bin
 
-for i in {1..$RETRIES}
+for I in {1..$RETRIES}
 do
   CMD="CREATE USER $USER"
-  echo "Create mysql user: $CMD"
+  echo "$I: Create mysql user: $CMD"
   $MY_PRE/mysql -u root -e "$CMD" && break || echo 'Try again...'
   sleep 1
 done
