@@ -7,7 +7,7 @@ from typing import Any
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
-from polars_to_ibis.serializer import Serialization
+from polars_to_ibis.serialization import Serialization
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
