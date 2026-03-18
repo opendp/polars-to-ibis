@@ -120,7 +120,7 @@ polars==1.32.0
     #   opendp
 pre-commit==4.3.0
     # via -r requirements-dev.in
-psycopg==3.2.12
+psycopg==3.3.3
     # via ibis-framework
 pyarrow==22.0.0
     # via
