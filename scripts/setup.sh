@@ -2,10 +2,12 @@
 
 set -euo pipefail
 
+WAIT=20
 
 # PostgreSQL:
 brew install postgresql@16
-brew services run postgresql@16
+brew services start postgresql@16
+[[ -n $CI ]] && echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> /Users/runner/.bash_profile
 
 for i in {1..10}
 do
@@ -17,7 +19,8 @@ done
 
 # MySQL:
 brew install mysql@8.4
-brew services run mysql@8.4
+brew services start mysql@8.4
+[[ -n $CI ]] && echo 'export PATH="/opt/homebrew/opt/mysql@8.4/bin:$PATH"' >> /Users/runner/.bash_profile
 
 for i in {1..10}
 do
