@@ -2,19 +2,19 @@
 
 set -euo pipefail
 
-RETRIES=20
-
 # PostgreSQL:
 PG='postgresql@16'
 brew install $PG
+brew services stop $PG || echo "$PG not already running? Continue..."
 brew services start $PG
 PG_PRE=$( brew --prefix $PG )/bin
 
-for I in {1..$RETRIES}
-do
-  echo "$I: Create postgres user..."
+for ((I = 0 ; I < 20 ; I++)); do
+  echo "$I: Create postgres database: $USER"
   # Tests will create and drop "default_table" in this database:
-  $PG_PRE/createdb $USER && break || echo 'Try again...'
+  $PG_PRE/dropdb $USER || echo "No pre-existing DB?"
+  $PG_PRE/createdb $USER && break
+  echo 'Try again...'
   sleep 1
 done
 
@@ -22,17 +22,27 @@ done
 # MySQL:
 MY='mysql@8.4'
 brew install $MY
+brew services stop $MY || echo "$MY not already running? Continue..."
 brew services start $MY
 MY_PRE=$( brew --prefix $MY )/bin
 
-for I in {1..$RETRIES}
+for ((I = 0 ; I < 20 ; I++))
 do
+  CMD="DROP USER '$USER'@'%'"
+  echo "$I: Drop mysql user: $CMD"
+  $MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing user?"
+
   CMD="CREATE USER '$USER'@'%'"
   echo "$I: Create mysql user: $CMD"
-  $MY_PRE/mysql -u root -e "$CMD" && break || echo 'Try again...'
+  $MY_PRE/mysql -u root -e "$CMD" && break
+  echo 'Try again...'
   sleep 1
 done
 # Tests will create and drop "default_table" in this database:
+CMD="DROP DATABASE $USER"
+echo "Drop database: $CMD"
+$MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing database?"
+
 CMD="CREATE DATABASE $USER"
 echo "Create database: $CMD"
 $MY_PRE/mysql -u root -e "$CMD"
