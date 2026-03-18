@@ -7,8 +7,6 @@ from typing import Any
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
-from polars_to_ibis.serialization import Serialization
-
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
 # Polars 1.32 is needed to support OpenDP 0.14.1:
@@ -44,11 +42,13 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
 
     # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
     # TODO: Understand whether the schema or the plan is changing.
+    from polars_to_ibis.serialization import Serialization
+
     polars_plan = Serialization(lf)
     polars_schema = lf.collect_schema()
 
     ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
-    ibis_table = ibis.table(ibis_schema, name=table_name)
+    ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
 
     return _apply_polars_plan_to_ibis_table(polars_plan, ibis_table)
 
@@ -73,17 +73,17 @@ class UnhandledPolarsException(Exception):
     pass
 
 
-def _apply_polars_plan_to_ibis_table(polars_plan: Serialization, table: ibis.Table):
-    operation = list(polars_plan.keys())[0]
-    params = list(polars_plan.values())[0]
+def _apply_polars_plan_to_ibis_table(polars_plan, table: ibis.Table):  # type: ignore
+    operation = list(polars_plan.keys())[0]  # type: ignore
+    params = list(polars_plan.values())[0]  # type: ignore
 
     if operation == "DataFrameScan":
         return table
 
-    input_polars_plan = params.pop("input")
-    input_table = _apply_polars_plan_to_ibis_table(input_polars_plan, table)
+    input_polars_plan = params.pop("input")  # type: ignore
+    input_table = _apply_polars_plan_to_ibis_table(input_polars_plan, table)  # type: ignore
 
-    return _apply_operation_params_to_ibis_table(operation, params, input_table)
+    return _apply_operation_params_to_ibis_table(operation, params, input_table)  # type: ignore
 
 
 def _apply_operation_params_to_ibis_table(
