@@ -181,7 +181,7 @@ backends = [
     "sqlite",
     "duckdb",
     pytest.param("postgres", marks=pytest.mark.extra_install),
-    pytest.param("mysql", marks=pytest.mark.extra_install),
+    # TODO: pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 
 

@@ -49,7 +49,7 @@ flit==3.12.0
     # via -r requirements-dev.in
 flit-core==3.12.0
     # via flit
-ibis-framework[duckdb,mysql,polars,postgres,sqlite]==11.0.0
+ibis-framework[duckdb,polars,postgres,sqlite]==11.0.0
     # via
     #   -r requirements-dev.in
     #   -r requirements.in
@@ -75,8 +75,6 @@ mdurl==0.1.2
     # via markdown-it-py
 mypy-extensions==1.1.0
     # via black
-mysqlclient==2.2.7
-    # via ibis-framework
 nodeenv==1.9.1
     # via
     #   pre-commit
