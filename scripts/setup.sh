@@ -27,7 +27,7 @@ MY_PRE=$( brew --prefix $MY )/bin
 
 for I in {1..$RETRIES}
 do
-  CMD="CREATE USER $USER"
+  CMD="CREATE USER '$USER'@'%'"
   echo "$I: Create mysql user: $CMD"
   $MY_PRE/mysql -u root -e "$CMD" && break || echo 'Try again...'
   sleep 1
@@ -37,6 +37,7 @@ CMD="CREATE DATABASE $USER"
 echo "Create database: $CMD"
 $MY_PRE/mysql -u root -e "$CMD"
 
+# Make sure '*' is passed through verbatim:
 CMD="GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
 echo "Grant privs: $CMD"
 $MY_PRE/mysql -u root -e "$CMD"
