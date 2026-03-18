@@ -5,7 +5,7 @@ set -euo pipefail
 
 # PostgreSQL:
 brew install postgresql@16
-brew services run postgresql
+brew services run postgresql@16
 
 for i in {1..10}
 do
@@ -16,8 +16,8 @@ done
 
 
 # MySQL:
-brew install mysql
-brew services run mysql
+brew install mysql@8.4
+brew services run mysql@8.4
 
 for i in {1..10}
 do
