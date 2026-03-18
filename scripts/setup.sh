@@ -35,4 +35,4 @@ done
 echo "Create database..."
 $MY_PRE/mysql -u root -e "CREATE DATABASE $USER"
 echo "Grant privs..."
-$MY_PRE/mysql -u root -e "GRANT ALL ON $USER.* TO '$USER'@'%'"
+$MY_PRE/mysql -u root -e "GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
