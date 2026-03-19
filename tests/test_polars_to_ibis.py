@@ -180,8 +180,10 @@ backends = [
     "polars",
     "sqlite",
     "duckdb",
-    pytest.param("postgres", marks=pytest.mark.extra_install),
-    # TODO: pytest.param("mysql", marks=pytest.mark.extra_install),
+    # TODO: Restore postgres: https://github.com/opendp/polars-to-ibis/issues/35
+    # pytest.param("postgres", marks=pytest.mark.extra_install),
+    # TODO: Restore mysql: https://github.com/opendp/polars-to-ibis/issues/34
+    # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 
 

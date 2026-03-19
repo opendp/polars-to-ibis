@@ -2,6 +2,17 @@
 
 set -euo pipefail
 
+
+
+# Databases not currently used downstream,
+# but continue to exercise the install process in CI
+# so it doesn't break again.
+
+# TODO: Restore postgres: https://github.com/opendp/polars-to-ibis/issues/35
+# TODO: Restore mysql: https://github.com/opendp/polars-to-ibis/issues/34
+
+
+
 # PostgreSQL:
 PG='postgresql@16'
 brew install $PG
@@ -19,39 +30,39 @@ for ((I = 0 ; I < 20 ; I++)); do
 done
 
 
-# # MySQL:
-# # "pkg-config" is required by Python connector:
-# # https://github.com/PyMySQL/mysqlclient/blob/main/README.md#macos-homebrew
-# brew install pkg-config
+# MySQL:
+# "pkg-config" is required by Python connector:
+# https://github.com/PyMySQL/mysqlclient/blob/main/README.md#macos-homebrew
+brew install pkg-config
 
-# MY='mysql@8.4'
-# brew install $MY
-# brew services stop $MY || echo "$MY not already running? Continue..."
-# brew services start $MY
-# MY_PRE=$( brew --prefix $MY )/bin
+MY='mysql@8.4'
+brew install $MY
+brew services stop $MY || echo "$MY not already running? Continue..."
+brew services start $MY
+MY_PRE=$( brew --prefix $MY )/bin
 
-# for ((I = 0 ; I < 20 ; I++))
-# do
-#   CMD="DROP USER '$USER'@'%'"
-#   echo "$I: Drop mysql user: $CMD"
-#   $MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing user?"
+for ((I = 0 ; I < 20 ; I++))
+do
+  CMD="DROP USER '$USER'@'%'"
+  echo "$I: Drop mysql user: $CMD"
+  $MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing user?"
 
-#   CMD="CREATE USER '$USER'@'%'"
-#   echo "$I: Create mysql user: $CMD"
-#   $MY_PRE/mysql -u root -e "$CMD" && break
-#   echo 'Try again...'
-#   sleep 1
-# done
-# # Tests will create and drop "default_table" in this database:
-# CMD="DROP DATABASE $USER"
-# echo "Drop database: $CMD"
-# $MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing database?"
+  CMD="CREATE USER '$USER'@'%'"
+  echo "$I: Create mysql user: $CMD"
+  $MY_PRE/mysql -u root -e "$CMD" && break
+  echo 'Try again...'
+  sleep 1
+done
+# Tests will create and drop "default_table" in this database:
+CMD="DROP DATABASE $USER"
+echo "Drop database: $CMD"
+$MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing database?"
 
-# CMD="CREATE DATABASE $USER"
-# echo "Create database: $CMD"
-# $MY_PRE/mysql -u root -e "$CMD"
+CMD="CREATE DATABASE $USER"
+echo "Create database: $CMD"
+$MY_PRE/mysql -u root -e "$CMD"
 
-# # Make sure '*' is passed through verbatim:
-# CMD="GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
-# echo "Grant privs: $CMD"
-# $MY_PRE/mysql -u root -e "$CMD"
+# Make sure '*' is passed through verbatim:
+CMD="GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
+echo "Grant privs: $CMD"
+$MY_PRE/mysql -u root -e "$CMD"
