@@ -4,7 +4,10 @@
 ibis-framework[duckdb,polars,sqlite,postgres,mysql]>=10.0.0
 
 # Developer tools:
-pip-tools
+# pip-tools depends on particular versions of pip, so pin both.
+# See: https://github.com/jazzband/pip-tools/issues/2252
+pip-tools==7.5.3
+pip==25.3
 flit
 flake8
 flake8-bugbear
