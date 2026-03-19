@@ -3,27 +3,66 @@
 set -euo pipefail
 
 
-# PostgreSQL:
-brew install postgresql
-brew services run postgresql
 
-while true
-do
+# Databases not currently used downstream,
+# but continue to exercise the install process in CI
+# so it doesn't break again.
+
+# TODO: Restore postgres: https://github.com/opendp/polars-to-ibis/issues/35
+# TODO: Restore mysql: https://github.com/opendp/polars-to-ibis/issues/34
+
+
+
+# PostgreSQL:
+PG='postgresql@16'
+brew install $PG
+brew services stop $PG || echo "$PG not already running? Continue..."
+brew services start $PG
+PG_PRE=$( brew --prefix $PG )/bin
+
+for ((I = 0 ; I < 20 ; I++)); do
+  echo "$I: Create postgres database: $USER"
   # Tests will create and drop "default_table" in this database:
-  createdb $USER && break || echo 'Try again...'
+  $PG_PRE/dropdb $USER || echo "No pre-existing DB?"
+  $PG_PRE/createdb $USER && break
+  echo 'Try again...'
   sleep 1
 done
 
 
 # MySQL:
-brew install mysql
-brew services run mysql
+# "pkg-config" is required by Python connector:
+# https://github.com/PyMySQL/mysqlclient/blob/main/README.md#macos-homebrew
+brew install pkg-config
 
-while true
+MY='mysql@8.4'
+brew install $MY
+brew services stop $MY || echo "$MY not already running? Continue..."
+brew services start $MY
+MY_PRE=$( brew --prefix $MY )/bin
+
+for ((I = 0 ; I < 20 ; I++))
 do
-  mysql -u root -e "CREATE USER $USER" && break || echo 'Try again...'
+  CMD="DROP USER '$USER'@'%'"
+  echo "$I: Drop mysql user: $CMD"
+  $MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing user?"
+
+  CMD="CREATE USER '$USER'@'%'"
+  echo "$I: Create mysql user: $CMD"
+  $MY_PRE/mysql -u root -e "$CMD" && break
+  echo 'Try again...'
   sleep 1
 done
 # Tests will create and drop "default_table" in this database:
-mysql -u root -e "CREATE DATABASE $USER"
-mysql -u root -e "GRANT ALL ON $USER.* TO '$USER'@'%'"
+CMD="DROP DATABASE $USER"
+echo "Drop database: $CMD"
+$MY_PRE/mysql -u root -e "$CMD" || echo "No pre-existing database?"
+
+CMD="CREATE DATABASE $USER"
+echo "Create database: $CMD"
+$MY_PRE/mysql -u root -e "$CMD"
+
+# Make sure '*' is passed through verbatim:
+CMD="GRANT ALL PRIVILEGES ON $USER."'*'" TO '$USER'@'%' WITH GRANT OPTION"
+echo "Grant privs: $CMD"
+$MY_PRE/mysql -u root -e "$CMD"
