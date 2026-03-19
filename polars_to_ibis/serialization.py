@@ -6,7 +6,6 @@ Pulling out the serialization and validation logic keeps the rest of the code si
 
 import json
 
-import jsonschema
 import polars as pl
 
 
@@ -29,7 +28,8 @@ class Serialization:
                 f"Expected only a single key, not: {self.keys()}"
             )
 
-        jsonschema.validate(self._serial, {"type": "object"})  # type: ignore
+        # TODO:
+        # jsonschema.validate(self._serial, {"type": "object"})  # type: ignore
 
     # def __getitem__(self, name: str):
     #     return self._serial[name]
