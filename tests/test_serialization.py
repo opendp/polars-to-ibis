@@ -1,33 +1,9 @@
-from collections.abc import Callable
 from typing import Any
 
 import polars as pl
 import pytest
 
-from polars_to_ibis.serialization import Serialization
-
-
-def replace(
-    source: dict[str, Any] | list[Any] | str, key: str, function: Callable[[Any], Any]
-) -> None:
-    """
-    >>> source = {"foo": [{"bar": 42}]}
-    >>> def sound_excited(old):
-    ...     return f"{old}!"
-    >>> replace(source, "bar", sound_excited)
-    >>> source
-    {'foo': [{'bar': '42!'}]}
-    """
-    if isinstance(source, list):
-        for i in source:
-            replace(i, key, function)
-    elif isinstance(source, dict):
-        for k, v in source.items():
-            if k == key:
-                source[k] = function(v)
-            elif isinstance(source[k], (dict, list)):
-                replace(source[k], key, function)
-
+from polars_to_ibis.serialization import Serialization, _replace  # type: ignore
 
 io_pairs = [
     (
@@ -93,5 +69,5 @@ io_pairs = [
 @pytest.mark.parametrize("lf,expected", io_pairs)
 def test_serialization(lf: pl.LazyFrame, expected: dict[str, Any]):
     serial = Serialization(lf)._serial  # type: ignore
-    replace(serial, "DataFrameScan", lambda _: "...")
+    _replace(serial, "DataFrameScan", lambda _: "...")
     assert serial == expected
