@@ -40,15 +40,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install flit
-        run: pip install flit
-
-      - name: Install package
-        run: flit install
-
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
 
+      # This may override the version in requirements.
+      # TODO: Use tox to manage environments locally and in CI.
+      # https://github.com/opendp/polars-to-ibis/issues/40
       - name: Install polars ${{ matrix.polars-version }}
         run: pip install polars==${{ matrix.polars-version }}
 
