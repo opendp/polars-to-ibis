@@ -42,7 +42,7 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
 
     # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
     # TODO: Understand whether the schema or the plan is changing.
-    from polars_to_ibis.serialization import Serialization
+    from polars_to_ibis._serialization import Serialization
 
     polars_plan = Serialization(lf)
     polars_schema = lf.collect_schema()

@@ -32,7 +32,7 @@ class Serialization:
                 }
             return params  # pragma: no cover
 
-        _replace(self._serial, "Count", norm_count_params)
+        replace(self._serial, "Count", norm_count_params)
         self._validate()
 
     def _validate(self):
@@ -53,7 +53,7 @@ class Serialization:
         return self._serial.values()  # type: ignore
 
 
-def _replace(
+def replace(
     source: dict[str, Any] | list[Any] | str, key: str, function: Callable[[Any], Any]
 ) -> None:
     """
@@ -66,10 +66,10 @@ def _replace(
     """
     if isinstance(source, list):
         for i in source:
-            _replace(i, key, function)
+            replace(i, key, function)
     elif isinstance(source, dict):
         for k, v in source.items():
             if k == key:
                 source[k] = function(v)
             elif isinstance(source[k], (dict, list)):
-                _replace(source[k], key, function)
+                replace(source[k], key, function)

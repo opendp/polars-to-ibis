@@ -162,7 +162,7 @@ mixed_expressions_rows_cols = [
 numeric_expressions_rows_cols = [
     # All of the methods listed on:
     # https://docs.pola.rs/api/python/stable/reference/lazyframe/aggregation.html
-    # ("lf.count()", 1, 2),
+    ("lf.count()", 1, 2),
     ("lf.max()", 1, 2),
     ("lf.mean()", 1, 2),
     # ("lf.median()", 1, 2),
