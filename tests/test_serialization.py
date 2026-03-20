@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Any
 
 import polars as pl
@@ -6,18 +7,26 @@ import pytest
 from polars_to_ibis.serialization import Serialization
 
 
-def replace(source: dict[str, Any], key: str, new_value: str) -> None:
+def replace(
+    source: dict[str, Any] | list[Any] | str, key: str, function: Callable[[Any], Any]
+) -> None:
     """
-    >>> source = {"foo": {"bar": 42}}
-    >>> replace(source, "bar", "stub")
+    >>> source = {"foo": [{"bar": 42}]}
+    >>> def sound_excited(old):
+    ...     return f"{old}!"
+    >>> replace(source, "bar", sound_excited)
     >>> source
-    {'foo': {'bar': 'stub'}}
+    {'foo': [{'bar': '42!'}]}
     """
-    for k in source.keys():
-        if k == key:
-            source[k] = new_value
-        elif isinstance(source[k], dict):
-            replace(source[k], key, new_value)
+    if isinstance(source, list):
+        for i in source:
+            replace(i, key, function)
+    elif isinstance(source, dict):
+        for k, v in source.items():
+            if k == key:
+                source[k] = function(v)
+            elif isinstance(source[k], (dict, list)):
+                replace(source[k], key, function)
 
 
 io_pairs = [
@@ -25,7 +34,16 @@ io_pairs = [
         pl.LazyFrame().count(),
         {
             "Select": {
-                "expr": [{"Agg": {"Count": [{"Selector": "Wildcard"}, False]}}],
+                "expr": [
+                    {
+                        "Agg": {
+                            "Count": {
+                                "input": {"Selector": "Wildcard"},
+                                "include_nulls": False,
+                            }
+                        }
+                    }
+                ],
                 "input": {"DataFrameScan": "..."},
                 "options": {
                     "run_parallel": True,
@@ -34,6 +52,17 @@ io_pairs = [
                 },
             }
         },
+        # {
+        #     "Select": {
+        #         "expr": [{"Agg": {"Count": [{"Selector": "Wildcard"}, False]}}],
+        #         "input": {"DataFrameScan": "..."},
+        #         "options": {
+        #             "run_parallel": True,
+        #             "duplicate_check": True,
+        #             "should_broadcast": True,
+        #         },
+        #     }
+        # },
     ),
     (
         pl.LazyFrame().sort(by="ints").head(1),
@@ -64,5 +93,5 @@ io_pairs = [
 @pytest.mark.parametrize("lf,expected", io_pairs)
 def test_serialization(lf: pl.LazyFrame, expected: dict[str, Any]):
     serial = Serialization(lf)._serial  # type: ignore
-    replace(serial, "DataFrameScan", "...")
+    replace(serial, "DataFrameScan", lambda _: "...")
     assert serial == expected
