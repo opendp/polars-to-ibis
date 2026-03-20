@@ -22,6 +22,20 @@ def replace(source: dict[str, Any], key: str, new_value: str) -> None:
 
 io_pairs = [
     (
+        pl.LazyFrame().count(),
+        {
+            "Select": {
+                "expr": [{"Agg": {"Count": [{"Selector": "Wildcard"}, False]}}],
+                "input": {"DataFrameScan": "..."},
+                "options": {
+                    "run_parallel": True,
+                    "duplicate_check": True,
+                    "should_broadcast": True,
+                },
+            }
+        },
+    ),
+    (
         pl.LazyFrame().sort(by="ints").head(1),
         {
             "Slice": {
@@ -43,7 +57,7 @@ io_pairs = [
                 "len": 1,
             }
         },
-    )
+    ),
 ]
 
 
