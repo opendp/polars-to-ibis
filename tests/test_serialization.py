@@ -13,7 +13,7 @@ io_pairs = [
                 "expr": [
                     {
                         "Agg": {
-                            "Count": {
+                            "Count": {  # In Polars 1.32, this is a list.
                                 "input": {"Selector": "Wildcard"},
                                 "include_nulls": False,
                             }
@@ -28,17 +28,6 @@ io_pairs = [
                 },
             }
         },
-        # {
-        #     "Select": {
-        #         "expr": [{"Agg": {"Count": [{"Selector": "Wildcard"}, False]}}],
-        #         "input": {"DataFrameScan": "..."},
-        #         "options": {
-        #             "run_parallel": True,
-        #             "duplicate_check": True,
-        #             "should_broadcast": True,
-        #         },
-        #     }
-        # },
     ),
     (
         pl.LazyFrame().sort(by="ints").head(1),

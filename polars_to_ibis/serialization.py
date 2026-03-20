@@ -25,14 +25,12 @@ class Serialization:
         self._serial = json.loads(lf.serialize(format="json"))
 
         def norm_count_params(params: dict[str, Any] | list[Any] | str) -> Any:
-            if isinstance(params, dict):
-                return params
             if isinstance(params, list):
-                return {
+                return {  # pragma: no cover
                     "input": params[0],
                     "include_nulls": params[1],
                 }
-            return
+            return params
 
         _replace(self._serial, "Count", norm_count_params)
         self._validate()
