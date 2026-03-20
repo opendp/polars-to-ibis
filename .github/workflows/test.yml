@@ -40,12 +40,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install flit
-        run: pip install flit
-
-      - name: Install package
-        run: flit install
-
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
 
