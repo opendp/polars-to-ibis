@@ -30,7 +30,7 @@ class Serialization:
                     "input": params[0],
                     "include_nulls": params[1],
                 }
-            return params
+            return params  # pragma: no cover
 
         _replace(self._serial, "Count", norm_count_params)
         self._validate()
