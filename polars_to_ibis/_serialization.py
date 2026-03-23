@@ -60,7 +60,7 @@ def replace(
     >>> source = {"foo": [{"bar": 42}]}
     >>> def sound_excited(old):
     ...     return f"{old}!"
-    >>> _replace(source, "bar", sound_excited)
+    >>> replace(source, "bar", sound_excited)
     >>> source
     {'foo': [{'bar': '42!'}]}
     """

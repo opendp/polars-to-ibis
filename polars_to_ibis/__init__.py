@@ -121,10 +121,9 @@ def _apply_operation_params_to_ibis_table(
                     selector = input.pop("Selector")
                     assert selector == "Wildcard"
 
-                    # TODO: Replace hard-coded column names.
-                    return table.mutate(ints=table.count(), floats=table.count()).head(
-                        1
-                    )
+                    return table.mutate(
+                        **{col: table.count() for col in table.columns}
+                    ).head(1)
                 case "Column":  # pragma: no cover
                     # TODO: Not working!
                     assert isinstance(inner_params, str)
