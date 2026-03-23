@@ -149,8 +149,7 @@ mixed_expressions_rows_cols = [
     # TODO: Not working!
     # ("lf.select('ints')", 4, 1),
     #
-    # Polars 1.32 raises TypeError:
-    # ("lf.count()", 0, 0),
+    ("lf.count()", 1, 4),
     # Ibis returns a single number; Polars returns a DF with a count in each column:
     # ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
     xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
@@ -213,6 +212,8 @@ def test_namespace_polars_to_ibis(
 def test_mixed_polars_to_ibis(
     mixed_expressions_rows_cols: tuple[str, int, int], backend: str
 ):
+    if backend == "polars" and "count" in mixed_expressions_rows_cols[0]:
+        pytest.xfail("TODO: No translation rule for WindowFunction")
     assert_polars_to_ibis(mixed_df, mixed_expressions_rows_cols, backend)
 
 
