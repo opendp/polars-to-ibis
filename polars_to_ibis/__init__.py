@@ -42,7 +42,7 @@ def polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
 
     # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
     # TODO: Understand whether the schema or the plan is changing.
-    from polars_to_ibis.serialization import Serialization
+    from polars_to_ibis._serialization import Serialization
 
     polars_plan = Serialization(lf)
     polars_schema = lf.collect_schema()
@@ -115,30 +115,15 @@ def _apply_operation_params_to_ibis_table(
                     count = inner_params.pop("Count")
                     _assert_empty(inner_params)
 
-                    # breakpoint()
-                    # `pytest -k count`:
-                    # pl.__version__ == '1.32.0'
-                    # count == [{'Selector': 'Wildcard'}, False]
-
-                    # pl.__version__ == '1.33.0'
-                    # count == {
-                    #   'input': {'Selector': 'Wildcard'},
-                    #   'include_nulls': False
-                    # }
-
                     input = count.pop("input")
                     _assert_falsy(count)
 
                     selector = input.pop("Selector")
                     assert selector == "Wildcard"
 
-                    # TODO: table.count() returns an int,
-                    # but Polars returns a dataframe.
-                    # Can we do something else to get ibis
-                    # results that will match polars?
-                    raise UnhandledPolarsException(
-                        f"Unhandled select operation: {select_operation}"
-                    )
+                    return table.mutate(
+                        **{col: table.count() for col in table.columns}
+                    ).head(1)
                 case "Column":  # pragma: no cover
                     # TODO: Not working!
                     assert isinstance(inner_params, str)

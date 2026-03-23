@@ -162,7 +162,7 @@ mixed_expressions_rows_cols = [
 numeric_expressions_rows_cols = [
     # All of the methods listed on:
     # https://docs.pola.rs/api/python/stable/reference/lazyframe/aggregation.html
-    # ("lf.count()", 1, 2),
+    ("lf.count()", 1, 2),
     ("lf.max()", 1, 2),
     ("lf.mean()", 1, 2),
     # ("lf.median()", 1, 2),
@@ -225,4 +225,6 @@ def test_mixed_polars_to_ibis(
 def test_numeric_polars_to_ibis(
     numeric_expressions_rows_cols: tuple[str, int, int], backend: str
 ):
+    if backend == "polars" and "count" in numeric_expressions_rows_cols[0]:
+        pytest.xfail("TODO: No translation rule for WindowFunction")
     assert_polars_to_ibis(numeric_df, numeric_expressions_rows_cols, backend)

@@ -3,7 +3,7 @@ from typing import Any
 import polars as pl
 import pytest
 
-from polars_to_ibis.serialization import Serialization, _replace  # type: ignore
+from polars_to_ibis._serialization import Serialization, replace  # type: ignore
 
 io_pairs = [
     (
@@ -58,5 +58,5 @@ io_pairs = [
 @pytest.mark.parametrize("lf,expected", io_pairs)
 def test_serialization(lf: pl.LazyFrame, expected: dict[str, Any]):
     serial = Serialization(lf)._serial  # type: ignore
-    _replace(serial, "DataFrameScan", lambda _: "...")
+    replace(serial, "DataFrameScan", lambda _: "...")
     assert serial == expected
