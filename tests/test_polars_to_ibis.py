@@ -167,7 +167,7 @@ numeric_expressions_rows_cols = [
     ("lf.mean()", 1, 2),
     ("lf.median()", 1, 2),
     ("lf.min()", 1, 2),
-    # ("lf.null_count()", 1, 2),
+    ("lf.null_count()", 1, 2),
     # ("lf.quantile(quantile[, interpolation])
     ("lf.std()", 1, 2),
     # TODO: ("lf.std(2)", 1, 2),

@@ -128,6 +128,15 @@ def _apply_operation_params_to_ibis_table(
                     # TODO: Not working!
                     assert isinstance(inner_params, str)
                     return table.select(inner_params)
+                case "Function":
+                    # TODO: Other functions?
+                    assert inner_params["function"] == "NullCount"
+                    return table.mutate(
+                        **{
+                            col: table.count() - table[col].count()
+                            for col in table.columns
+                        }
+                    ).head(1)
                 case "Selector":
                     raise UnhandledPolarsException(
                         f"Unhandled select operation: {select_operation}"
