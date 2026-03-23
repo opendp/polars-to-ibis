@@ -115,29 +115,15 @@ def _apply_operation_params_to_ibis_table(
                     count = inner_params.pop("Count")
                     _assert_empty(inner_params)
 
-                    # breakpoint()
-                    # `pytest -k count`:
-                    # pl.__version__ == '1.32.0'
-                    # count == [{'Selector': 'Wildcard'}, False]
-
-                    # pl.__version__ == '1.33.0'
-                    # count == {
-                    #   'input': {'Selector': 'Wildcard'},
-                    #   'include_nulls': False
-                    # }
-
                     input = count.pop("input")
                     _assert_falsy(count)
 
                     selector = input.pop("Selector")
                     assert selector == "Wildcard"
 
-                    # TODO: table.count() returns an int,
-                    # but Polars returns a dataframe.
-                    # Can we do something else to get ibis
-                    # results that will match polars?
-                    raise UnhandledPolarsException(
-                        f"Unhandled select operation: {select_operation}"
+                    # TODO: Replace hard-coded column names.
+                    return table.mutate(ints=table.count(), floats=table.count()).head(
+                        1
                     )
                 case "Column":  # pragma: no cover
                     # TODO: Not working!
