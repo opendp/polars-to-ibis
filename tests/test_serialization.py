@@ -30,6 +30,34 @@ io_pairs = [
         },
     ),
     (
+        pl.LazyFrame().null_count(),
+        {
+            "Select": {
+                "expr": [
+                    {
+                        "Function": {
+                            "function": "NullCount",
+                            # Unlike count(), which does not have a wrapping list.
+                            "input": [
+                                {
+                                    "Selector": "Wildcard",
+                                },
+                            ],
+                        },
+                    },
+                ],
+                "input": {
+                    "DataFrameScan": "...",
+                },
+                "options": {
+                    "duplicate_check": True,
+                    "run_parallel": True,
+                    "should_broadcast": True,
+                },
+            },
+        },
+    ),
+    (
         pl.LazyFrame().sort(by="ints").head(1),
         {
             "Slice": {
