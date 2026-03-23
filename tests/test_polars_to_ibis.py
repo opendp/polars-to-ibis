@@ -165,7 +165,7 @@ numeric_expressions_rows_cols = [
     ("lf.count()", 1, 2),
     ("lf.max()", 1, 2),
     ("lf.mean()", 1, 2),
-    # ("lf.median()", 1, 2),
+    ("lf.median()", 1, 2),
     ("lf.min()", 1, 2),
     # ("lf.null_count()", 1, 2),
     # ("lf.quantile(quantile[, interpolation])
@@ -227,4 +227,6 @@ def test_numeric_polars_to_ibis(
 ):
     if backend == "polars" and "count" in numeric_expressions_rows_cols[0]:
         pytest.xfail("TODO: No translation rule for WindowFunction")
+    if backend == "sqlite" and "median" in numeric_expressions_rows_cols[0]:
+        pytest.xfail("TODO: Compilation rule for 'Median' operation is not defined")
     assert_polars_to_ibis(numeric_df, numeric_expressions_rows_cols, backend)
