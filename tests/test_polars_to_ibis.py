@@ -38,17 +38,16 @@ def get_connection_table_name(df: pl.DataFrame, backend: str):
 
 
 def assert_polars_to_ibis(
-    df: pl.DataFrame, expression_rows_cols: tuple[str, int, int], backend: str
+    df: pl.DataFrame,
+    expression: str,
+    expected_rows: int,
+    expected_cols: int,
+    backend: str,
 ):
     # Expressions as strings just for readability of test output.
-    (
-        str_expression,
-        expected_rows,
-        expected_cols,
-    ) = expression_rows_cols
     lf = df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
 
-    polars_expression = eval(str_expression)
+    polars_expression = eval(expression)
     expected_dicts = polars_expression.collect().to_dicts()
 
     connection, table_name = get_connection_table_name(df, backend)
@@ -59,13 +58,16 @@ def assert_polars_to_ibis(
     via_ibis_df = connection.to_pandas(ibis_unbound_table)
 
     # For readable assertion message:
-    (rows, cols) = via_ibis_df.shape
-    assert {"rows": rows, "cols": cols} == {
+    (actual_rows, actual_cols) = via_ibis_df.shape
+    assert {
+        "rows": actual_rows,
+        "cols": actual_cols,
+    } == {
         "rows": expected_rows,
         "cols": expected_cols,
     }
-    via_ibis_dicts = via_ibis_df.to_dict(orient="records")
 
+    via_ibis_dicts = via_ibis_df.to_dict(orient="records")
     if expected_rows == 1:
         # PosgreSQL shows differences in the last digit of var(),
         # so a slightly looser test:
@@ -211,12 +213,15 @@ backends = [
 def test_polars_to_ibis(
     category_expressions_rows_cols: tuple[str, str, int, int], backend: str
 ):
-    if backend == "sqlite" and "median" in category_expressions_rows_cols[1]:
+    (category, expression, rows, cols) = category_expressions_rows_cols
+    if backend == "sqlite" and "median" in expression:
         pytest.xfail("TODO: Compilation rule for 'Median' operation is not defined")
-    if backend == "polars" and "count" in category_expressions_rows_cols[1]:
+    if backend == "polars" and "count" in expression:
         pytest.xfail("TODO: No translation rule for WindowFunction")
     assert_polars_to_ibis(
-        df[category_expressions_rows_cols[0]],
-        category_expressions_rows_cols[1:],
-        backend,
+        df=df[category],
+        expression=expression,
+        expected_rows=rows,
+        expected_cols=cols,
+        backend=backend,
     )
