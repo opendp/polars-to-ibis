@@ -43,8 +43,8 @@ def assert_polars_to_ibis(
     # Expressions as strings just for readability of test output.
     (
         str_expression,
-        rows,
-        cols,
+        expected_rows,
+        expected_cols,
     ) = expression_rows_cols
     lf = df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
 
@@ -58,10 +58,15 @@ def assert_polars_to_ibis(
     # that the path through Ibis does not depend on Polars.
     via_ibis_df = connection.to_pandas(ibis_unbound_table)
 
-    assert via_ibis_df.shape == (rows, cols)
+    # For readable assertion message:
+    (rows, cols) = via_ibis_df.shape
+    assert {"rows": rows, "cols": cols} == {
+        "rows": expected_rows,
+        "cols": expected_cols,
+    }
     via_ibis_dicts = via_ibis_df.to_dict(orient="records")
 
-    if rows == 1:
+    if expected_rows == 1:
         # PosgreSQL shows differences in the last digit of var(),
         # so a slightly looser test:
         # (approx() doesn't work with deeper data structures.)
