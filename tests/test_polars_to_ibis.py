@@ -74,7 +74,7 @@ def assert_polars_to_ibis(
         connection.disconnect()  # pragma: no cover
 
 
-def xfail(error: type[BaseException], param: tuple[str, int, int]):
+def xfail(error: type[BaseException], param: tuple[str, str, int, int]):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
@@ -83,26 +83,28 @@ def xfail(error: type[BaseException], param: tuple[str, int, int]):
 #
 
 
-namespace_data = {
-    "ints": [1, 2, 3, 4],
-    # TODO: Add more columns, once polars namespace works on at least one
+df = {
+    "namespace": pl.DataFrame(
+        {
+            "ints": [1, 2, 3, 4],
+            # TODO: Add more columns, once polars namespace works on at least one
+        }
+    ),
+    "mixed": pl.DataFrame(
+        {
+            "ints": [1, 2, 3, 4],
+            "floats": [0.1, 0.2, 0.3, 0.4],
+            "strings": ["a", "b", "c", "d"],
+            "bools": [True, True, False, False],
+        }
+    ),
+    "numeric": pl.DataFrame(
+        {
+            "ints": [1, 2, 3, 4],
+            "floats": [0.1, 0.2, 0.3, 0.4],
+        }
+    ),
 }
-namespace_df = pl.DataFrame(namespace_data)
-
-mixed_data = {
-    "ints": [1, 2, 3, 4],
-    "floats": [0.1, 0.2, 0.3, 0.4],
-    "strings": ["a", "b", "c", "d"],
-    "bools": [True, True, False, False],
-}
-mixed_df = pl.DataFrame(mixed_data)
-
-
-numeric_data = {
-    "ints": [1, 2, 3, 4],
-    "floats": [0.1, 0.2, 0.3, 0.4],
-}
-numeric_df = pl.DataFrame(numeric_data)
 
 
 @pl.api.register_lazyframe_namespace("demo")
@@ -117,61 +119,65 @@ class DemoOperations:  # type: ignore
         return self._lf.with_columns(pl.lit(0))
 
 
-namespace_expressions_rows_cols = [
-    ("lf.demo.no_op()", 4, 1),
-    xfail(UnhandledPolarsException, ("lf.demo.zero()", 4, 1)),
-]
-mixed_expressions_rows_cols = [
+category_expressions_rows_cols = [
+    #
+    # Namespace:
+    #
+    ("namespace", "lf.demo.no_op()", 4, 1),
+    xfail(UnhandledPolarsException, ("namespace", "lf.demo.zero()", 4, 1)),
     #
     # Slice:
     #
     # NOTE: Non-deterministic on some backends without sort().
-    ("lf.sort(by='ints').head(1)", 1, 4),
-    ("lf.sort(by='ints').head(2)", 2, 4),
-    # ("lf.tail(3)", 3, 4), # Fails sqlite and duckdb
-    ("lf.sort(by='ints')[1:3]", 2, 4),
-    ("lf.sort(by='ints').first()", 1, 4),
-    # ("lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
+    ("mixed", "lf.sort(by='ints').head(1)", 1, 4),
+    ("mixed", "lf.sort(by='ints').head(2)", 2, 4),
+    # ("mixed", "lf.tail(3)", 3, 4), # Fails sqlite and duckdb
+    ("mixed", "lf.sort(by='ints')[1:3]", 2, 4),
+    ("mixed", "lf.sort(by='ints').first()", 1, 4),
+    # ("mixed", "lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
     #
     # Sort:
     #
-    ("lf.sort(by='ints')", 4, 4),
-    ("lf.sort(by=['ints', 'floats'])", 4, 4),
+    ("mixed", "lf.sort(by='ints')", 4, 4),
+    ("mixed", "lf.sort(by=['ints', 'floats'])", 4, 4),
     #
     # MapFunction:
     #
-    ("lf.max()", 1, 4),
-    ("lf.min()", 1, 4),
-    xfail(AttributeError, ("lf.mean()", 1, 4)),  # mean() doesn't work for strings
+    ("mixed", "lf.max()", 1, 4),
+    ("mixed", "lf.min()", 1, 4),
+    xfail(
+        AttributeError, ("mixed", "lf.mean()", 1, 4)
+    ),  # mean() doesn't work for strings
     #
     # Column:
     #
     # TODO: Not working!
-    # ("lf.select('ints')", 4, 1),
+    # ("mixed", "lf.select('ints')", 4, 1),
     #
-    ("lf.count()", 1, 4),
+    ("mixed", "lf.count()", 1, 4),
     # Ibis returns a single number; Polars returns a DF with a count in each column:
-    # ("lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
-    xfail(UnhandledPolarsException, ("lf.drop(['ints'], strict=True)", 0, 0)),
+    # ("mixed", "lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
+    xfail(UnhandledPolarsException, ("mixed", "lf.drop(['ints'], strict=True)", 0, 0)),
     #
     # HStack:
     #
-    xfail(UnhandledPolarsException, ("lf.cast({'ints': pl.Float32})", 0, 0)),
-]
-numeric_expressions_rows_cols = [
+    xfail(UnhandledPolarsException, ("mixed", "lf.cast({'ints': pl.Float32})", 0, 0)),
+    #
+    # Simple numeric:
     # All of the methods listed on:
     # https://docs.pola.rs/api/python/stable/reference/lazyframe/aggregation.html
-    ("lf.count()", 1, 2),
-    ("lf.max()", 1, 2),
-    ("lf.mean()", 1, 2),
-    ("lf.median()", 1, 2),
-    ("lf.min()", 1, 2),
-    ("lf.null_count()", 1, 2),
-    # ("lf.quantile(quantile[, interpolation])
-    ("lf.std()", 1, 2),
-    # TODO: ("lf.std(2)", 1, 2),
-    ("lf.sum()", 1, 2),
-    ("lf.var()", 1, 2),
+    #
+    ("numeric", "lf.count()", 1, 2),
+    ("numeric", "lf.max()", 1, 2),
+    ("numeric", "lf.mean()", 1, 2),
+    ("numeric", "lf.median()", 1, 2),
+    ("numeric", "lf.min()", 1, 2),
+    ("numeric", "lf.null_count()", 1, 2),
+    # ("numeric", "lf.quantile(quantile[, interpolation])
+    ("numeric", "lf.std()", 1, 2),
+    # TODO: ("numeric", "lf.std(2)", 1, 2),
+    ("numeric", "lf.sum()", 1, 2),
+    ("numeric", "lf.var()", 1, 2),
 ]
 
 
@@ -192,42 +198,20 @@ backends = [
 
 
 @pytest.mark.parametrize(
-    "namespace_expressions_rows_cols",
-    namespace_expressions_rows_cols,
-    ids=lambda triple: triple[0],
+    "category_expressions_rows_cols",
+    category_expressions_rows_cols,
+    ids=lambda quad: f"{quad[0]}: {quad[1]}",
 )
 @pytest.mark.parametrize("backend", backends)
-def test_namespace_polars_to_ibis(
-    namespace_expressions_rows_cols: tuple[str, int, int], backend: str
+def test_polars_to_ibis(
+    category_expressions_rows_cols: tuple[str, str, int, int], backend: str
 ):
-    assert_polars_to_ibis(namespace_df, namespace_expressions_rows_cols, backend)
-
-
-@pytest.mark.parametrize(
-    "mixed_expressions_rows_cols",
-    mixed_expressions_rows_cols,
-    ids=lambda triple: triple[0],
-)
-@pytest.mark.parametrize("backend", backends)
-def test_mixed_polars_to_ibis(
-    mixed_expressions_rows_cols: tuple[str, int, int], backend: str
-):
-    if backend == "polars" and "count" in mixed_expressions_rows_cols[0]:
-        pytest.xfail("TODO: No translation rule for WindowFunction")
-    assert_polars_to_ibis(mixed_df, mixed_expressions_rows_cols, backend)
-
-
-@pytest.mark.parametrize(
-    "numeric_expressions_rows_cols",
-    numeric_expressions_rows_cols,
-    ids=lambda triple: triple[0],
-)
-@pytest.mark.parametrize("backend", backends)
-def test_numeric_polars_to_ibis(
-    numeric_expressions_rows_cols: tuple[str, int, int], backend: str
-):
-    if backend == "polars" and "count" in numeric_expressions_rows_cols[0]:
-        pytest.xfail("TODO: No translation rule for WindowFunction")
-    if backend == "sqlite" and "median" in numeric_expressions_rows_cols[0]:
+    if backend == "sqlite" and "median" in category_expressions_rows_cols[1]:
         pytest.xfail("TODO: Compilation rule for 'Median' operation is not defined")
-    assert_polars_to_ibis(numeric_df, numeric_expressions_rows_cols, backend)
+    if backend == "polars" and "count" in category_expressions_rows_cols[1]:
+        pytest.xfail("TODO: No translation rule for WindowFunction")
+    assert_polars_to_ibis(
+        df[category_expressions_rows_cols[0]],
+        category_expressions_rows_cols[1:],
+        backend,
+    )
