@@ -3,13 +3,16 @@ from typing import Any, Callable
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
-JsonObj = dict[str, Any]
+PolarsPlan = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
 ReturnsTable = Callable[..., ir.Table]
 ReturnsValue = Callable[..., NamedValue]
 
 TABLE_REGISTRY: dict[str, ReturnsTable] = {}
 VALUE_REGISTRY: dict[str, ReturnsValue] = {}
+
+
+# Decorators:
 
 
 def table_handler(tag: str) -> Callable[..., ReturnsTable]:
@@ -28,14 +31,17 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
     return deco
 
 
-def split_tag_payload(node: JsonObj) -> tuple[str, Any]:
-    if len(node) != 1:
-        raise ValueError(f"Expected single-key tagged dict, got: {node!r}")
-    return next(iter(node.items()))
+# Helpers:
 
 
-def node_to_ibis_table(node: JsonObj, table: ir.Table) -> ir.Table:
-    tag, payload = split_tag_payload(node)
+def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
+    if len(polars_plan) != 1:
+        raise ValueError(f"Expected single-key tagged dict, got: {polars_plan!r}")
+    return next(iter(polars_plan.items()))
+
+
+def polars_plan_to_ibis_table(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
+    tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
     except KeyError as e:
@@ -43,8 +49,8 @@ def node_to_ibis_table(node: JsonObj, table: ir.Table) -> ir.Table:
     return func(payload, table=table)
 
 
-def node_to_ibis_value(node: Any) -> NamedValue:
-    tag, payload = split_tag_payload(node)
+def polars_plan_to_ibis_value(polars_plan: PolarsPlan) -> NamedValue:
+    tag, payload = split_tag_payload(polars_plan)
     try:
         func = VALUE_REGISTRY[tag]
     except KeyError as e:
@@ -52,25 +58,28 @@ def node_to_ibis_value(node: Any) -> NamedValue:
     return func(payload)
 
 
-def nodes_to_ibis_values(nodes: list[Any]) -> dict[str, ir.Value]:
-    return dict(map(node_to_ibis_value, nodes))
+def polars_plans_to_ibis_values(plans: list[PolarsPlan]) -> dict[str, ir.Value]:
+    return dict(map(polars_plan_to_ibis_value, plans))
+
+
+# Handlers:
 
 
 @table_handler("Scan")
 @table_handler("DataFrameScan")
-def handle_source(payload: JsonObj, table: ir.Table) -> ir.Table:
+def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
 
 
 @table_handler("Select")
-def handle_select(payload: JsonObj, table: ir.Table) -> ir.Table:
-    input_table = node_to_ibis_table(payload["input"], table=table)
-    return input_table.aggregate(**nodes_to_ibis_values(payload.get("expr", [])))
+def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = polars_plan_to_ibis_table(payload["input"], table=table)
+    return input_table.aggregate(**polars_plans_to_ibis_values(payload.get("expr", [])))
 
 
 @table_handler("MapFunction")
-def handle_map_function(payload: JsonObj, table: ir.Table) -> ir.Table:
-    input_table = node_to_ibis_table(payload["input"], table=table)
+def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = polars_plan_to_ibis_table(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
         case "Sum":
@@ -91,7 +100,7 @@ def handle_agg(payload: Any) -> NamedValue:
 
     match agg:
         case "Sum":
-            name, value = node_to_ibis_value(agg_payload)
+            name, value = polars_plan_to_ibis_value(agg_payload)
             return name, value.sum()
 
         case _:
