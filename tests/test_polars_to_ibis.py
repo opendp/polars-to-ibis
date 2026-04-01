@@ -40,8 +40,6 @@ def get_connection_table_name(df: pl.DataFrame, backend: str):
 def assert_polars_to_ibis(
     df: pl.DataFrame,
     expression: str,
-    expected_rows: int,
-    expected_cols: int,
     backend: str,
 ):
     # Expressions as strings just for readability of test output.
@@ -57,18 +55,8 @@ def assert_polars_to_ibis(
     # that the path through Ibis does not depend on Polars.
     via_ibis_df = connection.to_pandas(ibis_unbound_table)
 
-    # For readable assertion message:
-    (actual_rows, actual_cols) = via_ibis_df.shape
-    assert {
-        "rows": actual_rows,
-        "cols": actual_cols,
-    } == {
-        "rows": expected_rows,
-        "cols": expected_cols,
-    }
-
     via_ibis_dicts = via_ibis_df.to_dict(orient="records")
-    if expected_rows == 1:
+    if via_ibis_df.shape[0] == 1:
         # PosgreSQL shows differences in the last digit of var(),
         # so a slightly looser test:
         # (approx() doesn't work with deeper data structures.)
@@ -81,7 +69,7 @@ def assert_polars_to_ibis(
         connection.disconnect()  # pragma: no cover
 
 
-def xfail(error: type[BaseException], param: tuple[str, str, int, int]):
+def xfail(error: type[BaseException], param: tuple[str, str]):
     return pytest.param(param, marks=pytest.mark.xfail(raises=error))
 
 
@@ -126,65 +114,63 @@ class DemoOperations:  # type: ignore
         return self._lf.with_columns(pl.lit(0))
 
 
-category_expressions_rows_cols = [
+category_expressions = [
     #
     # Namespace:
     #
-    ("namespace", "lf.demo.no_op()", 4, 1),
-    xfail(UnhandledPolarsException, ("namespace", "lf.demo.zero()", 4, 1)),
+    ("namespace", "lf.demo.no_op()"),
+    xfail(UnhandledPolarsException, ("namespace", "lf.demo.zero()")),
     #
     # Slice:
     #
     # NOTE: Non-deterministic on some backends without sort().
-    ("mixed", "lf.sort(by='ints').head(1)", 1, 4),
-    ("mixed", "lf.sort(by='ints').head(2)", 2, 4),
-    # ("mixed", "lf.tail(3)", 3, 4), # Fails sqlite and duckdb
-    ("mixed", "lf.sort(by='ints')[1:3]", 2, 4),
-    ("mixed", "lf.sort(by='ints').first()", 1, 4),
-    # ("mixed", "lf.sort(by='ints').last()", 1, 4), # Fails sqlite and duckdb
+    ("mixed", "lf.sort(by='ints').head(1)"),
+    ("mixed", "lf.sort(by='ints').head(2)"),
+    # ("mixed", "lf.tail(3)"), # Fails sqlite and duckdb
+    ("mixed", "lf.sort(by='ints')[1:3]"),
+    ("mixed", "lf.sort(by='ints').first()"),
+    # ("mixed", "lf.sort(by='ints').last()"), # Fails sqlite and duckdb
     #
     # Sort:
     #
-    ("mixed", "lf.sort(by='ints')", 4, 4),
-    ("mixed", "lf.sort(by=['ints', 'floats'])", 4, 4),
+    ("mixed", "lf.sort(by='ints')"),
+    ("mixed", "lf.sort(by=['ints', 'floats'])"),
     #
     # MapFunction:
     #
-    ("mixed", "lf.max()", 1, 4),
-    ("mixed", "lf.min()", 1, 4),
-    xfail(
-        AttributeError, ("mixed", "lf.mean()", 1, 4)
-    ),  # mean() doesn't work for strings
+    ("mixed", "lf.max()"),
+    ("mixed", "lf.min()"),
+    xfail(AttributeError, ("mixed", "lf.mean()")),  # mean() doesn't work for strings
     #
     # Column:
     #
     # TODO: Not working!
-    # ("mixed", "lf.select('ints')", 4, 1),
+    # ("mixed", "lf.select('ints')"),
     #
-    ("mixed", "lf.count()", 1, 4),
+    ("mixed", "lf.count()"),
     # Ibis returns a single number; Polars returns a DF with a count in each column:
-    # ("mixed", "lf.bottom_k(1, by=pl.col('ints'), reverse=True)", 0, 0)),
-    xfail(UnhandledPolarsException, ("mixed", "lf.drop(['ints'], strict=True)", 0, 0)),
+    # ("mixed", "lf.bottom_k(1, by=pl.col('ints'), reverse=True)")),
+    xfail(UnhandledPolarsException, ("mixed", "lf.drop(['ints'], strict=True)")),
     #
     # HStack:
     #
-    xfail(UnhandledPolarsException, ("mixed", "lf.cast({'ints': pl.Float32})", 0, 0)),
+    xfail(UnhandledPolarsException, ("mixed", "lf.cast({'ints': pl.Float32})")),
     #
     # Simple numeric:
     # All of the methods listed on:
     # https://docs.pola.rs/api/python/stable/reference/lazyframe/aggregation.html
     #
-    ("numeric", "lf.count()", 1, 2),
-    ("numeric", "lf.max()", 1, 2),
-    ("numeric", "lf.mean()", 1, 2),
-    ("numeric", "lf.median()", 1, 2),
-    ("numeric", "lf.min()", 1, 2),
-    ("numeric", "lf.null_count()", 1, 2),
+    ("numeric", "lf.count()"),
+    ("numeric", "lf.max()"),
+    ("numeric", "lf.mean()"),
+    ("numeric", "lf.median()"),
+    ("numeric", "lf.min()"),
+    ("numeric", "lf.null_count()"),
     # ("numeric", "lf.quantile(quantile[, interpolation])
-    ("numeric", "lf.std()", 1, 2),
-    # TODO: ("numeric", "lf.std(2)", 1, 2),
-    ("numeric", "lf.sum()", 1, 2),
-    ("numeric", "lf.var()", 1, 2),
+    ("numeric", "lf.std()"),
+    # TODO: ("numeric", "lf.std(2)"),
+    ("numeric", "lf.sum()"),
+    ("numeric", "lf.var()"),
 ]
 
 
@@ -205,15 +191,13 @@ backends = [
 
 
 @pytest.mark.parametrize(
-    "category_expressions_rows_cols",
-    category_expressions_rows_cols,
-    ids=lambda quad: f"{quad[0]}: {quad[1]}",
+    "category_expressions",
+    category_expressions,
+    ids=lambda cat_ex: f"{cat_ex[0]}: {cat_ex[1]}",
 )
 @pytest.mark.parametrize("backend", backends)
-def test_polars_to_ibis(
-    category_expressions_rows_cols: tuple[str, str, int, int], backend: str
-):
-    (category, expression, rows, cols) = category_expressions_rows_cols
+def test_polars_to_ibis(category_expressions: tuple[str, str], backend: str):
+    (category, expression) = category_expressions
     if backend == "sqlite" and "median" in expression:
         pytest.xfail("TODO: Compilation rule for 'Median' operation is not defined")
     if backend == "polars" and "count" in expression:
@@ -221,7 +205,5 @@ def test_polars_to_ibis(
     assert_polars_to_ibis(
         df=df[category],
         expression=expression,
-        expected_rows=rows,
-        expected_cols=cols,
         backend=backend,
     )
