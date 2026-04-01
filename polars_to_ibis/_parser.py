@@ -34,7 +34,7 @@ def split_tag_payload(node: JsonObj) -> tuple[str, Any]:
     return next(iter(node.items()))
 
 
-def node_to_ibis_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
+def node_to_ibis_table(node: JsonObj, table: ir.Table) -> ir.Table:
     tag, payload = split_tag_payload(node)
     try:
         func = TABLE_REGISTRY[tag]
@@ -58,18 +58,18 @@ def nodes_to_ibis_values(nodes: list[Any]) -> dict[str, ir.Value]:
 
 @table_handler("Scan")
 @table_handler("DataFrameScan")
-def handle_source(payload: JsonObj, *, table: ir.Table) -> ir.Table:
+def handle_source(payload: JsonObj, table: ir.Table) -> ir.Table:
     return table
 
 
 @table_handler("Select")
-def handle_select(payload: JsonObj, *, table: ir.Table) -> ir.Table:
+def handle_select(payload: JsonObj, table: ir.Table) -> ir.Table:
     input_table = node_to_ibis_table(payload["input"], table=table)
     return input_table.aggregate(**nodes_to_ibis_values(payload.get("expr", [])))
 
 
 @table_handler("MapFunction")
-def handle_map_function(payload: JsonObj, *, table: ir.Table) -> ir.Table:
+def handle_map_function(payload: JsonObj, table: ir.Table) -> ir.Table:
     input_table = node_to_ibis_table(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
