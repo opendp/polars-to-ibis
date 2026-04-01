@@ -1,13 +1,13 @@
 from typing import Any
 
-import polars as pl
+import polars as pl  # type: ignore # noqa: F401
 import pytest
 
 from polars_to_ibis._serialization import Serialization, replace  # type: ignore
 
 io_pairs = [
     (
-        pl.LazyFrame().count(),
+        "pl.LazyFrame().count()",
         {
             "Select": {
                 "expr": [
@@ -30,7 +30,7 @@ io_pairs = [
         },
     ),
     (
-        pl.LazyFrame().null_count(),
+        "pl.LazyFrame().null_count()",
         {
             "Select": {
                 "expr": [
@@ -58,7 +58,7 @@ io_pairs = [
         },
     ),
     (
-        pl.LazyFrame().sort(by="ints").head(1),
+        'pl.LazyFrame().sort(by="ints").head(1)',
         {
             "Slice": {
                 "input": {
@@ -83,8 +83,9 @@ io_pairs = [
 ]
 
 
-@pytest.mark.parametrize("lf,expected", io_pairs)
-def test_serialization(lf: pl.LazyFrame, expected: dict[str, Any]):
+@pytest.mark.parametrize("lf_str,expected", io_pairs)
+def test_serialization(lf_str: str, expected: dict[str, Any]):
+    lf = eval(lf_str)
     serial = Serialization(lf)._serial  # type: ignore
     replace(serial, "DataFrameScan", lambda _: "...")
     assert serial == expected
