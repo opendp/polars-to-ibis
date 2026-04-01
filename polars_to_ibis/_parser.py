@@ -1,6 +1,8 @@
+import re
 from typing import Any, Callable
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
+from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
 JsonObj = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -36,20 +38,70 @@ def tagged(node: JsonObj) -> tuple[str, Any]:
 def translate_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
     tag, payload = tagged(node)
     try:
-        return TABLE_REGISTRY[tag](payload, table=table)
+        func = TABLE_REGISTRY[tag]
     except KeyError as e:
         raise NotImplementedError(f"No table handler for {tag!r}") from e
+    return func(payload, table=table)
 
 
 def translate_value(node: Any) -> NamedValue:
     tag, payload = tagged(node)
     try:
-        return VALUE_REGISTRY[tag](payload)
+        func = VALUE_REGISTRY[tag]
     except KeyError as e:
         raise NotImplementedError(f"No value handler for {tag!r}") from e
+    return func(payload)
+
+
+def translate_values(nodes: list[Any]) -> dict[str, ir.Value]:
+    return dict(map(translate_value, nodes))
 
 
 @table_handler("Scan")
 @table_handler("DataFrameScan")
 def handle_source(payload: JsonObj, *, table: ir.Table) -> ir.Table:
     return table
+
+
+@table_handler("Select")
+def handle_select(payload: JsonObj, *, table: ir.Table) -> ir.Table:
+    input_table = translate_table(payload["input"], table=table)
+    return input_table.aggregate(**translate_values(payload.get("expr", [])))
+
+
+@table_handler("MapFunction")
+def handle_map_function(payload: JsonObj, *, table: ir.Table) -> ir.Table:
+    input_table = translate_table(payload["input"], table=table)
+    stats = payload["function"]["Stats"]
+    match stats:
+        case "Sum":
+            return table.aggregate(
+                [
+                    getattr(getattr(input_table, col), stats.lower())()
+                    for col in table.columns
+                ]
+            ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
+
+        case _:
+            raise ValueError(f"unsupported stats type: {stats}")
+
+
+@value_handler("Agg")
+def handle_agg(payload: Any) -> NamedValue:
+    agg, agg_payload = tagged(payload)
+
+    match agg:
+        case "Count":
+            name, value = translate_value(agg_payload["input"])
+            if agg_payload["include_nulls"]:
+                # ibis doesn't allow changing lengths within an expr,
+                # which is why there is no "include nulls" count variant
+                return name, _.count()
+            return name, value.count()
+
+        case "Sum":
+            name, value = translate_value(agg_payload)
+            return name, value.sum()
+
+        case _:
+            raise ValueError(f"unsupported agg type: {agg}")

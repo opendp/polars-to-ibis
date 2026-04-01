@@ -50,7 +50,7 @@ def test_translate_table():
             "floats": [0.1, 0.2, 0.3, 0.4],
         }
     )
-    lf = df.lazy()
+    lf = df.lazy().sum()
 
     # TODO: Move out of test.
     node = Serialization(lf)._serial  # type: ignore
@@ -66,4 +66,4 @@ def test_translate_table():
 
     connection, table_name = get_connection_table_name(df, "sqlite")
     records = connection.to_pandas(new_table).to_dict(orient="list")
-    assert records == {"floats": [0.1, 0.2, 0.3, 0.4], "ints": [1, 2, 3, 4]}
+    assert records == {"floats": [1.0], "ints": [10]}
