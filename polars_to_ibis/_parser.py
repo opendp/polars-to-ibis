@@ -2,7 +2,6 @@ import re
 from typing import Any, Callable
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
-from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
 JsonObj = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -29,14 +28,14 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
     return deco
 
 
-def tagged(node: JsonObj) -> tuple[str, Any]:
+def split_tag_payload(node: JsonObj) -> tuple[str, Any]:
     if len(node) != 1:
         raise ValueError(f"Expected single-key tagged dict, got: {node!r}")
     return next(iter(node.items()))
 
 
 def translate_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
-    tag, payload = tagged(node)
+    tag, payload = split_tag_payload(node)
     try:
         func = TABLE_REGISTRY[tag]
     except KeyError as e:
@@ -45,7 +44,7 @@ def translate_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
 
 
 def translate_value(node: Any) -> NamedValue:
-    tag, payload = tagged(node)
+    tag, payload = split_tag_payload(node)
     try:
         func = VALUE_REGISTRY[tag]
     except KeyError as e:
@@ -88,17 +87,9 @@ def handle_map_function(payload: JsonObj, *, table: ir.Table) -> ir.Table:
 
 @value_handler("Agg")
 def handle_agg(payload: Any) -> NamedValue:
-    agg, agg_payload = tagged(payload)
+    agg, agg_payload = split_tag_payload(payload)
 
     match agg:
-        case "Count":
-            name, value = translate_value(agg_payload["input"])
-            if agg_payload["include_nulls"]:
-                # ibis doesn't allow changing lengths within an expr,
-                # which is why there is no "include nulls" count variant
-                return name, _.count()
-            return name, value.count()
-
         case "Sum":
             name, value = translate_value(agg_payload)
             return name, value.sum()
