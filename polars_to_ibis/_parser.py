@@ -34,7 +34,7 @@ def split_tag_payload(node: JsonObj) -> tuple[str, Any]:
     return next(iter(node.items()))
 
 
-def translate_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
+def node_to_ibis_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
     tag, payload = split_tag_payload(node)
     try:
         func = TABLE_REGISTRY[tag]
@@ -43,7 +43,7 @@ def translate_table(node: JsonObj, *, table: ir.Table) -> ir.Table:
     return func(payload, table=table)
 
 
-def translate_value(node: Any) -> NamedValue:
+def node_to_ibis_value(node: Any) -> NamedValue:
     tag, payload = split_tag_payload(node)
     try:
         func = VALUE_REGISTRY[tag]
@@ -52,8 +52,8 @@ def translate_value(node: Any) -> NamedValue:
     return func(payload)
 
 
-def translate_values(nodes: list[Any]) -> dict[str, ir.Value]:
-    return dict(map(translate_value, nodes))
+def nodes_to_ibis_values(nodes: list[Any]) -> dict[str, ir.Value]:
+    return dict(map(node_to_ibis_value, nodes))
 
 
 @table_handler("Scan")
@@ -64,13 +64,13 @@ def handle_source(payload: JsonObj, *, table: ir.Table) -> ir.Table:
 
 @table_handler("Select")
 def handle_select(payload: JsonObj, *, table: ir.Table) -> ir.Table:
-    input_table = translate_table(payload["input"], table=table)
-    return input_table.aggregate(**translate_values(payload.get("expr", [])))
+    input_table = node_to_ibis_table(payload["input"], table=table)
+    return input_table.aggregate(**nodes_to_ibis_values(payload.get("expr", [])))
 
 
 @table_handler("MapFunction")
 def handle_map_function(payload: JsonObj, *, table: ir.Table) -> ir.Table:
-    input_table = translate_table(payload["input"], table=table)
+    input_table = node_to_ibis_table(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
         case "Sum":
@@ -91,7 +91,7 @@ def handle_agg(payload: Any) -> NamedValue:
 
     match agg:
         case "Sum":
-            name, value = translate_value(agg_payload)
+            name, value = node_to_ibis_value(agg_payload)
             return name, value.sum()
 
         case _:

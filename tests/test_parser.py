@@ -5,7 +5,7 @@ import ibis  # type: ignore
 import polars as pl
 import pytest
 
-from polars_to_ibis._parser import translate_table
+from polars_to_ibis._parser import node_to_ibis_table
 from polars_to_ibis._serialization import Serialization
 
 ibis.set_backend("polars")
@@ -95,7 +95,7 @@ def test_translate_table(
     polars_expression = eval(expression)
     assert (
         polars_expression.collect().to_dict(as_series=False) == expected_output
-    ), "Polars does not produce expected output"
+    ), "Typo in test? Polars does not produce expected output."
 
     # TODO: Move out of test.
     node = Serialization(polars_expression)._serial  # type: ignore
@@ -107,7 +107,7 @@ def test_translate_table(
     ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
 
     # TODO: Test at higher level.
-    new_table = translate_table(node=node, table=ibis_table)
+    new_table = node_to_ibis_table(node=node, table=ibis_table)
 
     connection, table_name = get_connection_table_name(input_df, backend=backend)
     actual_output = connection.to_pandas(new_table).to_dict(orient="list")
