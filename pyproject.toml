@@ -30,3 +30,4 @@ strict = ["**"]
 
 [tool.isort]
 profile = "black"
+skip_glob = [".venv*/*"]
