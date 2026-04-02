@@ -5,17 +5,14 @@ import ibis  # type: ignore
 import polars as pl
 import pytest
 
-from polars_to_ibis._parser import polars_plan_to_ibis_table
-from polars_to_ibis._serialization import Serialization
+from polars_to_ibis._parser import polars_to_ibis
 
 ibis.set_backend("polars")
 
-#
-# Utilities
-#
+# Utilities:
 
 
-def get_connection_table_name(df: pl.DataFrame, backend: str):
+def get_connection(df: pl.DataFrame, table_name: str, backend: str):
     kwargs = (
         {
             "user": environ["USER"],
@@ -26,7 +23,6 @@ def get_connection_table_name(df: pl.DataFrame, backend: str):
         else {}
     )
     connection = getattr(ibis, backend).connect(**kwargs)
-    table_name = "default_table"
 
     # Ensure a clean slate.
     # Each backend raises its own error type
@@ -37,12 +33,10 @@ def get_connection_table_name(df: pl.DataFrame, backend: str):
         pass
     connection.create_table(table_name, df)
 
-    return (connection, table_name)
+    return connection
 
 
-#
-# Tests
-#
+# Test fixtures:
 
 backends = [
     # "polars",
@@ -80,6 +74,9 @@ category_expression_output_triples = [
 ]
 
 
+# Tests:
+
+
 @pytest.mark.parametrize(
     "category_expression_output",
     category_expression_output_triples,
@@ -89,28 +86,21 @@ category_expression_output_triples = [
 def test_translate_table(
     category_expression_output: tuple[str, str, dict[str, list[Any]]], backend: str
 ):
+    # Setup:
     category, expression, expected_output = category_expression_output
     input_df = input_data[category]
     lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
-    polars_expression = eval(expression)
+    lf: pl.LazyFrame = eval(expression)
+    polars_output = lf.collect().to_dict(as_series=False)
     assert (
-        polars_expression.collect().to_dict(as_series=False) == expected_output
+        polars_output == expected_output
     ), "Typo in test? Polars does not produce expected output."
 
-    # TODO: Move out of test.
-    polars_plan = Serialization(polars_expression)._serial  # type: ignore
-
-    # TODO: Move out of test.
-    polars_schema = lf.collect_schema()
-    ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
     table_name = "default_table"
-    ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
+    ibis_table = polars_to_ibis(lf, table_name)
 
-    # TODO: Test at higher level.
-    new_table = polars_plan_to_ibis_table(polars_plan=polars_plan, table=ibis_table)
-
-    connection, table_name = get_connection_table_name(input_df, backend=backend)
-    actual_output = connection.to_pandas(new_table).to_dict(orient="list")
+    connection = get_connection(input_df, table_name=table_name, backend=backend)
+    actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
     assert (
         actual_output == expected_output
     ), f"Via ibis, {backend} does not produce expected output"
