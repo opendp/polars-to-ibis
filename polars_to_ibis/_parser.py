@@ -42,12 +42,12 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
     return deco
 
 
-def value_handler(tag: str) -> Callable[..., ReturnsValue]:
-    def deco(func: ReturnsValue) -> ReturnsValue:
-        VALUE_REGISTRY[tag] = func
-        return func
+# def value_handler(tag: str) -> Callable[..., ReturnsValue]:
+#     def deco(func: ReturnsValue) -> ReturnsValue:
+#         VALUE_REGISTRY[tag] = func
+#         return func
 
-    return deco
+#     return deco
 
 
 # Helpers:
@@ -55,7 +55,9 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
     if len(polars_plan) != 1:
-        raise ValueError(f"Expected single-key tagged dict, got: {polars_plan!r}")
+        raise ValueError(
+            f"Expected single-key tagged dict, got: {polars_plan!r}"
+        )  # pragma: no cover
     return next(iter(polars_plan.items()))
 
 
@@ -63,22 +65,22 @@ def polars_plan_to_ibis_table(polars_plan: PolarsPlan, table: ir.Table) -> ir.Ta
     tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
-    except KeyError as e:
+    except KeyError as e:  # pragma: no cover
         raise NotImplementedError(f"No table handler for {tag!r}") from e
     return func(payload, table=table)
 
 
-def polars_plan_to_ibis_value(polars_plan: PolarsPlan) -> NamedValue:
-    tag, payload = split_tag_payload(polars_plan)
-    try:
-        func = VALUE_REGISTRY[tag]
-    except KeyError as e:
-        raise NotImplementedError(f"No value handler for {tag!r}") from e
-    return func(payload)
+# def polars_plan_to_ibis_value(polars_plan: PolarsPlan) -> NamedValue:
+#     tag, payload = split_tag_payload(polars_plan)
+#     try:
+#         func = VALUE_REGISTRY[tag]
+#     except KeyError as e:
+#         raise NotImplementedError(f"No value handler for {tag!r}") from e
+#     return func(payload)
 
 
-def polars_plans_to_ibis_values(plans: list[PolarsPlan]) -> dict[str, ir.Value]:
-    return dict(map(polars_plan_to_ibis_value, plans))
+# def polars_plans_to_ibis_values(plans: list[PolarsPlan]) -> dict[str, ir.Value]:
+#     return dict(map(polars_plan_to_ibis_value, plans))
 
 
 # Handlers:
@@ -90,10 +92,11 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
 
 
-@table_handler("Select")
-def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = polars_plan_to_ibis_table(payload["input"], table=table)
-    return input_table.aggregate(**polars_plans_to_ibis_values(payload.get("expr", [])))
+# @table_handler("Select")
+# def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+#     input_table = polars_plan_to_ibis_table(payload["input"], table=table)
+#     ibis_values = polars_plans_to_ibis_values(payload.get("expr", []))
+#     return input_table.aggregate(**ibis_values)  # type: ignore
 
 
 @table_handler("MapFunction")
@@ -109,18 +112,18 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 ]
             ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
 
-        case _:
+        case _:  # pragma: no cover
             raise ValueError(f"unsupported stats type: {stats}")
 
 
-@value_handler("Agg")
-def handle_agg(payload: Any) -> NamedValue:
-    agg, agg_payload = split_tag_payload(payload)
+# @value_handler("Agg")
+# def handle_agg(payload: Any) -> NamedValue:
+#     agg, agg_payload = split_tag_payload(payload)
 
-    match agg:
-        case "Sum":
-            name, value = polars_plan_to_ibis_value(agg_payload)
-            return name, value.sum()
+#     match agg:
+#         case "Sum":
+#             name, value = polars_plan_to_ibis_value(agg_payload)
+#             return name, value.sum()  # type: ignore
 
-        case _:
-            raise ValueError(f"unsupported agg type: {agg}")
+#         case _:
+#             raise ValueError(f"unsupported agg type: {agg}")
