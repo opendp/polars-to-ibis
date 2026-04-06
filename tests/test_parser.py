@@ -5,7 +5,7 @@ import ibis  # type: ignore
 import polars as pl
 import pytest
 
-from polars_to_ibis._parser import polars_to_ibis
+from polars_to_ibis import polars_to_ibis
 
 ibis.set_backend("polars")
 

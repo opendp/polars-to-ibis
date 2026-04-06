@@ -20,16 +20,17 @@ pip install 'ibis-framework[sqlite]'
 >>> from polars_to_ibis import polars_to_ibis
 
 >>> polars_lazy = pl.LazyFrame(schema=pl.Schema({"ints": pl.Int32}))
->>> polars_query = polars_lazy.sort(by="ints").head(1)
+>>> polars_query = polars_lazy.sum()
 
 >>> ibis_unbound_table = polars_to_ibis(polars_query, table_name="my_table")
 >>> print(ibis_unbound_table.to_sql())
 SELECT
-  *
-FROM "my_table" AS "t0"
-ORDER BY
-  "t0"."ints" ASC
-LIMIT 1
+  "t1"."Sum(ints)" AS "ints"
+FROM (
+  SELECT
+    SUM("t0"."ints") AS "Sum(ints)"
+  FROM "my_table" AS "t0"
+) AS "t1"
 
 ```
 

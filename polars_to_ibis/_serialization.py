@@ -36,21 +36,13 @@ class Serialization:
         self._validate()
 
     def _validate(self):
-        if len(self._serial.keys()) != 1:  # type: ignore
+        keys = self._serial.keys()
+        if len(keys) != 1:  # type: ignore
             raise UnexpectedPolarsException(  # pragma: no cover
-                f"Expected only a single key, not: {self.keys()}"
+                f"Expected only a single key, not: {keys}"
             )
 
         jsonschema.validate(self._serial, {"type": "object"})  # type: ignore
-
-    # def __getitem__(self, name: str):
-    #     return self._serial[name]
-
-    def keys(self):  # type: ignore
-        return self._serial.keys()  # type: ignore
-
-    def values(self):  # type: ignore
-        return self._serial.values()  # type: ignore
 
 
 def replace(

@@ -1,11 +1,7 @@
 import re
 from typing import Any, Callable
 
-import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
-import polars as pl
-
-from polars_to_ibis._serialization import Serialization
 
 PolarsPlan = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -14,21 +10,6 @@ ReturnsValue = Callable[..., NamedValue]
 
 TABLE_REGISTRY: dict[str, ReturnsTable] = {}
 VALUE_REGISTRY: dict[str, ReturnsValue] = {}
-
-
-# Public interface:
-
-
-def polars_to_ibis(lf: pl.LazyFrame, table_name: str):
-    polars_plan = Serialization(lf)._serial  # type: ignore
-    polars_schema = lf.collect_schema()
-    ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
-    ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
-    new_table = polars_plan_to_ibis_table(
-        polars_plan=polars_plan,
-        table=ibis_table,
-    )
-    return new_table
 
 
 # Decorators:
