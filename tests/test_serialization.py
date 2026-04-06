@@ -3,7 +3,7 @@ from typing import Any
 import polars as pl  # type: ignore # noqa: F401
 import pytest
 
-from polars_to_ibis._serialization import Serialization, replace  # type: ignore
+from polars_to_ibis.serialize import replace, serialize  # type: ignore
 
 io_pairs = [
     (
@@ -86,6 +86,6 @@ io_pairs = [
 @pytest.mark.parametrize("lf_str,expected", io_pairs)
 def test_serialization(lf_str: str, expected: dict[str, Any]):
     lf = eval(lf_str)
-    serial = Serialization(lf)._serial  # type: ignore
+    serial = serialize(lf)  # type: ignore
     replace(serial, "DataFrameScan", lambda _: "...")
     assert serial == expected
