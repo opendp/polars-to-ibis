@@ -42,7 +42,7 @@ def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
     return next(iter(polars_plan.items()))
 
 
-def polars_plan_to_ibis_table(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
+def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
     tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
@@ -82,7 +82,7 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("MapFunction")
 def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = polars_plan_to_ibis_table(payload["input"], table=table)
+    input_table = update_polars_to_ibis(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
         case "Sum":

@@ -5,7 +5,7 @@ import ibis  # type: ignore
 import polars as pl
 import pytest
 
-from polars_to_ibis import polars_to_ibis
+from polars_to_ibis import convert_polars_to_ibis
 
 ibis.set_backend("polars")
 
@@ -97,7 +97,7 @@ def test_translate_table(
     ), "Typo in test? Polars does not produce expected output."
 
     table_name = "default_table"
-    ibis_table = polars_to_ibis(lf, table_name)
+    ibis_table = convert_polars_to_ibis(lf, table_name)
 
     connection = get_connection(input_df, table_name=table_name, backend=backend)
     actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")

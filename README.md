@@ -17,12 +17,12 @@ pip install 'ibis-framework[sqlite]'
 
 ```python
 >>> import polars as pl
->>> from polars_to_ibis import polars_to_ibis
+>>> from polars_to_ibis import convert_polars_to_ibis
 
 >>> polars_lazy = pl.LazyFrame(schema=pl.Schema({"ints": pl.Int32}))
 >>> polars_query = polars_lazy.sum()
 
->>> ibis_unbound_table = polars_to_ibis(polars_query, table_name="my_table")
+>>> ibis_unbound_table = convert_polars_to_ibis(polars_query, table_name="my_table")
 >>> print(ibis_unbound_table.to_sql())
 SELECT
   "t1"."Sum(ints)" AS "ints"
