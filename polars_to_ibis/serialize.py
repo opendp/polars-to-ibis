@@ -12,6 +12,24 @@ import jsonschema
 import polars as pl
 
 
+def serialize(lf: pl.LazyFrame):
+    serial = json.loads(lf.serialize(format="json"))
+
+    # Cleanup:
+    replace(serial, "Count", norm_count_params)
+
+    # Vaidation:
+    keys = serial.keys()
+    if len(keys) != 1:  # type: ignore
+        raise UnexpectedPolarsException(  # pragma: no cover
+            f"Expected only a single key, not: {keys}"
+        )
+
+    jsonschema.validate(serial, {"type": "object"})  # type: ignore
+
+    return serial
+
+
 class UnexpectedPolarsException(Exception):
     """
     JSON structure is not what we expected.
@@ -20,29 +38,13 @@ class UnexpectedPolarsException(Exception):
     pass
 
 
-class Serialization:
-    def __init__(self, lf: pl.LazyFrame):
-        self._serial = json.loads(lf.serialize(format="json"))
-
-        def norm_count_params(params: dict[str, Any] | list[Any] | str) -> Any:
-            if isinstance(params, list):
-                return {  # pragma: no cover
-                    "input": params[0],
-                    "include_nulls": params[1],
-                }
-            return params  # pragma: no cover
-
-        replace(self._serial, "Count", norm_count_params)
-        self._validate()
-
-    def _validate(self):
-        keys = self._serial.keys()
-        if len(keys) != 1:  # type: ignore
-            raise UnexpectedPolarsException(  # pragma: no cover
-                f"Expected only a single key, not: {keys}"
-            )
-
-        jsonschema.validate(self._serial, {"type": "object"})  # type: ignore
+def norm_count_params(params: dict[str, Any] | list[Any] | str) -> Any:
+    if isinstance(params, list):
+        return {  # pragma: no cover
+            "input": params[0],
+            "include_nulls": params[1],
+        }
+    return params  # pragma: no cover
 
 
 def replace(

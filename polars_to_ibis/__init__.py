@@ -41,14 +41,14 @@ def _check_version():
 
 def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     from polars_to_ibis.parse import update_polars_to_ibis
-    from polars_to_ibis.serialize import Serialization
+    from polars_to_ibis.serialize import serialize
 
     _check_version()
 
     # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
     # TODO: Understand whether the schema or the plan is changing.
 
-    polars_plan = Serialization(lf)._serial  # type: ignore
+    polars_plan = serialize(lf)  # type: ignore
     polars_schema = lf.collect_schema()
 
     ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
