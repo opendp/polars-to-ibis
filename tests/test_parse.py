@@ -71,6 +71,7 @@ input_data = {
 
 category_expression_output_triples = [
     ("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
+    ("numeric", "lf.select(['ints'])", {"ints": [1, 2, 3, 4]}),
 ]
 
 

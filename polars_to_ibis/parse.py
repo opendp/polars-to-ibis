@@ -1,6 +1,7 @@
 import re
 from typing import Any, Callable
 
+import ibis  # pyright: ignore[reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
 PolarsPlan = dict[str, Any]
@@ -23,12 +24,12 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
     return deco
 
 
-# def value_handler(tag: str) -> Callable[..., ReturnsValue]:
-#     def deco(func: ReturnsValue) -> ReturnsValue:
-#         VALUE_REGISTRY[tag] = func
-#         return func
+def value_handler(tag: str) -> Callable[..., ReturnsValue]:
+    def deco(func: ReturnsValue) -> ReturnsValue:
+        VALUE_REGISTRY[tag] = func
+        return func
 
-#     return deco
+    return deco
 
 
 # Helpers:
@@ -42,7 +43,7 @@ def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
     return next(iter(polars_plan.items()))
 
 
-def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
+def polars_to_ibis_table(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
     tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
@@ -51,17 +52,17 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
     return func(payload, table=table)
 
 
-# def polars_plan_to_ibis_value(polars_plan: PolarsPlan) -> NamedValue:
-#     tag, payload = split_tag_payload(polars_plan)
-#     try:
-#         func = VALUE_REGISTRY[tag]
-#     except KeyError as e:
-#         raise NotImplementedError(f"No value handler for {tag!r}") from e
-#     return func(payload)
+def polars_to_ibis_value(polars_plan: PolarsPlan) -> NamedValue:
+    tag, payload = split_tag_payload(polars_plan)
+    try:
+        func = VALUE_REGISTRY[tag]
+    except KeyError as e:
+        raise NotImplementedError(f"No value handler for {tag!r}") from e
+    return func(payload)
 
 
-# def polars_plans_to_ibis_values(plans: list[PolarsPlan]) -> dict[str, ir.Value]:
-#     return dict(map(polars_plan_to_ibis_value, plans))
+def polars_to_ibis_values(plans: list[PolarsPlan]) -> dict[str, ir.Value]:
+    return dict(map(polars_to_ibis_value, plans))
 
 
 # Handlers:
@@ -73,16 +74,19 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
 
 
-# @table_handler("Select")
-# def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-#     input_table = polars_plan_to_ibis_table(payload["input"], table=table)
-#     ibis_values = polars_plans_to_ibis_values(payload.get("expr", []))
-#     return input_table.aggregate(**ibis_values)  # type: ignore
+@table_handler("Select")
+def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = polars_to_ibis_table(payload["input"], table=table)
+    ibis_values = polars_to_ibis_values(payload.get("expr", []))
+    try:
+        return input_table.aggregate(**ibis_values)  # type: ignore
+    except ibis.common.annotations.SignatureValidationError:
+        return input_table.select(**ibis_values)
 
 
 @table_handler("MapFunction")
 def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+    input_table = polars_to_ibis_table(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
         case "Sum":
@@ -95,6 +99,11 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
         case _:  # pragma: no cover
             raise ValueError(f"unsupported stats type: {stats}")
+
+
+@value_handler("Column")
+def handle_column(column_name: str) -> NamedValue:
+    return (column_name, ibis._[column_name])  # type: ignore
 
 
 # @value_handler("Agg")

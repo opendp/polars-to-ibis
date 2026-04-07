@@ -40,7 +40,7 @@ def _check_version():
 
 
 def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
-    from polars_to_ibis.parse import update_polars_to_ibis
+    from polars_to_ibis.parse import polars_to_ibis_table
     from polars_to_ibis.serialize import serialize
 
     _check_version()
@@ -54,7 +54,7 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
     ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
 
-    return update_polars_to_ibis(
+    return polars_to_ibis_table(
         polars_plan=polars_plan,
         table=ibis_table,
     )
