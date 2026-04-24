@@ -39,9 +39,9 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
 # Test fixtures:
 
 backends = [
-    # "polars",
+    "polars",
     "sqlite",
-    # "duckdb",
+    "duckdb",
     # pytest.param("postgres", marks=pytest.mark.extra_install),
     # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
