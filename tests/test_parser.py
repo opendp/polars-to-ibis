@@ -42,7 +42,7 @@ backends = [
     "polars",
     "sqlite",
     "duckdb",
-    # pytest.param("postgres", marks=pytest.mark.extra_install),
+    pytest.param("postgres", marks=pytest.mark.extra_install),
     # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 

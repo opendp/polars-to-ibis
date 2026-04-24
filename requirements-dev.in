@@ -1,9 +1,11 @@
 # After making changes here, run scripts/requirements.py.
 
 # End users only need the backend extra they'll be connecting to:
-ibis-framework[duckdb,polars,sqlite]>=10.0.0
-# TODO: Restore Postgres. https://github.com/opendp/polars-to-ibis/issues/35
+ibis-framework[duckdb,polars,sqlite,postgres]>=10.0.0
 # TODO: Restore MySQL.    https://github.com/opendp/polars-to-ibis/issues/34
+
+psycopg-binary
+# TODO: Surprised that ibis-framework[postgres] doesn't cover this?
 
 # Developer tools:
 # pip-tools depends on particular versions of pip, so pin both.
