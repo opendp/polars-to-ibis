@@ -1,4 +1,5 @@
 import dataclasses
+import math
 import re
 from os import environ
 
@@ -100,6 +101,11 @@ fixtures = [
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         require_approx={"postgres"},
+    ),
+    Fixture(
+        "numeric",
+        "lf.std()",
+        {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
     ),
 ]
 
