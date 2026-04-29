@@ -1,6 +1,6 @@
+import dataclasses
 import re
 from os import environ
-from typing import Any
 
 import ibis  # type: ignore
 import polars as pl
@@ -70,10 +70,19 @@ input_data = {
     ),
 }
 
-category_expression_output_triples = [
-    ("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
-    ("numeric", "lf.mean()", {"floats": [0.25], "ints": [2.5]}),
-    (
+
+@dataclasses.dataclass
+class Fixture:
+    category: str
+    expression: str
+    expected_output: dict[str, list[float]]
+    expected_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+
+
+fixtures = [
+    Fixture("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
+    Fixture("numeric", "lf.mean()", {"floats": [0.25], "ints": [2.5]}),
+    Fixture(
         "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
@@ -86,25 +95,17 @@ category_expression_output_triples = [
 
 
 @pytest.mark.parametrize(
-    "category_expression_output",
-    category_expression_output_triples,
-    ids=lambda triple: "-".join(triple[0:2]),  # Don't include output in ID.
+    "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
 )
 @pytest.mark.parametrize("backend", backends)
-def test_translate_table(
-    category_expression_output: tuple[str, str, dict[str, list[Any]]], backend: str
-):
+def test_translate_table(fixture: Fixture, backend: str):
     # Setup:
-    category, expression, expected_output = category_expression_output[:3]
-    expected_errors: dict[str, str] = (
-        category_expression_output[3] if len(category_expression_output) == 4 else {}
-    )
-    input_df = input_data[category]
+    input_df = input_data[fixture.category]
     lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
-    lf: pl.LazyFrame = eval(expression)
+    lf: pl.LazyFrame = eval(fixture.expression)
     polars_output = lf.collect().to_dict(as_series=False)
     assert (
-        polars_output == expected_output
+        polars_output == fixture.expected_output
     ), "Typo in test? Polars does not produce expected output."
 
     table_name = "default_table"
@@ -112,11 +113,11 @@ def test_translate_table(
 
     connection = get_connection(input_df, table_name=table_name, backend=backend)
     # Using to_pandas to avoid accidental dependency on target library.
-    if expected_error := expected_errors.get(backend):
+    if expected_error := fixture.expected_errors.get(backend):
         with pytest.raises(Exception, match=re.escape(expected_error)):
             connection.to_pandas(ibis_table)
     else:
         actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
         assert (
-            actual_output == expected_output
+            actual_output == fixture.expected_output
         ), f"Via ibis, {backend} does not produce expected output"
