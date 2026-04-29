@@ -79,6 +79,7 @@ class Fixture:
     expression: str
     expected_output: dict[str, list[float]]
     expected_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    require_approx: set[str] = dataclasses.field(default_factory=set)  # type: ignore
 
 
 fixtures = [
@@ -88,10 +89,18 @@ fixtures = [
         "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
-        {"sqlite": "Compilation rule for 'Median' operation is not defined"},
+        expected_errors={
+            "sqlite": "Compilation rule for 'Median' operation is not defined"
+        },
     ),
     Fixture("numeric", "lf.max()", {"floats": [0.4], "ints": [4]}),
     Fixture("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
+    Fixture(
+        "numeric",
+        "lf.var()",
+        {"floats": [5 / 3 / 100], "ints": [5 / 3]},
+        require_approx={"postgres"},
+    ),
 ]
 
 
@@ -123,6 +132,9 @@ def test_translate_table(fixture: Fixture, backend: str):
         pytest.xfail(f"expected {backend} error: {expected_error}")
     else:
         actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
-        assert (
-            actual_output == fixture.expected_output
-        ), f"Via ibis, {backend} does not produce expected output"
+        if backend in fixture.require_approx:
+            pytest.xfail("TODO")
+        else:
+            assert (
+                actual_output == fixture.expected_output
+            ), f"Via ibis, {backend} does not produce expected output"

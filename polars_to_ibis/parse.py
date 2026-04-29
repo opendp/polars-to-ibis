@@ -92,6 +92,11 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
+        case {"Var": {"ddof": 1}}:
+            return table.aggregate(
+                **{col: getattr(input_table, col).var() for col in table.columns}
+            )
+
         case _:  # pragma: no cover
             raise ValueError(f"unsupported stats type: {stats}")
 
