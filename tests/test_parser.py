@@ -44,6 +44,8 @@ backends = [
     "sqlite",
     "duckdb",
     pytest.param("postgres", marks=pytest.mark.extra_install),
+    # MySQL could be added, if needed, but for now
+    # we want to focus on a smaller number of backends.
     # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 
@@ -116,6 +118,7 @@ def test_translate_table(fixture: Fixture, backend: str):
     if expected_error := fixture.expected_errors.get(backend):
         with pytest.raises(Exception, match=re.escape(expected_error)):
             connection.to_pandas(ibis_table)
+        pytest.xfail(f"expected {backend} error: {expected_error}")
     else:
         actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
         assert (
