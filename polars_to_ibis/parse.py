@@ -84,10 +84,34 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
-        case "Sum":
+        case "Sum" | "Mean" | "Median" | "Max" | "Min":
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())()
+                    for col in table.columns
+                }
+            )
+
+        case {"Var": {"ddof": 1}}:
+            return table.aggregate(
+                **{col: getattr(input_table, col).var() for col in table.columns}
+            )
+
+        case {"Std": {"ddof": 1}}:
+            return table.aggregate(
+                **{col: getattr(input_table, col).std() for col in table.columns}
+            )
+
+        # TODO: Does not support general quantiles
+        case {
+            "Quantile": {
+                "quantile": {"Literal": {"Dyn": {"Float": 0.5}}},
+                "method": "Nearest",
+            }
+        }:
+            return table.aggregate(
+                **{
+                    col: getattr(input_table, col).quantile(0.5)
                     for col in table.columns
                 }
             )
