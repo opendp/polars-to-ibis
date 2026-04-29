@@ -1,6 +1,7 @@
 import re
 from typing import Any, Callable
 
+import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
 PolarsPlan = dict[str, Any]
@@ -73,11 +74,25 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
 
 
-# @table_handler("Select")
-# def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-#     input_table = polars_plan_to_ibis_table(payload["input"], table=table)
-#     ibis_values = polars_plans_to_ibis_values(payload.get("expr", []))
-#     return input_table.aggregate(**ibis_values)  # type: ignore
+@table_handler("Select")
+def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
+
+    # TODO: This is hard-coded for one case. Generalize.
+    exprs = payload.get("expr", [])
+    assert len(exprs) == 1
+    agg = exprs[0]["Agg"]
+    assert "Count" in agg.keys()
+    # breakpoint()
+    # ibis_values = polars_plans_to_ibis_values(payload.get("expr", []))
+    # return input_table.aggregate(**ibis_values)  # type: ignore
+
+    return input_table.aggregate(
+        **{
+            name: ibis.literal(1)
+            for name in table.columns  # pyright: ignore[reportUnknownMemberType]
+        }
+    )
 
 
 @table_handler("MapFunction")

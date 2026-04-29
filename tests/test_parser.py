@@ -53,24 +53,34 @@ input_data = {
     #         # TODO: Add more columns, once polars namespace works on at least one
     #     }
     # ),
-    # "mixed": pl.DataFrame(
-    #     {
-    #         "ints": [1, 2, 3, 4],
-    #         "floats": [0.1, 0.2, 0.3, 0.4],
-    #         "strings": ["a", "b", "c", "d"],
-    #         "bools": [True, True, False, False],
-    #     }
-    # ),
-    "numeric": pl.DataFrame(
+    "mixed": pl.DataFrame(
         {
             "ints": [1, 2, 3, 4],
             "floats": [0.1, 0.2, 0.3, 0.4],
+            "strings": ["a", "b", "c", "d"],
+            "bools": [True, True, False, False],
+        }
+    ),
+    "numeric": pl.DataFrame(
+        {
+            "floats": [0.1, 0.2, 0.3, 0.4],
+            "ints": [1, 2, 3, 4],
         }
     ),
 }
 
 category_expression_output_triples = [
     ("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
+    (
+        "mixed",
+        "lf.count()",
+        {
+            "bools": [4],
+            "floats": [4],
+            "ints": [4],
+            "strings": [4],
+        },
+    ),
 ]
 
 
