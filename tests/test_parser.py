@@ -1,3 +1,4 @@
+import re
 from os import environ
 from typing import Any
 
@@ -71,6 +72,13 @@ input_data = {
 
 category_expression_output_triples = [
     ("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
+    ("numeric", "lf.mean()", {"floats": [0.25], "ints": [2.5]}),
+    (
+        "numeric",
+        "lf.median()",
+        {"floats": [0.25], "ints": [2.5]},
+        {"sqlite": "Compilation rule for 'Median' operation is not defined"},
+    ),
 ]
 
 
@@ -80,14 +88,17 @@ category_expression_output_triples = [
 @pytest.mark.parametrize(
     "category_expression_output",
     category_expression_output_triples,
-    ids=lambda triple: "-".join(triple[:-1]),  # Don't include output in ID.
+    ids=lambda triple: "-".join(triple[0:2]),  # Don't include output in ID.
 )
 @pytest.mark.parametrize("backend", backends)
 def test_translate_table(
     category_expression_output: tuple[str, str, dict[str, list[Any]]], backend: str
 ):
     # Setup:
-    category, expression, expected_output = category_expression_output
+    category, expression, expected_output = category_expression_output[:3]
+    expected_errors: dict[str, str] = (
+        category_expression_output[3] if len(category_expression_output) == 4 else {}
+    )
     input_df = input_data[category]
     lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
     lf: pl.LazyFrame = eval(expression)
@@ -100,7 +111,12 @@ def test_translate_table(
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
     connection = get_connection(input_df, table_name=table_name, backend=backend)
-    actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
-    assert (
-        actual_output == expected_output
-    ), f"Via ibis, {backend} does not produce expected output"
+    # Using to_pandas to avoid accidental dependency on target library.
+    if expected_error := expected_errors.get(backend):
+        with pytest.raises(Exception, match=re.escape(expected_error)):
+            connection.to_pandas(ibis_table)
+    else:
+        actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
+        assert (
+            actual_output == expected_output
+        ), f"Via ibis, {backend} does not produce expected output"
