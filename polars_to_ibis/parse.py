@@ -84,7 +84,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     stats = payload["function"]["Stats"]
     match stats:
-        case "Sum" | "Mean" | "Median":
+        case "Sum" | "Mean" | "Median" | "Max" | "Min":
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())()

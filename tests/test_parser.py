@@ -90,6 +90,8 @@ fixtures = [
         {"floats": [0.25], "ints": [2.5]},
         {"sqlite": "Compilation rule for 'Median' operation is not defined"},
     ),
+    Fixture("numeric", "lf.max()", {"floats": [0.4], "ints": [4]}),
+    Fixture("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
 ]
 
 
