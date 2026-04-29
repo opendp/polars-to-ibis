@@ -25,11 +25,7 @@ pip install 'ibis-framework[sqlite]'
 >>> ibis_unbound_table = convert_polars_to_ibis(polars_query, table_name="my_table")
 >>> print(ibis_unbound_table.to_sql())
 SELECT
-  "t1"."Sum(ints)" AS "ints"
-FROM (
-  SELECT
-    SUM("t0"."ints") AS "Sum(ints)"
-  FROM "my_table" AS "t0"
-) AS "t1"
+  SUM("t0"."ints") AS "ints"
+FROM "my_table" AS "t0"
 
 ```
