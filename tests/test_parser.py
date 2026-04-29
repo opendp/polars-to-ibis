@@ -80,7 +80,7 @@ class Fixture:
     expression: str
     expected_output: dict[str, list[float]]
     expected_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
-    require_approx: set[str] = dataclasses.field(default_factory=set)  # type: ignore
+    tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
 
 
 fixtures = [
@@ -94,13 +94,24 @@ fixtures = [
             "sqlite": "Compilation rule for 'Median' operation is not defined"
         },
     ),
+    Fixture(
+        "numeric",
+        # This should return the same value as median, but it doesn't!
+        "lf.quantile(0.5)",
+        {"floats": [0.3], "ints": [3]},
+        expected_errors={
+            "sqlite": "Compilation rule for 'Quantile' operation is not defined"
+        },
+        # BIG difference between the polars native version and the DB versions!
+        tolerance={"postgres": 0.5, "duckdb": 0.5, "polars": 0.5},
+    ),
     Fixture("numeric", "lf.max()", {"floats": [0.4], "ints": [4]}),
     Fixture("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
     Fixture(
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        require_approx={"postgres"},
+        tolerance={"postgres": 10e-6},
     ),
     Fixture(
         "numeric",
@@ -138,10 +149,11 @@ def test_translate_table(fixture: Fixture, backend: str):
         pytest.xfail(f"expected {backend} error: {expected_error}")
     else:
         actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
-        if backend in fixture.require_approx:
-            any_not_equal: bool = False
+        tolerance = fixture.tolerance.get(backend)
+        if tolerance:
+            any_not_equal = False
             for key in actual_output.keys() | fixture.expected_output.keys():
-                assert actual_output[key] == pytest.approx(fixture.expected_output[key])  # type: ignore  # noqa: B950 (line too long)
+                assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
                 any_not_equal |= actual_output[key] != fixture.expected_output[key]
             assert any_not_equal, "All are equal; approx not needed"
         else:
