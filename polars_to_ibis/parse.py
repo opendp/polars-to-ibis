@@ -1,6 +1,7 @@
 from typing import Any, Callable
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
+from ibis import _
 
 PolarsPlan = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -72,11 +73,18 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
 
 
-# @table_handler("Select")
-# def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-#     input_table = polars_plan_to_ibis_table(payload["input"], table=table)
-#     ibis_values = polars_plans_to_ibis_values(payload.get("expr", []))
-#     return input_table.aggregate(**ibis_values)  # type: ignore
+@table_handler("Sort")
+def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
+    # TODO: hard-coded!
+    return table.order_by("floats")
+
+
+@table_handler("GroupBy")
+def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
+    # TODO: hard-coded!
+    return table.group_by("ints").aggregate(floats=_["floats"].sum())
 
 
 @table_handler("MapFunction")
