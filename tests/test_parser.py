@@ -133,7 +133,11 @@ def test_translate_table(fixture: Fixture, backend: str):
     else:
         actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
         if backend in fixture.require_approx:
-            pytest.xfail("TODO")
+            any_not_equal: bool = False
+            for key in actual_output.keys() | fixture.expected_output.keys():
+                assert actual_output[key] == pytest.approx(fixture.expected_output[key])  # type: ignore  # noqa: B950 (line too long)
+                any_not_equal |= actual_output[key] != fixture.expected_output[key]
+            assert any_not_equal, "All are equal; approx not needed"
         else:
             assert (
                 actual_output == fixture.expected_output
