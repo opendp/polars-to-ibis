@@ -1,4 +1,3 @@
-import re
 from typing import Any, Callable
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
@@ -87,11 +86,11 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match stats:
         case "Sum":
             return table.aggregate(
-                [
-                    getattr(getattr(input_table, col), stats.lower())()
+                **{
+                    col: getattr(getattr(input_table, col), stats.lower())()
                     for col in table.columns
-                ]
-            ).rename(lambda name: re.sub(r"^\w+\((.*)\)$", r"\1", name))
+                }
+            )
 
         case _:  # pragma: no cover
             raise ValueError(f"unsupported stats type: {stats}")
