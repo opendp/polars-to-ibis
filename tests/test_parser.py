@@ -233,23 +233,23 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
         with pytest.raises(Exception, match=re.escape(expected_error)):
             export(connection, ibis_table)
         pytest.xfail(f"expected {backend} error: {expected_error}")
+
+    if expected_error := fixture.expected_exporter_errors.get(
+        f"{backend}+{exporter_key}"
+    ):
+        with pytest.raises(Exception, match=re.escape(expected_error)):
+            export(connection, ibis_table)
+        pytest.xfail(f"expected {backend}+{exporter_key} error: {expected_error}")
+
+    actual_output = export(connection, ibis_table)
+    tolerance = fixture.tolerance.get(backend)
+    if tolerance:
+        any_not_equal = False
+        for key in actual_output.keys() | fixture.expected_output.keys():
+            assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
+            any_not_equal |= actual_output[key] != fixture.expected_output[key]
+        assert any_not_equal, "All are equal; approx not needed"
     else:
-        if expected_error := fixture.expected_exporter_errors.get(
-            f"{backend}+{exporter_key}"
-        ):
-            with pytest.raises(Exception, match=re.escape(expected_error)):
-                export(connection, ibis_table)
-            pytest.xfail(f"expected {backend}+{exporter_key} error: {expected_error}")
-        else:
-            actual_output = export(connection, ibis_table)
-            tolerance = fixture.tolerance.get(backend)
-            if tolerance:
-                any_not_equal = False
-                for key in actual_output.keys() | fixture.expected_output.keys():
-                    assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
-                    any_not_equal |= actual_output[key] != fixture.expected_output[key]
-                assert any_not_equal, "All are equal; approx not needed"
-            else:
-                assert (
-                    actual_output == fixture.expected_output
-                ), f"Via ibis, {backend} does not produce expected output"
+        assert (
+            actual_output == fixture.expected_output
+        ), f"Via ibis, {backend} does not produce expected output"
