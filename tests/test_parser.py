@@ -73,8 +73,7 @@ input_data = {
     ),
     "sorting": pl.DataFrame(
         {
-            "ints": [4, 3, 2, 1],
-            "floats": [0.1, 0.2, 0.3, 0.4],
+            "ints": [9, 9, 1, 1],
             "strs": ["Z", "A", "B", "C"],
         }
     ),
@@ -129,9 +128,24 @@ fixtures = [
         "sorting",
         "lf.sort(by='strs')",
         {
-            "ints": [3, 2, 1, 4],
-            "floats": [0.2, 0.3, 0.4, 0.1],
+            "ints": [9, 1, 1, 9],
             "strs": ["A", "B", "C", "Z"],
+        },
+    ),
+    Fixture(
+        "sorting",
+        "lf.sort(by=['ints', 'strs'])",
+        {
+            "ints": [1, 1, 9, 9],
+            "strs": ["B", "C", "A", "Z"],
+        },
+    ),
+    Fixture(
+        "sorting",
+        "lf.sort(by='strs', descending=True)",
+        {
+            "ints": [9, 1, 1, 9],
+            "strs": ["Z", "C", "B", "A"],
         },
     ),
     # Fixture(
