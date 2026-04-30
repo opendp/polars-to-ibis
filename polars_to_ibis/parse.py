@@ -64,20 +64,30 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
 #     return dict(map(polars_plan_to_ibis_value, plans))
 
 
+def parse_column_list(col_list: list[dict[str, str]]) -> list[str]:
+    return [list(col.values())[0] for col in col_list]
+
+
 # Handlers:
 
 
 @table_handler("Scan")
 @table_handler("DataFrameScan")
-def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
+
+
+@table_handler("Select")
+def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    cols = parse_column_list(payload["expr"])
+    return table.select(cols)
 
 
 @table_handler("Sort")
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    undirected_sort_keys = [list(col.values())[0] for col in payload["by_column"]]
+    undirected_sort_keys = parse_column_list(payload["by_column"])
     descending = payload["sort_options"]["descending"]
-    # TODO: Error is unsupported sort options are used.
+    # TODO: Error if unsupported sort options are used.
     directed_sort_keys = [
         ibis.desc(key) if desc else key
         for key, desc in zip(undirected_sort_keys, descending)

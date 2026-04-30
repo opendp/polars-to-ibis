@@ -77,6 +77,12 @@ input_data = {
             "strs": ["Z", "A", "B", "C"],
         }
     ),
+    "select": pl.DataFrame(
+        {
+            "ints": [1, 2, 3],
+            "strs": ["A", "B", "C"],
+        }
+    ),
 }
 
 
@@ -85,18 +91,24 @@ class Fixture:
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
-    expected_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    expected_backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    expected_exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
 
 
 fixtures = [
     Fixture("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
-    Fixture("numeric", "lf.mean()", {"floats": [0.25], "ints": [2.5]}),
+    Fixture(
+        "numeric",
+        "lf.mean()",
+        {"floats": [0.25], "ints": [2.5]},
+        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+    ),
     Fixture(
         "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
-        expected_errors={
+        expected_backend_errors={
             "sqlite": "Compilation rule for 'Median' operation is not defined"
         },
     ),
@@ -105,24 +117,30 @@ fixtures = [
         # This should return the same value as median, but it doesn't!
         "lf.quantile(0.5)",
         {"floats": [0.3], "ints": [3]},
-        expected_errors={
+        expected_backend_errors={
             "sqlite": "Compilation rule for 'Quantile' operation is not defined"
         },
         # BIG difference between the polars native version and the DB versions!
         tolerance={"postgres": 0.5, "duckdb": 0.5, "polars": 0.5},
     ),
-    Fixture("numeric", "lf.max()", {"floats": [0.4], "ints": [4]}),
+    Fixture(
+        "numeric",
+        "lf.max()",
+        {"floats": [0.4], "ints": [4]},
+    ),
     Fixture("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
     Fixture(
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance={"postgres": 10e-6},
+        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
+        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
         "sorting",
@@ -165,6 +183,11 @@ fixtures = [
         },
     ),
     # Fixture(
+    #     "select",
+    #     "lf.select('ints')",
+    #     {"ints": [1, 2, 3]},
+    # )
+    # Fixture(
     #     "grouping",
     #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
     #     # Because of float arithmetic,
@@ -174,6 +197,15 @@ fixtures = [
 ]
 
 
+exporters = {
+    "to_polars": lambda connection, ibis_table: connection.to_polars(
+        ibis_table
+    ).to_dict(as_series=False),
+    "to_pandas": lambda connection, ibis_table: connection.to_pandas(
+        ibis_table
+    ).to_dict(orient="list"),
+}
+
 # Tests:
 
 
@@ -181,7 +213,8 @@ fixtures = [
     "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
 )
 @pytest.mark.parametrize("backend", backends)
-def test_translate_table(fixture: Fixture, backend: str):
+@pytest.mark.parametrize("exporter_key", exporters.keys())
+def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Setup:
     input_df = input_data[fixture.category]
     lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
@@ -195,21 +228,28 @@ def test_translate_table(fixture: Fixture, backend: str):
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
     connection = get_connection(input_df, table_name=table_name, backend=backend)
-    # Using to_pandas to avoid accidental dependency on target library.
-    if expected_error := fixture.expected_errors.get(backend):
+    export = exporters[exporter_key]
+    if expected_error := fixture.expected_backend_errors.get(backend):
         with pytest.raises(Exception, match=re.escape(expected_error)):
-            connection.to_pandas(ibis_table)
+            export(connection, ibis_table)
         pytest.xfail(f"expected {backend} error: {expected_error}")
     else:
-        actual_output = connection.to_pandas(ibis_table).to_dict(orient="list")
-        tolerance = fixture.tolerance.get(backend)
-        if tolerance:
-            any_not_equal = False
-            for key in actual_output.keys() | fixture.expected_output.keys():
-                assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
-                any_not_equal |= actual_output[key] != fixture.expected_output[key]
-            assert any_not_equal, "All are equal; approx not needed"
+        if expected_error := fixture.expected_exporter_errors.get(
+            f"{backend}+{exporter_key}"
+        ):
+            with pytest.raises(Exception, match=re.escape(expected_error)):
+                export(connection, ibis_table)
+            pytest.xfail(f"expected {backend}+{exporter_key} error: {expected_error}")
         else:
-            assert (
-                actual_output == fixture.expected_output
-            ), f"Via ibis, {backend} does not produce expected output"
+            actual_output = export(connection, ibis_table)
+            tolerance = fixture.tolerance.get(backend)
+            if tolerance:
+                any_not_equal = False
+                for key in actual_output.keys() | fixture.expected_output.keys():
+                    assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
+                    any_not_equal |= actual_output[key] != fixture.expected_output[key]
+                assert any_not_equal, "All are equal; approx not needed"
+            else:
+                assert (
+                    actual_output == fixture.expected_output
+                ), f"Via ibis, {backend} does not produce expected output"
