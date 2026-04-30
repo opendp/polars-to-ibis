@@ -1,5 +1,6 @@
 from typing import Any, Callable
 
+import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
 PolarsPlan = dict[str, Any]
@@ -72,11 +73,25 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return table
 
 
-# @table_handler("Select")
-# def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-#     input_table = polars_plan_to_ibis_table(payload["input"], table=table)
-#     ibis_values = polars_plans_to_ibis_values(payload.get("expr", []))
-#     return input_table.aggregate(**ibis_values)  # type: ignore
+@table_handler("Sort")
+def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    undirected_sort_keys = [list(col.values())[0] for col in payload["by_column"]]
+    descending = payload["sort_options"]["descending"]
+    # TODO: Error is unsupported sort options are used.
+    directed_sort_keys = [
+        ibis.desc(key) if desc else key
+        for key, desc in zip(undirected_sort_keys, descending)
+    ]
+    return table.order_by(*directed_sort_keys)  # type: ignore
+
+
+# @table_handler("GroupBy")
+# def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+#     # input_table = update_polars_to_ibis(payload["input"], table=table)
+#     # TODO: hard-coded!
+#     return table.group_by("ints").aggregate(
+#         floats=_["floats"].sum()
+#     )
 
 
 @table_handler("MapFunction")
