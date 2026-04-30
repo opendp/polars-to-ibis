@@ -148,6 +148,22 @@ fixtures = [
             "strs": ["Z", "C", "B", "A"],
         },
     ),
+    Fixture(
+        "sorting",
+        "lf.sort(by=['ints', 'strs'], descending=True)",
+        {
+            "ints": [9, 9, 1, 1],
+            "strs": ["Z", "A", "C", "B"],
+        },
+    ),
+    Fixture(
+        "sorting",
+        "lf.sort(by=['ints', 'strs'], descending=[True, False])",
+        {
+            "ints": [9, 9, 1, 1],
+            "strs": ["A", "Z", "B", "C"],
+        },
+    ),
     # Fixture(
     #     "grouping",
     #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
