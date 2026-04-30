@@ -71,6 +71,13 @@ input_data = {
             "floats": [0.1, 0.2, 0.3, 0.4],
         }
     ),
+    "sorting": pl.DataFrame(
+        {
+            "ints": [4, 3, 2, 1],
+            "floats": [0.1, 0.2, 0.3, 0.4],
+            "strs": ["Z", "A", "B", "C"],
+        }
+    ),
 }
 
 
@@ -78,7 +85,7 @@ input_data = {
 class Fixture:
     category: str
     expression: str
-    expected_output: dict[str, list[float]]
+    expected_output: dict[str, list[float | str]]
     expected_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
 
@@ -119,10 +126,21 @@ fixtures = [
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
     ),
     Fixture(
-        "numeric",
-        "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
-        {"floats": [0.1, 0.2, 0.3, 0.4], "ints": [1, 2, 3, 4]},
+        "sorting",
+        "lf.sort(by='strs')",
+        {
+            "ints": [3, 2, 1, 4],
+            "floats": [0.2, 0.3, 0.4, 0.1],
+            "strs": ["A", "B", "C", "Z"],
+        },
     ),
+    # Fixture(
+    #     "grouping",
+    #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
+    #     # Because of float arithmetic,
+    #     # 0.1 + 0.2 != 0.3
+    #     {"floats": [0.1 + 0.2, 0.7], "ints": [1, 4]},
+    # ),
 ]
 
 
