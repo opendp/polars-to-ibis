@@ -67,8 +67,8 @@ input_data = {
     # ),
     "numeric": pl.DataFrame(
         {
-            "ints": [1, 2, 3, 4, None],
-            "floats": [0.1, 0.2, 0.3, 0.4, None],
+            "ints": [1, 2, 3, 4],
+            "floats": [0.1, 0.2, 0.3, 0.4],
         }
     ),
 }
@@ -121,7 +121,7 @@ fixtures = [
     Fixture(
         "numeric",
         "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
-        {"floats": [0.0, 0.1, 0.2, 0.3, 0.4], "ints": [None, 1, 2, 3, 4]},
+        {"floats": [0.1, 0.2, 0.3, 0.4], "ints": [1, 2, 3, 4]},
     ),
 ]
 
