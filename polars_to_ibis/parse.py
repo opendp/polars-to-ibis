@@ -77,6 +77,7 @@ def handle_source(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     undirected_sort_keys = [list(col.values())[0] for col in payload["by_column"]]
     descending = payload["sort_options"]["descending"]
+    # TODO: Error is unsupported sort options are used.
     directed_sort_keys = [
         ibis.desc(key) if desc else key
         for key, desc in zip(undirected_sort_keys, descending)
