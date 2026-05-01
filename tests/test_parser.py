@@ -50,25 +50,28 @@ backends = [
     # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 
+
+exporters = {  # type: ignore
+    "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
+    "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
+}
+
+
 input_data = {
-    "numeric": pl.DataFrame(
-        {
-            "ints": [1, 2, 3, 4],
-            "floats": [0.1, 0.2, 0.3, 0.4],
-        }
-    ),
-    "sorting": pl.DataFrame(
-        {
-            "ints": [9, 9, 1, 1],
-            "strs": ["Z", "A", "B", "C"],
-        }
-    ),
-    # "select": pl.DataFrame(
-    #     {
-    #         "ints": [1, 2, 3],
-    #         "strs": ["A", "B", "C"],
-    #     }
-    # ),
+    "numeric": {
+        "ints": [1, 2, 3, 4],
+        "floats": [0.1, 0.2, 0.3, 0.4],
+    },
+    "sorting": {
+        "ints": [9, 9, 1, 1],
+        "strs": ["Z", "A", "B", "C"],
+    },
+    "select": {
+        "ints": [1, 2, 3],
+        "strs": ["A", "B", "C"],
+        "bools": [True, True, True],
+        "bytes": [b"C", b"B", b"C"],
+    },
 }
 
 
@@ -168,11 +171,11 @@ fixtures = [
             "strs": ["A", "Z", "B", "C"],
         },
     ),
-    # Fixture(
-    #     "select",
-    #     "lf.select('ints')",
-    #     {"ints": [1, 2, 3]},
-    # )
+    Fixture(
+        "select",
+        "lf.select('ints')",
+        {"ints": [1, 2, 3]},
+    ),
     # Fixture(
     #     "grouping",
     #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
@@ -183,15 +186,6 @@ fixtures = [
 ]
 
 
-exporters = {
-    "to_polars": lambda connection, ibis_table: connection.to_polars(
-        ibis_table
-    ).to_dict(as_series=False),
-    "to_pandas": lambda connection, ibis_table: connection.to_pandas(
-        ibis_table
-    ).to_dict(orient="list"),
-}
-
 # Tests:
 
 
@@ -199,37 +193,59 @@ exporters = {
     "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
 )
 @pytest.mark.parametrize("backend", backends)
-@pytest.mark.parametrize("exporter_key", exporters.keys())
+@pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
-    # Setup:
-    input_df = input_data[fixture.category]
-    lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
-    lf: pl.LazyFrame = eval(fixture.expression)
-    polars_output = lf.collect().to_dict(as_series=False)
+    # Sanity check: Does the polars expression have the expected result?
+    lf = pl.LazyFrame(input_data[fixture.category])
+    polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
     assert polars_output == fixture.expected_output, "Typo in test?"
 
+    # Convert polars to ibis, but without any data:
+    lf = pl.LazyFrame(schema=lf.collect_schema())
+    lf = eval(fixture.expression)
     table_name = "default_table"
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
+    # Set up target database, with data:
+    input_df = pl.DataFrame(input_data[fixture.category])
     connection = get_connection(input_df, table_name=table_name, backend=backend)
+
+    # If errors are expected, confirm that they are raised:
     export = exporters[exporter_key]  # type: ignore
-    if expected_error := fixture.expected_backend_errors.get(
-        backend
-    ) or fixture.expected_exporter_errors.get(f"{backend}+{exporter_key}"):
+    expected_backend_error = fixture.expected_backend_errors.get(backend)
+    expected_exporter_error = fixture.expected_exporter_errors.get(
+        f"{backend}+{exporter_key}"
+    )
+    if expected_error := expected_backend_error or expected_exporter_error:
         with pytest.raises(Exception, match=re.escape(expected_error)):
             export(connection, ibis_table)
         pytest.xfail(f"expected error: {expected_error}")
 
+    # Otherwise check for approximate or exact match:
     actual_output = export(connection, ibis_table)  # type: ignore
-    tolerance = fixture.tolerance.get(backend)
-    if not tolerance:
+    if tolerance := fixture.tolerance.get(backend):
+        assert_approx_equal(
+            actual_output,  # type: ignore
+            fixture.expected_output,
+            tolerance,
+            f"Via ibis, {backend} does not produce output within {tolerance}",
+        )
+    else:
         assert (
             actual_output == fixture.expected_output
         ), f"Via ibis, {backend} does not produce expected output"
-        return
 
+
+def assert_approx_equal(
+    actual: dict[str, list[float | str]],
+    expected: dict[str, list[float | str]],
+    tolerance: float,
+    message: str,
+):
     any_not_equal = False
-    for key in actual_output.keys() | fixture.expected_output.keys():  # type: ignore
-        assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
-        any_not_equal |= actual_output[key] != fixture.expected_output[key]  # type: ignore
+    for key in actual.keys() | expected.keys():
+        actual_col = actual[key]
+        expected_col = expected[key]
+        assert actual_col == pytest.approx(expected_col, abs=tolerance), f"{message} on {key}"  # type: ignore  # noqa: B950 (line too long)
+        any_not_equal |= actual_col != expected_col
     assert any_not_equal, "All are equal; approx not needed"

@@ -1,6 +1,7 @@
 """Convert Polars plans to Ibis tables"""
 
 from pathlib import Path
+from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
@@ -45,16 +46,71 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
 
     _check_version()
 
-    # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
-    # TODO: Understand whether the schema or the plan is changing.
-
     polars_plan = serialize(lf)  # type: ignore
-    polars_schema = lf.collect_schema()
-
-    ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
-    ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
+    input_schema = _get_input_schema(polars_plan)
+    ibis_table = ibis.table(input_schema, name=table_name)  # type: ignore
 
     return update_polars_to_ibis(
         polars_plan=polars_plan,
         table=ibis_table,
     )
+
+
+def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
+    """
+    lf.collect_schema() returns the OUTPUT schema,
+    after columns have been dropped or added.
+
+    Instead, we need to walk the tree to find the input schema.
+
+    >>> polars_plan = {
+    ...     'Select': {
+    ...         'expr': [{'Column': 'ints'}],
+    ...         'input': {
+    ...             'DataFrameScan': {
+    ...                 'df': ['byte list'],
+    ...                 'schema': {'fields': {'ints': 'Int64', 'strs': 'String'}}
+    ...             }
+    ...         },
+    ...         'options': {
+    ...             'run_parallel': True,
+    ...             'duplicate_check': True,
+    ...             'should_broadcast': True
+    ...         }
+    ...     }
+    ... }
+    >>> _get_input_schema(polars_plan)
+    ibis.Schema {
+      ints  int64
+      strs  string
+    }
+
+    """
+    if not isinstance(polars_plan, dict):  # type: ignore
+        return
+    if "DataFrameScan" in polars_plan:
+        input_schema = {
+            k: _get_type(v)
+            for k, v in polars_plan["DataFrameScan"]["schema"]["fields"].items()
+        }
+        return ibis.expr.schema.Schema(input_schema)
+    for value in polars_plan.values():  # pragma: no cover
+        maybe_schema = _get_input_schema(value)
+        if maybe_schema:
+            return maybe_schema
+
+
+def _get_type(polars_type_name: str) -> type:
+    if polars_type_name.startswith("Int"):
+        return int
+    if polars_type_name.startswith("Float"):
+        return float
+    if polars_type_name == "String":
+        return str
+    if polars_type_name == "Boolean":
+        return bool
+    if polars_type_name == "Binary":
+        return bytes
+    raise Exception(
+        f"No python type defined for {polars_type_name}"
+    )  # pragma: no cover
