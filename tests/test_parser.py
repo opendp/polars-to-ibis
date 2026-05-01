@@ -172,9 +172,37 @@ fixtures = [
         },
     ),
     Fixture(
+        "numeric",
+        "lf.sort(by='ints').head(1)",
+        {
+            "ints": [1],
+            "floats": [0.1],
+        },
+    ),
+    # TODO: Negative offset not implemented.
+    # Add reverse sort?
+    # Fixture(
+    #     "numeric",
+    #     "lf.sort(by='ints').tail(1)",
+    #     {
+    #         "ints": [4],
+    #         'floats': [0.4],
+    #     },
+    # ),
+    Fixture(
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
+    ),
+    Fixture(
+        "select",
+        "lf.drop(['strs', 'bools', 'bytes'])",
+        {"ints": [1, 2, 3]},
+    ),
+    Fixture(
+        "select",
+        "lf.select(new_name='ints')",
+        {"new_name": [1, 2, 3]},
     ),
     # Fixture(
     #     "grouping",
