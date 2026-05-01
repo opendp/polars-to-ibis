@@ -215,23 +215,34 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
             export(connection, ibis_table)
         pytest.xfail(f"expected error: {expected_error}")
 
-    # Check for matches within given tolerance, if any:
+    # Check for approximate or exact match
     actual_output = export(connection, ibis_table)  # type: ignore
-    tolerance = fixture.tolerance.get(backend)
-    if tolerance:
-        any_not_equal = False
-        for key in actual_output.keys() | fixture.expected_output.keys():  # type: ignore
-            actual_col = actual_output[key]  # type: ignore
-            expected_col = fixture.expected_output[key]
-            assert actual_col == pytest.approx(expected_col, abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
-            any_not_equal |= actual_col != expected_col  # type: ignore
-        assert any_not_equal, "All are equal; approx not needed"
-        return
+    if tolerance := fixture.tolerance.get(backend):
+        assert_approx_equal(
+            actual_output,  # type: ignore
+            fixture.expected_output,
+            tolerance,
+            f"Via ibis, {backend} does not produce output within {tolerance}",
+        )
+    else:
+        assert (
+            actual_output == fixture.expected_output
+        ), f"Via ibis, {backend} does not produce expected output"
 
-    # Check for exact matches:
-    assert (
-        actual_output == fixture.expected_output
-    ), f"Via ibis, {backend} does not produce expected output"
+
+def assert_approx_equal(
+    actual: dict[str, list[float | str]],
+    expected: dict[str, list[float | str]],
+    tolerance: float,
+    message: str,
+):
+    any_not_equal = False
+    for key in actual.keys() | expected.keys():
+        actual_col = actual[key]
+        expected_col = expected[key]
+        assert actual_col == pytest.approx(expected_col, abs=tolerance), f"{message} on {key}"  # type: ignore  # noqa: B950 (line too long)
+        any_not_equal |= actual_col != expected_col
+    assert any_not_equal, "All are equal; approx not needed"
 
 
 def test_select_minimal_reproducer():
