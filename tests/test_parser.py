@@ -195,18 +195,20 @@ fixtures = [
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Sanity check: Does the polars expression have the expected result?
     lf = pl.LazyFrame(input_data[fixture.category])
-    lf: pl.LazyFrame = eval(fixture.expression)
-    polars_output = lf.collect().to_dict(as_series=False)
+    polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
     assert polars_output == fixture.expected_output, "Typo in test?"
 
-    # Set up target database:
-    input_df = pl.DataFrame(input_data[fixture.category])
+    # Convert polars to ibis, but without any data:
+    lf = pl.LazyFrame(schema=lf.collect_schema())
+    lf = eval(fixture.expression)
     table_name = "default_table"
-    connection = get_connection(input_df, table_name=table_name, backend=backend)
-    # TODO: Create LF from just the schema, or load from scratch.
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
-    # Check for expected errors, if any:
+    # Set up target database, with data:
+    input_df = pl.DataFrame(input_data[fixture.category])
+    connection = get_connection(input_df, table_name=table_name, backend=backend)
+
+    # If errors are expected, confirm that they are raised:
     export = exporters[exporter_key]  # type: ignore
     expected_backend_error = fixture.expected_backend_errors.get(backend)
     expected_exporter_error = fixture.expected_exporter_errors.get(
@@ -217,7 +219,7 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
             export(connection, ibis_table)
         pytest.xfail(f"expected error: {expected_error}")
 
-    # Check for approximate or exact match
+    # Otherwise check for approximate or exact match:
     actual_output = export(connection, ibis_table)  # type: ignore
     if tolerance := fixture.tolerance.get(backend):
         assert_approx_equal(
