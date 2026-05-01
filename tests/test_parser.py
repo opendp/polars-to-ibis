@@ -191,38 +191,47 @@ exporters = {  # type: ignore
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
-    # Setup:
-    input_df = pl.DataFrame(input_data[fixture.category])
-    lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
+    # Sanity check: Does the polars expression have the expected result?
+    lf = pl.LazyFrame(input_data[fixture.category])
     lf: pl.LazyFrame = eval(fixture.expression)
     polars_output = lf.collect().to_dict(as_series=False)
     assert polars_output == fixture.expected_output, "Typo in test?"
 
+    # Set up target database:
+    input_df = pl.DataFrame(input_data[fixture.category])
     table_name = "default_table"
+    connection = get_connection(input_df, table_name=table_name, backend=backend)
+    # TODO: Create LF from just the schema, or load from scratch.
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
-    connection = get_connection(input_df, table_name=table_name, backend=backend)
+    # Check for expected errors, if any:
     export = exporters[exporter_key]  # type: ignore
-    if expected_error := fixture.expected_backend_errors.get(
-        backend
-    ) or fixture.expected_exporter_errors.get(f"{backend}+{exporter_key}"):
+    expected_backend_error = fixture.expected_backend_errors.get(backend)
+    expected_exporter_error = fixture.expected_exporter_errors.get(
+        f"{backend}+{exporter_key}"
+    )
+    if expected_error := expected_backend_error or expected_exporter_error:
         with pytest.raises(Exception, match=re.escape(expected_error)):
             export(connection, ibis_table)
         pytest.xfail(f"expected error: {expected_error}")
 
+    # Check for matches within given tolerance, if any:
     actual_output = export(connection, ibis_table)  # type: ignore
     tolerance = fixture.tolerance.get(backend)
-    if not tolerance:
-        assert (
-            actual_output == fixture.expected_output
-        ), f"Via ibis, {backend} does not produce expected output"
+    if tolerance:
+        any_not_equal = False
+        for key in actual_output.keys() | fixture.expected_output.keys():  # type: ignore
+            actual_col = actual_output[key]  # type: ignore
+            expected_col = fixture.expected_output[key]
+            assert actual_col == pytest.approx(expected_col, abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
+            any_not_equal |= actual_col != expected_col  # type: ignore
+        assert any_not_equal, "All are equal; approx not needed"
         return
 
-    any_not_equal = False
-    for key in actual_output.keys() | fixture.expected_output.keys():  # type: ignore
-        assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
-        any_not_equal |= actual_output[key] != fixture.expected_output[key]  # type: ignore
-    assert any_not_equal, "All are equal; approx not needed"
+    # Check for exact matches:
+    assert (
+        actual_output == fixture.expected_output
+    ), f"Via ibis, {backend} does not produce expected output"
 
 
 def test_select_minimal_reproducer():
