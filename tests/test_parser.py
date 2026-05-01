@@ -177,13 +177,9 @@ fixtures = [
 ]
 
 
-exporters = {
-    "to_polars": lambda connection, ibis_table: connection.to_polars(
-        ibis_table
-    ).to_dict(as_series=False),
-    "to_pandas": lambda connection, ibis_table: connection.to_pandas(
-        ibis_table
-    ).to_dict(orient="list"),
+exporters = {  # type: ignore
+    "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
+    "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
 }
 
 # Tests:
@@ -193,7 +189,7 @@ exporters = {
     "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
 )
 @pytest.mark.parametrize("backend", backends)
-@pytest.mark.parametrize("exporter_key", exporters.keys())
+@pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Setup:
     input_df = pl.DataFrame(input_data[fixture.category])
