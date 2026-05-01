@@ -81,7 +81,6 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     columns = parse_column_list(payload["expr"])
     return table.select(*columns)
-    # return table.select(ibis.selectors.cols(*columns))
 
 
 @table_handler("Sort")

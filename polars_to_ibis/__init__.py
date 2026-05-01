@@ -90,7 +90,7 @@ def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
         return
     if "DataFrameScan" in polars_plan:
         input_schema = {
-            k: _type_map[v]
+            k: _get_type(v)
             for k, v in polars_plan["DataFrameScan"]["schema"]["fields"].items()
         }
         return ibis.expr.schema.Schema(input_schema)
@@ -100,10 +100,17 @@ def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
             return maybe_schema
 
 
-_type_map = {
-    # TODO: Expand
-    "Int32": int,
-    "Int64": int,
-    "Float64": float,
-    "String": str,
-}
+def _get_type(polars_type_name: str) -> type:
+    if polars_type_name.startswith("Int"):
+        return int
+    if polars_type_name.startswith("Float"):
+        return float
+    if polars_type_name == "String":
+        return str
+    if polars_type_name == "Boolean":
+        return bool
+    if polars_type_name == "Binary":
+        return bytes
+    raise Exception(
+        f"No python type defined for {polars_type_name}"
+    )  # pragma: no cover
