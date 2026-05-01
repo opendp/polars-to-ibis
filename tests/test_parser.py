@@ -199,6 +199,11 @@ fixtures = [
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
     ),
+    Fixture(
+        "select",
+        "lf.select(new_name='ints')",
+        {"new_name": [1, 2, 3]},
+    ),
     # Fixture(
     #     "grouping",
     #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",

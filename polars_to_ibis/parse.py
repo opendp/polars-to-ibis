@@ -64,8 +64,42 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
 #     return dict(map(polars_plan_to_ibis_value, plans))
 
 
-def parse_column_list(col_list: list[dict[str, str]]) -> list[str]:
+def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
     return [list(col.values())[0] for col in col_list]
+
+
+def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # type: ignore
+    """
+    Given a polars serialization,
+    return tuple of (kw)args to be used for select() or drop().
+
+    >>> parse_select_expr([{'Column': 'keep'}, {'Column': 'two'}])
+    ({'keep': 'keep', 'two': 'two'}, [])
+
+    >>> parse_select_expr([{'Alias': [{'Column': 'old_name'}, 'new_name']}])
+    ({'new_name': 'old_name'}, [])
+
+    >>> parse_select_expr([{'Selector': {'Difference': ['Wildcard', {'ByName': {
+    ...     'names': ['cols', 'to', 'drop'],
+    ...     'strict': True
+    ... }}]}}])
+    ({}, ['cols', 'to', 'drop'])
+
+    """
+    select_kwargs = {}
+    drop_args = []
+    for col in col_list:
+        tag, payload = split_tag_payload(col)
+        match tag:
+            case "Column":
+                select_kwargs[payload] = payload
+            case "Alias":
+                select_kwargs[payload[1]] = payload[0]["Column"]
+            case "Selector":
+                drop_args += payload["Difference"][1]["ByName"]["names"]
+            case _:  # pragma: no cover
+                raise NotImplementedError(f"No support for {tag}")
+    return (select_kwargs, drop_args)  # type: ignore
 
 
 # Handlers:
@@ -79,23 +113,24 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("Select")
 def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    columns = parse_column_list(payload["expr"])
-    if len(columns) == 1 and isinstance(columns[0], dict):
-        drop_columns = columns[0]["Difference"][1]["ByName"]["names"]  # type: ignore
-        return table.drop(drop_columns)
-    return table.select(*columns)
+    select_kwargs, drop_args = parse_select_expr(payload["expr"])  # type: ignore
+    if select_kwargs:
+        table = table.select(**select_kwargs)  # type: ignore
+    if drop_args:
+        table = table.drop(*drop_args)  # type: ignore
+    return table
 
 
 @table_handler("Slice")
 def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     if offset := payload["offset"] < 0:
-        raise NotImplementedError("Negative offsets not supported")
+        raise NotImplementedError("Negative offsets not supported")  # pragma: no cover
     return table.limit(payload["len"], offset=offset)
 
 
 @table_handler("Sort")
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    undirected_sort_keys = parse_column_list(payload["by_column"])
+    undirected_sort_keys = parse_sort_by_column(payload["by_column"])
     descending = payload["sort_options"]["descending"]
     # TODO: Error if unsupported sort options are used.
     directed_sort_keys = [
