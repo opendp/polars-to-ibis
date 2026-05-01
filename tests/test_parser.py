@@ -51,24 +51,18 @@ backends = [
 ]
 
 input_data = {
-    "numeric": pl.DataFrame(
-        {
-            "ints": [1, 2, 3, 4],
-            "floats": [0.1, 0.2, 0.3, 0.4],
-        }
-    ),
-    "sorting": pl.DataFrame(
-        {
-            "ints": [9, 9, 1, 1],
-            "strs": ["Z", "A", "B", "C"],
-        }
-    ),
-    # "select": pl.DataFrame(
-    #     {
-    #         "ints": [1, 2, 3],
-    #         "strs": ["A", "B", "C"],
-    #     }
-    # ),
+    "numeric": {
+        "ints": [1, 2, 3, 4],
+        "floats": [0.1, 0.2, 0.3, 0.4],
+    },
+    "sorting": {
+        "ints": [9, 9, 1, 1],
+        "strs": ["Z", "A", "B", "C"],
+    },
+    "select": {
+        "ints": [1, 2, 3],
+        "strs": ["A", "B", "C"],
+    },
 }
 
 
@@ -202,7 +196,7 @@ exporters = {
 @pytest.mark.parametrize("exporter_key", exporters.keys())
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Setup:
-    input_df = input_data[fixture.category]
+    input_df = pl.DataFrame(input_data[fixture.category])
     lf = input_df.lazy()  # type: ignore # noqa: F841; "lf" is used in eval()
     lf: pl.LazyFrame = eval(fixture.expression)
     polars_output = lf.collect().to_dict(as_series=False)
@@ -233,3 +227,7 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
         assert actual_output[key] == pytest.approx(fixture.expected_output[key], abs=tolerance)  # type: ignore  # noqa: B950 (line too long)
         any_not_equal |= actual_output[key] != fixture.expected_output[key]  # type: ignore
     assert any_not_equal, "All are equal; approx not needed"
+
+
+def test_select_minimal_reproducer():
+    pass
