@@ -80,7 +80,17 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 @table_handler("Select")
 def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     columns = parse_column_list(payload["expr"])
+    if len(columns) == 1 and isinstance(columns[0], dict):
+        drop_columns = columns[0]["Difference"][1]["ByName"]["names"]  # type: ignore
+        return table.drop(drop_columns)
     return table.select(*columns)
+
+
+@table_handler("Slice")
+def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    if offset := payload["offset"] < 0:
+        raise NotImplementedError("Negative offsets not supported")
+    return table.limit(payload["len"], offset=offset)
 
 
 @table_handler("Sort")
