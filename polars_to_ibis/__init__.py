@@ -1,6 +1,7 @@
 """Convert Polars plans to Ibis tables"""
 
 from pathlib import Path
+from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
@@ -55,7 +56,7 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     )
 
 
-def _get_input_schema(polars_plan):
+def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
     """
     lf.collect_schema() returns the OUTPUT schema,
     after columns have been dropped or added.
@@ -85,7 +86,7 @@ def _get_input_schema(polars_plan):
     }
 
     """
-    if not isinstance(polars_plan, dict):
+    if not isinstance(polars_plan, dict):  # type: ignore
         return
     if "DataFrameScan" in polars_plan:
         input_schema = {
@@ -93,7 +94,7 @@ def _get_input_schema(polars_plan):
             for k, v in polars_plan["DataFrameScan"]["schema"]["fields"].items()
         }
         return ibis.expr.schema.Schema(input_schema)
-    for value in polars_plan.values():
+    for value in polars_plan.values():  # pragma: no cover
         maybe_schema = _get_input_schema(value)
         if maybe_schema:
             return maybe_schema
