@@ -50,6 +50,13 @@ backends = [
     # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 
+
+exporters = {  # type: ignore
+    "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
+    "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
+}
+
+
 input_data = {
     "numeric": {
         "ints": [1, 2, 3, 4],
@@ -176,11 +183,6 @@ fixtures = [
     # ),
 ]
 
-
-exporters = {  # type: ignore
-    "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
-    "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
-}
 
 # Tests:
 
