@@ -45,16 +45,64 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
 
     _check_version()
 
-    # NOTE: Tests fail if the order of serialize() and collect_schema() is switched.
-    # TODO: Understand whether the schema or the plan is changing.
-
     polars_plan = serialize(lf)  # type: ignore
-    polars_schema = lf.collect_schema()
-
-    ibis_schema = ibis.expr.schema.Schema.from_polars(polars_schema)
-    ibis_table = ibis.table(ibis_schema, name=table_name)  # type: ignore
+    input_schema = _get_input_schema(polars_plan)
+    ibis_table = ibis.table(input_schema, name=table_name)  # type: ignore
 
     return update_polars_to_ibis(
         polars_plan=polars_plan,
         table=ibis_table,
     )
+
+
+def _get_input_schema(polars_plan):
+    """
+    lf.collect_schema() returns the OUTPUT schema,
+    after columns have been dropped or added.
+
+    Instead, we need to walk the tree to find the input schema.
+
+    >>> polars_plan = {
+    ...     'Select': {
+    ...         'expr': [{'Column': 'ints'}],
+    ...         'input': {
+    ...             'DataFrameScan': {
+    ...                 'df': ['byte list'],
+    ...                 'schema': {'fields': {'ints': 'Int64', 'strs': 'String'}}
+    ...             }
+    ...         },
+    ...         'options': {
+    ...             'run_parallel': True,
+    ...             'duplicate_check': True,
+    ...             'should_broadcast': True
+    ...         }
+    ...     }
+    ... }
+    >>> _get_input_schema(polars_plan)
+    ibis.Schema {
+      ints  int64
+      strs  string
+    }
+
+    """
+    if not isinstance(polars_plan, dict):
+        return
+    if "DataFrameScan" in polars_plan:
+        input_schema = {
+            k: _type_map[v]
+            for k, v in polars_plan["DataFrameScan"]["schema"]["fields"].items()
+        }
+        return ibis.expr.schema.Schema(input_schema)
+    for value in polars_plan.values():
+        maybe_schema = _get_input_schema(value)
+        if maybe_schema:
+            return maybe_schema
+
+
+_type_map = {
+    # TODO: Expand
+    "Int32": int,
+    "Int64": int,
+    "Float64": float,
+    "String": str,
+}

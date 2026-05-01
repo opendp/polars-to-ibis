@@ -169,11 +169,11 @@ fixtures = [
             "strs": ["A", "Z", "B", "C"],
         },
     ),
-    # Fixture(
-    #     "select",
-    #     "lf.select('ints')",
-    #     {"ints": [1, 2, 3]},
-    # )
+    Fixture(
+        "select",
+        "lf.select('ints')",
+        {"ints": [1, 2, 3]},
+    ),
     # Fixture(
     #     "grouping",
     #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
@@ -249,5 +249,33 @@ def assert_approx_equal(
     assert any_not_equal, "All are equal; approx not needed"
 
 
-def test_select_minimal_reproducer():
-    pass
+# def test_select_minimal_reproducer():
+#     lf = pl.LazyFrame(schema={'ints': int, 'strs': str}).select('ints')
+#     table_name = "default_table"
+#     # import json
+#     # serial = json.loads(lf.serialize(format="json"))
+#     # assert serial == {}
+#     ibis_table = convert_polars_to_ibis(lf, table_name)
+#     # Still "SELECT *"
+#     assert ibis_table.columns == ("ints",)
+#     assert ibis_table.to_sql() == ""
+
+#     input_df = pl.DataFrame({'ints': [1,2,3], 'strs': ['A', 'B', 'C']})
+#     connection = get_connection(input_df, table_name=table_name, backend='sqlite')
+
+#     result = connection.to_polars(ibis_table).to_dict(as_series=False)
+#     assert result == {'ints': [1,2,3]}
+
+# def test_drop_minimal_reproducer():
+#     lf = pl.LazyFrame(schema={'ints': int, 'strs': str}).drop('strs')
+#     table_name = "default_table"
+#     ibis_table = convert_polars_to_ibis(lf, table_name)
+#     # Still "SELECT *"
+#     assert ibis_table.columns == ("ints",)
+#     assert ibis_table.to_sql() == ""
+
+#     input_df = pl.DataFrame({'ints': [1,2,3], 'strs': ['A', 'B', 'C']})
+#     connection = get_connection(input_df, table_name=table_name, backend='sqlite')
+
+#     result = connection.to_polars(ibis_table).to_dict(as_series=False)
+#     assert result == {'ints': [1,2,3]}
