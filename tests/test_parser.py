@@ -66,6 +66,10 @@ input_data = {
         "ints": [9, 9, 1, 1],
         "strs": ["Z", "A", "B", "C"],
     },
+    "grouping": {
+        "keys": [0, 0, 1, 1],
+        "values": [1, 2, 3, 4],
+    },
     "select": {
         "ints": [1, 2, 3],
         "strs": ["A", "B", "C"],
@@ -179,8 +183,7 @@ fixtures = [
             "floats": [0.1],
         },
     ),
-    # TODO: Negative offset not implemented.
-    # Add reverse sort?
+    # TODO: Negative offset not implemented. Reverse?
     # Fixture(
     #     "numeric",
     #     "lf.sort(by='ints').tail(1)",
@@ -204,13 +207,14 @@ fixtures = [
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
     ),
-    # Fixture(
-    #     "grouping",
-    #     "lf.group_by('ints').agg(pl.col('floats').sum()).sort(by='floats')",
-    #     # Because of float arithmetic,
-    #     # 0.1 + 0.2 != 0.3
-    #     {"floats": [0.1 + 0.2, 0.7], "ints": [1, 4]},
-    # ),
+    Fixture(
+        "grouping",
+        # Add sort for result stability?
+        "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys')",
+        # "lf.group_by('grouping_keys')",
+        {"keys": [0, 1], "values": [3, 7]},
+        # {'keys': [1, 0], 'values': [7, 3]},
+    ),
 ]
 
 

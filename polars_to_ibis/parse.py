@@ -137,16 +137,20 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         ibis.desc(key) if desc else key
         for key, desc in zip(undirected_sort_keys, descending)
     ]
-    return table.order_by(*directed_sort_keys)  # type: ignore
+    return update_polars_to_ibis(
+        payload["input"],
+        table,
+    ).order_by(
+        *directed_sort_keys  # type: ignore
+    )
 
 
-# @table_handler("GroupBy")
-# def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-#     # input_table = update_polars_to_ibis(payload["input"], table=table)
-#     # TODO: hard-coded!
-#     return table.group_by("ints").aggregate(
-#         floats=_["floats"].sum()
-#     )
+@table_handler("GroupBy")
+def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    # TODO: hard-coded!
+    from ibis import _  # pyright: ignore[reportMissingTypeStubs]
+
+    return table.group_by("keys").aggregate(values=_["values"].sum())  # type: ignore
 
 
 @table_handler("MapFunction")
