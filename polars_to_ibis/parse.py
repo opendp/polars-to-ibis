@@ -147,10 +147,27 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("GroupBy")
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    # TODO: hard-coded!
+    # TODO: Clean up!
     from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
-    return table.group_by("keys").aggregate(values=_["values"].sum())  # type: ignore
+    group_by_keys = parse_sort_by_column(payload["keys"])
+    aggs = payload["aggs"]
+    if len(aggs) != 1:
+        raise NotImplementedError("Only one aggregate handled")  # pragma: no cover
+    agg_tag, agg_payload = split_tag_payload(aggs[0])
+    if agg_tag != "Agg":
+        raise NotImplementedError(f"Unexpected {agg_tag}")  # pragma: no cover
+    agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+
+    grouped_table = table.group_by(group_by_keys)
+    agg_col = agg_payload_payload["Column"]
+    match agg_payload_tag:
+        case "Sum" | "Mean" | "Median" | "Max" | "Min":
+            return grouped_table.aggregate(  # type: ignore
+                **{agg_col: getattr(_[agg_col], agg_payload_tag.lower())()}
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Not implemented: {agg_payload_tag}")
 
 
 @table_handler("MapFunction")
