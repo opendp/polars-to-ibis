@@ -8,6 +8,7 @@ import polars as pl
 import pytest
 
 from polars_to_ibis import convert_polars_to_ibis
+from polars_to_ibis.parse import update_polars_to_ibis
 
 ibis.set_backend("polars")
 
@@ -278,3 +279,17 @@ def assert_approx_equal(
         assert actual_col == pytest.approx(expected_col, abs=tolerance), f"{message} on {key}"  # type: ignore  # noqa: B950 (line too long)
         any_not_equal |= actual_col != expected_col
     assert any_not_equal, "All are equal; approx not needed"
+
+
+@pytest.mark.parametrize(
+    "polars_plan,expected_error",
+    [
+        ({}, "Expected single-key tagged dict"),
+        ({"Scan": {}}, "Unexpected payload keys"),
+        ({"Scan": {"df": {}, "schema": {}}}, "Unexpected schema keys"),
+    ],
+    ids=lambda plan: str(plan),
+)
+def test_unexpected_payloads(polars_plan, expected_error):
+    with pytest.raises(Exception, match=re.escape(expected_error)):
+        update_polars_to_ibis(polars_plan, None)

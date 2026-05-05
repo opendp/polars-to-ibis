@@ -90,13 +90,21 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
     drop_args = []
     for col in col_list:
         tag, payload = split_tag_payload(col)
-        match tag:
-            case "Column":
+        match (tag, payload):
+            case ("Column", _):
                 select_kwargs[payload] = payload
-            case "Alias":
-                select_kwargs[payload[1]] = payload[0]["Column"]
-            case "Selector":
-                drop_args += payload["Difference"][1]["ByName"]["names"]
+            case ("Alias", [{"Column": old_name}, new_name]):
+                select_kwargs[new_name] = old_name
+            case (
+                "Selector",
+                {
+                    "Difference": [
+                        "Wildcard",
+                        {"ByName": {"names": names, "strict": True}},
+                    ]
+                },
+            ):
+                drop_args += names
             case _:  # pragma: no cover
                 raise NotImplementedError(f"No support for {tag}")
     return (select_kwargs, drop_args)  # type: ignore
@@ -108,7 +116,13 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
 @table_handler("Scan")
 @table_handler("DataFrameScan")
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    return table
+    match payload:
+        case {"df": _, "schema": {"fields": _}}:
+            return table
+        case {"df": _, "schema": schema}:
+            raise NotImplementedError(f"Unexpected schema keys: {schema.keys()}")
+        case _:
+            raise NotImplementedError(f"Unexpected payload keys: {payload.keys()}")
 
 
 @table_handler("Select")
@@ -123,26 +137,46 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("Slice")
 def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    if offset := payload["offset"] < 0:
-        raise NotImplementedError("Negative offsets not supported")  # pragma: no cover
-    return table.limit(payload["len"], offset=offset)
+    match payload:
+        case {
+            "len": len,
+            "offset": offset,
+            **_rest,
+        }:
+            if offset < 0:
+                raise NotImplementedError(f"Negative offsets not supported: {offset}")
+            return table.limit(len, offset=offset)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unexpected Slice payload: {payload}")
 
 
 @table_handler("Sort")
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    undirected_sort_keys = parse_sort_by_column(payload["by_column"])
-    descending = payload["sort_options"]["descending"]
-    # TODO: Error if unsupported sort options are used.
-    directed_sort_keys = [
-        ibis.desc(key) if desc else key
-        for key, desc in zip(undirected_sort_keys, descending)
-    ]
-    return update_polars_to_ibis(
-        payload["input"],
-        table,
-    ).order_by(
-        *directed_sort_keys  # type: ignore
-    )
+    match payload:
+        case {
+            "by_column": by_column,
+            "sort_options": {
+                "descending": descending,
+                "nulls_last": _nulls_last,
+                "multithreaded": True,
+                "maintain_order": False,
+                "limit": None,
+            },
+            **_rest,
+        }:
+            undirected_sort_keys = parse_sort_by_column(by_column)
+            directed_sort_keys = [
+                ibis.desc(key) if desc else key
+                for key, desc in zip(undirected_sort_keys, descending)
+            ]
+            return update_polars_to_ibis(
+                payload["input"],
+                table,
+            ).order_by(
+                *directed_sort_keys  # type: ignore
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unexpected Sort payload: {payload}")
 
 
 @table_handler("GroupBy")
@@ -150,24 +184,27 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     # TODO: Clean up!
     from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
-    group_by_keys = parse_sort_by_column(payload["keys"])
-    aggs = payload["aggs"]
-    if len(aggs) != 1:
-        raise NotImplementedError("Only one aggregate handled")  # pragma: no cover
-    agg_tag, agg_payload = split_tag_payload(aggs[0])
-    if agg_tag != "Agg":
-        raise NotImplementedError(f"Unexpected {agg_tag}")  # pragma: no cover
-    agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+    match payload:
+        case {
+            "keys": keys,
+            "aggs": [{"Agg": agg_payload}],
+            "maintain_order": False,
+            "options": {"dynamic": None, "rolling": None, "slice": None},
+        }:
+            group_by_keys = parse_sort_by_column(keys)
+            grouped_table = table.group_by(group_by_keys)
 
-    grouped_table = table.group_by(group_by_keys)
-    agg_col = agg_payload_payload["Column"]
-    match agg_payload_tag:
-        case "Sum" | "Mean" | "Median" | "Max" | "Min":
-            return grouped_table.aggregate(  # type: ignore
-                **{agg_col: getattr(_[agg_col], agg_payload_tag.lower())()}
-            )
+            agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+            agg_col = agg_payload_payload["Column"]
+            match agg_payload_tag:
+                case "Sum" | "Mean" | "Median" | "Max" | "Min":
+                    return grouped_table.aggregate(  # type: ignore
+                        **{agg_col: getattr(_[agg_col], agg_payload_tag.lower())()}
+                    )
+                case _:  # pragma: no cover
+                    raise NotImplementedError(f"Not implemented: {agg_payload_tag}")
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Not implemented: {agg_payload_tag}")
+            raise NotImplementedError(f"Not implemented: {payload}")
 
 
 @table_handler("MapFunction")
@@ -209,16 +246,3 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
         case _:  # pragma: no cover
             raise ValueError(f"unsupported stats type: {stats}")
-
-
-# @value_handler("Agg")
-# def handle_agg(payload: Any) -> NamedValue:
-#     agg, agg_payload = split_tag_payload(payload)
-
-#     match agg:
-#         case "Sum":
-#             name, value = polars_plan_to_ibis_value(agg_payload)
-#             return name, value.sum()  # type: ignore
-
-#         case _:
-#             raise ValueError(f"unsupported agg type: {agg}")
