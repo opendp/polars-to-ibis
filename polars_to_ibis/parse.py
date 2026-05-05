@@ -2,6 +2,7 @@ from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
+from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
 PolarsPlan = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -99,6 +100,20 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
                 select_kwargs[new_name] = old_name
             case ("Alias", [{"Literal": {"Dyn": {"Int": value}}}, new_name]):
                 select_kwargs[new_name] = value
+            case (
+                "Alias",
+                [
+                    {
+                        "BinaryExpr": {
+                            "left": {"Column": old_name},
+                            "op": "Plus",
+                            "right": {"Literal": {"Dyn": {"Int": value}}},
+                        }
+                    },
+                    new_name,
+                ],
+            ):
+                select_kwargs[new_name] = defer[old_name] + value
             case ("Alias", _):
                 raise NotImplementedError(f"No support for {tag} with {payload}")
             case (
@@ -192,8 +207,6 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("GroupBy")
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
-
     input_table = update_polars_to_ibis(payload["input"], table=table)
 
     match payload:

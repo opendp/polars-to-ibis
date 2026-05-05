@@ -213,6 +213,11 @@ fixtures = [
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
     ),
+    Fixture(
+        "select",
+        "lf.select(plus_ten=pl.col('ints') + 10)",
+        {"plus_ten": [11, 12, 13]},
+    ),
     # Fixture(
     #     "select",
     #     "lf.select(plus=pl.col('ints') + 1)",
