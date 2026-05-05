@@ -90,13 +90,21 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
     drop_args = []
     for col in col_list:
         tag, payload = split_tag_payload(col)
-        match tag:
-            case "Column":
+        match (tag, payload):
+            case ("Column", _):
                 select_kwargs[payload] = payload
-            case "Alias":
-                select_kwargs[payload[1]] = payload[0]["Column"]
-            case "Selector":
-                drop_args += payload["Difference"][1]["ByName"]["names"]
+            case ("Alias", [{"Column": old_name}, new_name]):
+                select_kwargs[new_name] = old_name
+            case (
+                "Selector",
+                {
+                    "Difference": [
+                        "Wildcard",
+                        {"ByName": {"names": names, "strict": True}},
+                    ]
+                },
+            ):
+                drop_args += names
             case _:  # pragma: no cover
                 raise NotImplementedError(f"No support for {tag}")
     return (select_kwargs, drop_args)  # type: ignore
