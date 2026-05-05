@@ -108,7 +108,13 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
 @table_handler("Scan")
 @table_handler("DataFrameScan")
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    return table
+    match payload:
+        case {"df": _, "schema": {"fields": _}}:
+            return table
+        case {"df": _, "schema": schema}:
+            raise NotImplementedError(f"Unexpected schema keys: {schema.keys()}")
+        case _:
+            raise NotImplementedError(f"Unexpected payload keys: {payload.keys()}")
 
 
 @table_handler("Select")
@@ -209,16 +215,3 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
         case _:  # pragma: no cover
             raise ValueError(f"unsupported stats type: {stats}")
-
-
-# @value_handler("Agg")
-# def handle_agg(payload: Any) -> NamedValue:
-#     agg, agg_payload = split_tag_payload(payload)
-
-#     match agg:
-#         case "Sum":
-#             name, value = polars_plan_to_ibis_value(agg_payload)
-#             return name, value.sum()  # type: ignore
-
-#         case _:
-#             raise ValueError(f"unsupported agg type: {agg}")
