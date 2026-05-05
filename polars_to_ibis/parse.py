@@ -184,24 +184,27 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     # TODO: Clean up!
     from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
-    group_by_keys = parse_sort_by_column(payload["keys"])
-    aggs = payload["aggs"]
-    if len(aggs) != 1:
-        raise NotImplementedError("Only one aggregate handled")  # pragma: no cover
-    agg_tag, agg_payload = split_tag_payload(aggs[0])
-    if agg_tag != "Agg":
-        raise NotImplementedError(f"Unexpected {agg_tag}")  # pragma: no cover
-    agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+    match payload:
+        case {
+            "keys": keys,
+            "aggs": [{"Agg": agg_payload}],
+            "maintain_order": False,
+            "options": {"dynamic": None, "rolling": None, "slice": None},
+        }:
+            group_by_keys = parse_sort_by_column(keys)
+            grouped_table = table.group_by(group_by_keys)
 
-    grouped_table = table.group_by(group_by_keys)
-    agg_col = agg_payload_payload["Column"]
-    match agg_payload_tag:
-        case "Sum" | "Mean" | "Median" | "Max" | "Min":
-            return grouped_table.aggregate(  # type: ignore
-                **{agg_col: getattr(_[agg_col], agg_payload_tag.lower())()}
-            )
+            agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+            agg_col = agg_payload_payload["Column"]
+            match agg_payload_tag:
+                case "Sum" | "Mean" | "Median" | "Max" | "Min":
+                    return grouped_table.aggregate(  # type: ignore
+                        **{agg_col: getattr(_[agg_col], agg_payload_tag.lower())()}
+                    )
+                case _:  # pragma: no cover
+                    raise NotImplementedError(f"Not implemented: {agg_payload_tag}")
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Not implemented: {agg_payload_tag}")
+            raise NotImplementedError(f"Not implemented: {payload}")
 
 
 @table_handler("MapFunction")
