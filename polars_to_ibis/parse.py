@@ -24,12 +24,12 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
     return deco
 
 
-# def value_handler(tag: str) -> Callable[..., ReturnsValue]:
-#     def deco(func: ReturnsValue) -> ReturnsValue:
-#         VALUE_REGISTRY[tag] = func
-#         return func
+def value_handler(tag: str) -> Callable[..., ReturnsValue]:
+    def deco(func: ReturnsValue) -> ReturnsValue:
+        VALUE_REGISTRY[tag] = func
+        return func
 
-#     return deco
+    return deco
 
 
 # Helpers:
@@ -54,13 +54,13 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
     return func(payload, table=table)
 
 
-# def polars_plan_to_ibis_value(polars_plan: PolarsPlan) -> NamedValue:
-#     tag, payload = split_tag_payload(polars_plan)
-#     try:
-#         func = VALUE_REGISTRY[tag]
-#     except KeyError as e:
-#         raise NotImplementedError(f"No value handler for {tag!r}") from e
-#     return func(payload)
+def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> NamedValue:
+    tag, payload = split_tag_payload(polars_expr)
+    try:
+        func = VALUE_REGISTRY[tag]
+    except KeyError as e:  # pragma: no cover
+        raise NotImplementedError(f"No value handler for {tag!r}") from e
+    return func(payload)
 
 
 # def polars_plans_to_ibis_values(plans: list[PolarsPlan]) -> dict[str, ir.Value]:
@@ -80,7 +80,7 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
     ({'keep': 'keep', 'two': 'two'}, [])
 
     >>> parse_select_expr([{'Alias': [{'Column': 'old_name'}, 'new_name']}])
-    ({'new_name': 'old_name'}, [])
+    ({'new_name': _['old_name']}, [])
 
     >>> parse_select_expr([{'Selector': {'Difference': ['Wildcard', {'ByName': {
     ...     'names': ['cols', 'to', 'drop'],
@@ -96,26 +96,8 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
         match (tag, payload):
             case ("Column", _):
                 select_kwargs[payload] = payload
-            case ("Alias", [{"Column": old_name}, new_name]):
-                select_kwargs[new_name] = old_name
-            case ("Alias", [{"Literal": {"Dyn": {"Int": value}}}, new_name]):
-                select_kwargs[new_name] = value
-            case (
-                "Alias",
-                [
-                    {
-                        "BinaryExpr": {
-                            "left": {"Column": old_name},
-                            "op": "Plus",
-                            "right": {"Literal": {"Dyn": {"Int": value}}},
-                        }
-                    },
-                    new_name,
-                ],
-            ):
-                select_kwargs[new_name] = defer[old_name] + value
-            case ("Alias", _):
-                raise NotImplementedError(f"No support for {tag} with {payload}")
+            case ("Alias", [expr, new_name]):
+                select_kwargs[new_name] = polars_expr_to_ibis_value(expr)
             case (
                 "Selector",
                 {
@@ -126,14 +108,40 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
                 },
             ):
                 drop_args += names
-            case ("Selector", _):
+            case ("Selector", _):  # pragma: no cover
                 raise NotImplementedError(f"No support for {tag} with {payload}")
             case _:  # pragma: no cover
                 raise NotImplementedError(f"No support for {tag}")
     return (select_kwargs, drop_args)  # type: ignore
 
 
-# Handlers:
+# Value handlers:
+
+
+@value_handler("Literal")
+def handle_literal(payload: PolarsPlan):
+    match payload:
+        case {"Dyn": {"Int": value}}:
+            return value
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unimplemented Literal {payload}")
+
+
+@value_handler("Column")
+def handle_column(payload: PolarsPlan):
+    return defer[payload]  # pyright: ignore[reportArgumentType]
+
+
+@value_handler("BinaryExpr")
+def handle_binary_expr(payload: PolarsPlan):
+    match payload:
+        case {"left": left, "op": "Plus", "right": right}:
+            return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unimplemented BinaryExpr {payload}")
+
+
+# Table handlers:
 
 
 @table_handler("Scan")

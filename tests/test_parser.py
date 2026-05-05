@@ -218,11 +218,6 @@ fixtures = [
         "lf.select(plus_ten=pl.col('ints') + 10)",
         {"plus_ten": [11, 12, 13]},
     ),
-    # Fixture(
-    #     "select",
-    #     "lf.select(plus=pl.col('ints') + 1)",
-    #     {"plus": [2, 3, 4]},
-    # ),
     Fixture(
         "grouping",
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
