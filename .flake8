@@ -8,5 +8,5 @@ extend-select = B950
 extend-ignore = E203,E501,E701
 
 per-file-ignores =
-    # Ignore undefined names in templates.
-    **/no-tests/*.py:F821,F401,E302
+    # pyright will handle unused variables.
+    **/parse.py:F841

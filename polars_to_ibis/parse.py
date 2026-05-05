@@ -137,26 +137,46 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("Slice")
 def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    if offset := payload["offset"] < 0:
-        raise NotImplementedError("Negative offsets not supported")  # pragma: no cover
-    return table.limit(payload["len"], offset=offset)
+    match payload:
+        case {
+            "len": len,
+            "offset": offset,
+            **_rest,
+        }:
+            if offset < 0:
+                raise NotImplementedError(f"Negative offsets not supported: {offset}")
+            return table.limit(len, offset=offset)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unexpected Slice payload: {payload}")
 
 
 @table_handler("Sort")
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    undirected_sort_keys = parse_sort_by_column(payload["by_column"])
-    descending = payload["sort_options"]["descending"]
-    # TODO: Error if unsupported sort options are used.
-    directed_sort_keys = [
-        ibis.desc(key) if desc else key
-        for key, desc in zip(undirected_sort_keys, descending)
-    ]
-    return update_polars_to_ibis(
-        payload["input"],
-        table,
-    ).order_by(
-        *directed_sort_keys  # type: ignore
-    )
+    match payload:
+        case {
+            "by_column": by_column,
+            "sort_options": {
+                "descending": descending,
+                "nulls_last": _nulls_last,
+                "multithreaded": True,
+                "maintain_order": False,
+                "limit": None,
+            },
+            **_rest,
+        }:
+            undirected_sort_keys = parse_sort_by_column(by_column)
+            directed_sort_keys = [
+                ibis.desc(key) if desc else key
+                for key, desc in zip(undirected_sort_keys, descending)
+            ]
+            return update_polars_to_ibis(
+                payload["input"],
+                table,
+            ).order_by(
+                *directed_sort_keys  # type: ignore
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unexpected Sort payload: {payload}")
 
 
 @table_handler("GroupBy")
