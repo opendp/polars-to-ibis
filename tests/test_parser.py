@@ -210,8 +210,8 @@ fixtures = [
     ),
     Fixture(
         "grouping",
-        "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys')",
-        {"keys": [0, 1], "values": [3, 7]},
+        "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
+        {"values": [3]},
     ),
 ]
 

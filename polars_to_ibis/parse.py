@@ -127,16 +127,18 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("Select")
 def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
     select_kwargs, drop_args = parse_select_expr(payload["expr"])  # type: ignore
     if select_kwargs:
-        table = table.select(**select_kwargs)  # type: ignore
+        input_table = input_table.select(**select_kwargs)  # type: ignore
     if drop_args:
-        table = table.drop(*drop_args)  # type: ignore
-    return table
+        input_table = input_table.drop(*drop_args)  # type: ignore
+    return input_table
 
 
 @table_handler("Slice")
 def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
         case {
             "len": len,
@@ -145,13 +147,14 @@ def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         }:
             if offset < 0:
                 raise NotImplementedError(f"Negative offsets not supported: {offset}")
-            return table.limit(len, offset=offset)
+            return input_table.limit(len, offset=offset)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unexpected Slice payload: {payload}")
 
 
 @table_handler("Sort")
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
         case {
             "by_column": by_column,
@@ -171,7 +174,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             ]
             return update_polars_to_ibis(
                 payload["input"],
-                table,
+                input_table,
             ).order_by(
                 *directed_sort_keys  # type: ignore
             )
@@ -181,6 +184,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("GroupBy")
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
     # TODO: Clean up!
     from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
@@ -192,7 +196,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None},
         }:
             group_by_keys = parse_sort_by_column(keys)
-            grouped_table = table.group_by(group_by_keys)
+            grouped_table = input_table.group_by(group_by_keys)
 
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
             agg_col = agg_payload_payload["Column"]
