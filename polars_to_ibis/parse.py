@@ -97,6 +97,10 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
                 select_kwargs[payload] = payload
             case ("Alias", [{"Column": old_name}, new_name]):
                 select_kwargs[new_name] = old_name
+            case ("Alias", [{"Literal": {"Dyn": {"Int": value}}}, new_name]):
+                select_kwargs[new_name] = value
+            case ("Alias", _):
+                raise NotImplementedError(f"No support for {tag} with {payload}")
             case (
                 "Selector",
                 {
@@ -107,6 +111,8 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
                 },
             ):
                 drop_args += names
+            case ("Selector", _):
+                raise NotImplementedError(f"No support for {tag} with {payload}")
             case _:  # pragma: no cover
                 raise NotImplementedError(f"No support for {tag}")
     return (select_kwargs, drop_args)  # type: ignore
