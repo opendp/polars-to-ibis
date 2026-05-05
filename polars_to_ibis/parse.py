@@ -35,11 +35,13 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
 
 
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
-    if len(polars_plan) != 1:
-        raise ValueError(
-            f"Expected single-key tagged dict, got: {polars_plan!r}"
-        )  # pragma: no cover
-    return next(iter(polars_plan.items()))
+    match list(polars_plan.items()):
+        case [[tag, payload]]:
+            return tag, payload
+        case _:
+            raise ValueError(
+                f"Expected single-key tagged dict, got: {polars_plan!r}"
+            )  # pragma: no cover
 
 
 def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
@@ -184,9 +186,9 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler("GroupBy")
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
+
     input_table = update_polars_to_ibis(payload["input"], table=table)
-    # TODO: Clean up!
-    from ibis import _  # pyright: ignore[reportMissingTypeStubs]
 
     match payload:
         case {
@@ -203,7 +205,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             match agg_payload_tag:
                 case "Sum" | "Mean" | "Median" | "Max" | "Min":
                     return grouped_table.aggregate(  # type: ignore
-                        **{agg_col: getattr(_[agg_col], agg_payload_tag.lower())()}
+                        **{agg_col: getattr(defer[agg_col], agg_payload_tag.lower())()}
                     )
                 case _:  # pragma: no cover
                     raise NotImplementedError(f"Not implemented: {agg_payload_tag}")
