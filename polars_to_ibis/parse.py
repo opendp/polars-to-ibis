@@ -138,11 +138,32 @@ def handle_column(payload: PolarsPlan):
     return defer[payload]  # pyright: ignore[reportArgumentType]
 
 
+@value_handler("Function")
+def handle_function(payload: PolarsPlan):  # type: ignore
+    match payload:
+        case {"input": [left, right], "function": {"Pow": "Generic"}}:
+            return polars_expr_to_ibis_value(left) ** polars_expr_to_ibis_value(right)  # type: ignore
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unimplemented Function {payload}")
+
+
 @value_handler("BinaryExpr")
 def handle_binary_expr(payload: PolarsPlan):
     match payload:
-        case {"left": left, "op": "Plus", "right": right}:
-            return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
+        case {"left": left, "op": op, "right": right}:
+            from operator import add, mod, mul, sub, truediv
+
+            func = {
+                "Plus": add,
+                "Minus": sub,
+                "Multiply": mul,
+                "TrueDivide": truediv,
+                "Modulus": mod,
+            }[op]
+            return func(
+                polars_expr_to_ibis_value(left), polars_expr_to_ibis_value(right)
+            )
+            # return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unimplemented BinaryExpr {payload}")
 

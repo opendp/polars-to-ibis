@@ -233,26 +233,37 @@ fixtures = [
     # Fixture(
     #     "numeric",
     #     "lf.select(pl.col('ints') + pl.col('floats'))",
-    #     {
-    #         "ints": [
-    #             1.1,
-    #             2.2,
-    #             3.3,
-    #             4.4,
-    #         ],
-    #     },
+    #     {"ints": [1.1, 2.2, 3.3, 4.4]},
     # ),
     Fixture(
         "numeric",
         "lf.select(sum=pl.col('ints') + pl.col('floats'))",
-        {
-            "sum": [
-                1.1,
-                2.2,
-                3.3,
-                4.4,
-            ],
-        },
+        {"sum": [1.1, 2.2, 3.3, 4.4]},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select(diff=pl.col('ints') - pl.col('floats'))",
+        {"diff": [0.9, 1.8, 2.7, 3.6]},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select(prod=pl.col('ints') * pl.col('floats'))",
+        {"prod": [0.1, 0.4, 3 * 0.3, 1.6]},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select(div=pl.col('ints') / 2)",
+        {"div": [0.5, 1, 1.5, 2]},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select(square=pl.col('ints') ** 2)",
+        {"square": [1, 4, 9, 16]},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select(mod=pl.col('ints') % 2)",
+        {"mod": [1, 0, 1, 0]},
     ),
     Fixture(
         "select",
