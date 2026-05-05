@@ -226,6 +226,36 @@ fixtures = [
     ),
     Fixture(
         "select",
+        "lf.select('ints', ten=False)",
+        {"ints": [1, 2, 3], "ten": [False, False, False]},
+    ),
+    # TODO: For now, names need to be explictly provided.
+    # Fixture(
+    #     "numeric",
+    #     "lf.select(pl.col('ints') + pl.col('floats'))",
+    #     {
+    #         "ints": [
+    #             1.1,
+    #             2.2,
+    #             3.3,
+    #             4.4,
+    #         ],
+    #     },
+    # ),
+    Fixture(
+        "numeric",
+        "lf.select(sum=pl.col('ints') + pl.col('floats'))",
+        {
+            "sum": [
+                1.1,
+                2.2,
+                3.3,
+                4.4,
+            ],
+        },
+    ),
+    Fixture(
+        "select",
         "lf.select(plus_ten=pl.col('ints') + 10)",
         {"plus_ten": [11, 12, 13]},
     ),
