@@ -215,6 +215,17 @@ fixtures = [
     ),
     Fixture(
         "select",
+        "lf.select('ints', ten=pl.lit('ten!'))",
+        {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
+    ),
+    Fixture(
+        "select",
+        "lf.select('ints', ten=10.0)",
+        {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
+        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+    ),
+    Fixture(
+        "select",
         "lf.select(plus_ten=pl.col('ints') + 10)",
         {"plus_ten": [11, 12, 13]},
     ),

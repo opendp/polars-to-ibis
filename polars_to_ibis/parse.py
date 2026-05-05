@@ -121,8 +121,10 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
 @value_handler("Literal")
 def handle_literal(payload: PolarsPlan):
     match payload:
-        case {"Dyn": {"Int": value}}:
+        case {"Dyn": {"Int": value}} | {"Dyn": {"Float": value}}:
             return value
+        case {"Scalar": {"String": value}}:
+            return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unimplemented Literal {payload}")
 
