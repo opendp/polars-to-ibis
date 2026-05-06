@@ -277,7 +277,9 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None},
             **extras,
         }:
-            del extras["apply"]  # Added in new polars versions
+            if "apply" in extras and extras["apply"] is None:
+                # Added in new polars versions.
+                del extras["apply"]  # pragma: no cover
             assert_no_extras(extras)
             group_by_keys = parse_sort_by_column(keys)
             grouped_table = input_table.group_by(group_by_keys)
