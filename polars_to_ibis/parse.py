@@ -151,14 +151,21 @@ def handle_function(payload: PolarsPlan):  # type: ignore
 def handle_binary_expr(payload: PolarsPlan):
     match payload:
         case {"left": left, "op": op, "right": right}:
-            from operator import add, mod, mul, sub, truediv
+            from operator import add, eq, ge, gt, le, lt, mod, mul, ne, sub, truediv
 
+            # TODO: replace with case so we check coverage.
             func = {
                 "Plus": add,
                 "Minus": sub,
                 "Multiply": mul,
                 "TrueDivide": truediv,
                 "Modulus": mod,
+                "NotEq": ne,
+                "Eq": eq,
+                "Gt": gt,
+                "GtEq": ge,
+                "Lt": lt,
+                "LtEq": le,
             }[op]
             return func(
                 polars_expr_to_ibis_value(left), polars_expr_to_ibis_value(right)
@@ -197,7 +204,11 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 @table_handler("Filter")
 def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
-    return input_table.filter(defer["values"] != 1)
+    match payload:
+        case {"predicate": predicate}:
+            return input_table.filter(polars_expr_to_ibis_value(predicate))
+        case _:
+            raise NotImplementedError(f"Unexpected Filter payload: {payload}")
 
 
 @table_handler("Slice")

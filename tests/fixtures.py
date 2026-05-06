@@ -202,4 +202,34 @@ fixtures = [
         "lf.filter(pl.col('values') != 1)",
         {"keys": [0, 1, 1], "values": [2, 3, 4]},
     ),
+    Fixture(
+        "grouping",
+        "lf.filter(pl.col('keys') != 1)",
+        {"keys": [0, 0], "values": [1, 2]},
+    ),
+    Fixture(
+        "grouping",
+        "lf.filter(pl.col('values') != 1)",
+        {"keys": [0, 1, 1], "values": [2, 3, 4]},
+    ),
+    Fixture(
+        "grouping",
+        "lf.filter(pl.col('values') > 2).select('values')",
+        {"values": [3, 4]},
+    ),
+    Fixture(
+        "grouping",
+        "lf.filter(pl.col('values') >= 2).select('values')",
+        {"values": [2, 3, 4]},
+    ),
+    Fixture(
+        "grouping",
+        "lf.filter(pl.col('values') < 2).select('values')",
+        {"values": [1]},
+    ),
+    Fixture(
+        "grouping",
+        "lf.filter(pl.col('values') <= 2).select('values')",
+        {"values": [1, 2]},
+    ),
 ]
