@@ -280,24 +280,34 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             assert_no_extras(extras)
             group_by_keys = parse_sort_by_column(keys)
             grouped_table = input_table.group_by(group_by_keys)
-
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
-            agg_col = agg_payload_payload["Column"]
-            match agg_payload_tag:
-                case "Sum" | "Mean" | "Median" | "Max" | "Min":
-                    return grouped_table.aggregate(  # type: ignore
-                        **{agg_col: getattr(defer[agg_col], agg_payload_tag.lower())()}
-                    )
-                case _:  # pragma: no cover
-                    raise NotImplementedError(f"Unsupported Agg: {agg_payload_tag}")
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported GroupBy: {payload}")
+
+    match agg_payload_payload:
+        case {"Column": column, **extras}:
+            assert_no_extras(extras)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported GroupBy: {payload}")
+
+    match agg_payload_tag:
+        case "Sum" | "Mean" | "Median" | "Max" | "Min":
+            return grouped_table.aggregate(  # type: ignore
+                **{column: getattr(defer[column], agg_payload_tag.lower())()}
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported Agg: {agg_payload_tag}")
 
 
 @table_handler("MapFunction")
 def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
-    stats = payload["function"]["Stats"]
+    match payload:
+        case {"function": {"Stats": stats}, **extras}:
+            assert_no_extras(extras)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported MapFunction: {payload}")
+
     match stats:
         case "Sum" | "Mean" | "Median" | "Max" | "Min":
             return table.aggregate(
@@ -307,26 +317,29 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case {"Var": {"ddof": 1}}:
+        case {"Var": {"ddof": 1}, **extras}:
+            assert_no_extras(extras)
             return table.aggregate(
                 **{col: getattr(input_table, col).var() for col in table.columns}
             )
 
-        case {"Std": {"ddof": 1}}:
+        case {"Std": {"ddof": 1}, **extras}:
+            assert_no_extras(extras)
             return table.aggregate(
                 **{col: getattr(input_table, col).std() for col in table.columns}
             )
 
-        # TODO: Does not support general quantiles
         case {
             "Quantile": {
-                "quantile": {"Literal": {"Dyn": {"Float": 0.5}}},
+                "quantile": {"Literal": {"Dyn": {"Float": quantile}}},
                 "method": "Nearest",
-            }
+            },
+            **extras,
         }:
+            assert_no_extras(extras)
             return table.aggregate(
                 **{
-                    col: getattr(input_table, col).quantile(0.5)
+                    col: getattr(input_table, col).quantile(quantile)
                     for col in table.columns
                 }
             )
