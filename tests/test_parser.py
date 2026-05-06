@@ -149,8 +149,11 @@ def assert_approx_equal(
     "polars_plan,expected_error",
     [
         ({}, "Expected single-key tagged dict"),
-        ({"Scan": {}}, "Unexpected payload keys"),
-        ({"Scan": {"df": {}, "schema": {}}}, "Unexpected schema keys"),
+        ({"Scan": {}}, "Unsupported Scan: {}"),
+        (
+            {"Scan": {"df": {}, "schema": {}}},
+            "Unsupported Scan: {'df': {}, 'schema': {}}",
+        ),
     ],
     ids=lambda plan: str(plan),
 )
