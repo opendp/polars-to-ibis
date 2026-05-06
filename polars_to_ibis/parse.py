@@ -194,6 +194,12 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     return input_table
 
 
+@table_handler("Filter")
+def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
+    return input_table.filter(defer["values"] != 1)
+
+
 @table_handler("Slice")
 def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
