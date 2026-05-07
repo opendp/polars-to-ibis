@@ -77,6 +77,7 @@ input_data = {
         "bools": [True, True, True],
         "bytes": [b"C", b"B", b"C"],
     },
+    "hundred": {"ints": list(range(101))},
 }
 
 
