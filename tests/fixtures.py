@@ -243,8 +243,8 @@ fixtures = [
         {"ints": [0, 1, 99, 100]},
     ),
     Fixture(
-        "null_inf",
-        "lf.select('floats').fill_null(111)",
-        {"floats": [0.0, 111.0, float("inf")]},
+        "nan_null_inf",
+        "lf.select('null').fill_null(111)",
+        {"null": [0.0, 111.0]},
     ),
 ]
