@@ -242,9 +242,22 @@ fixtures = [
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
+    # TODO: Going through a DB, None is converted to nan, and test fails.
+    # Fixture(
+    #     "nan_null_inf",
+    #     # nan != nan, so drop it: We could compare serializations, if necessary.
+    #     "lf.drop('nan')",
+    #     {'inf': [0.0, float('inf')], 'null': [0.0, None]},
+    # ),
     Fixture(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
     ),
+    # TODO: Fails for duckdb and postgres, but sqlite passes.
+    # Fixture(
+    #     "nan_null_inf",
+    #     "lf.select('nan').fill_nan(111)",
+    #     {"nan": [0.0, 111.0]},
+    # ),
 ]
