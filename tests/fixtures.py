@@ -59,6 +59,14 @@ fixtures = [
         expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
+        "numeric",
+        "lf.select("
+        "    ints=pl.col('ints').clip(2.0,3.0),"
+        "    floats=pl.col('floats').clip(2,3)"
+        ")",
+        {"floats": [2.0, 2.0, 2.0, 2.0], "ints": [2, 2, 3, 3]},
+    ),
+    Fixture(
         "sorting",
         "lf.sort(by='strs')",
         {

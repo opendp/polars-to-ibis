@@ -153,15 +153,30 @@ def handle_column(payload: PolarsPlan):
 @value_handler("Function")
 def handle_function(payload: PolarsPlan):  # type: ignore
     match payload:
-        case {"input": [left, right], "function": {"Pow": "Generic"}, **extras}:
+        case {
+            "input": [left_expr, right_expr],
+            "function": {"Pow": "Generic"},
+            **extras,
+        }:
             assert_no_extras(extras)
-            return polars_expr_to_ibis_value(left) ** polars_expr_to_ibis_value(right)  # type: ignore
-        case {"input": [input], "function": {"Boolean": "Not"}, **extras}:
+            return polars_expr_to_ibis_value(left_expr) ** polars_expr_to_ibis_value(
+                right_expr
+            )  # type: ignore
+        case {"input": [input_expr], "function": {"Boolean": "Not"}, **extras}:
             assert_no_extras(extras)
-            return ~polars_expr_to_ibis_value(input)  # type: ignore
-        case {"input": [input], "function": "Negate", **extras}:
+            return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
+        case {"input": [input_expr], "function": "Negate", **extras}:
             assert_no_extras(extras)
-            return -polars_expr_to_ibis_value(input)  # type: ignore
+            return -polars_expr_to_ibis_value(input_expr)  # type: ignore
+        case {
+            "input": [input_expr, lower_expr, upper_expr],
+            "function": {"Clip": {"has_min": True, "has_max": True}},
+            **extras,
+        }:
+            assert_no_extras(extras)
+            lower = polars_expr_to_ibis_value(lower_expr)
+            upper = polars_expr_to_ibis_value(upper_expr)
+            return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Function: {payload}")
 
