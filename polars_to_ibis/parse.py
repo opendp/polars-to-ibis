@@ -152,6 +152,12 @@ def handle_function(payload: PolarsPlan):  # type: ignore
         case {"input": [left, right], "function": {"Pow": "Generic"}, **extras}:
             assert_no_extras(extras)
             return polars_expr_to_ibis_value(left) ** polars_expr_to_ibis_value(right)  # type: ignore
+        case {"input": [input], "function": {"Boolean": "Not"}, **extras}:
+            assert_no_extras(extras)
+            return ~polars_expr_to_ibis_value(input)  # type: ignore
+        case {"input": [input], "function": "Negate", **extras}:
+            assert_no_extras(extras)
+            return -polars_expr_to_ibis_value(input)  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Function: {payload}")
 

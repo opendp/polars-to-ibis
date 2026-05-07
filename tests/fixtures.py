@@ -189,8 +189,8 @@ fixtures = [
     ),
     Fixture(
         "select",
-        "lf.select(plus_ten=pl.col('ints') + 10)",
-        {"plus_ten": [11, 12, 13]},
+        "lf.select(plus_ten=(-pl.col('ints')) + 10)",
+        {"plus_ten": [9, 8, 7]},
     ),
     Fixture(
         "grouping",
@@ -239,7 +239,7 @@ fixtures = [
     ),
     Fixture(
         "hundred",
-        "lf.filter((pl.col('ints') < 2) | (pl.col('ints') > 98))",
+        "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
 ]
