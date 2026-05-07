@@ -397,8 +397,15 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case {"function": {"FillNan": fill_nan_expr}, **extras}:
             assert_no_extras(extras)
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
-            # TODO: no "fill_nan()"
-            return input_table.fill_null(fill_nan_value)  # type: ignore
+            # No ibis "fill_nan()", so we do it by hand:
+            return input_table.select(
+                **{
+                    col: input_table[col]
+                    .isnan()  # type: ignore
+                    .ifelse(fill_nan_value, input_table[col])
+                    for col in input_table.columns
+                }  # type: ignore
+            )
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported MapFunction: {payload}")
 

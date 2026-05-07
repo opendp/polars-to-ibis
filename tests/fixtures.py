@@ -254,10 +254,12 @@ fixtures = [
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
     ),
-    # TODO: Fails for duckdb and postgres, but sqlite passes.
-    # Fixture(
-    #     "nan_null_inf",
-    #     "lf.select('nan').fill_nan(111)",
-    #     {"nan": [0.0, 111.0]},
-    # ),
+    Fixture(
+        "nan_null_inf",
+        "lf.select('nan').fill_nan(111)",
+        {"nan": [0.0, 111.0]},
+        expected_backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined"
+        },
+    ),
 ]
