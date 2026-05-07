@@ -293,6 +293,64 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError(f"Unsupported Sort: {payload}")
 
 
+@table_handler("HStack")
+def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
+    match payload:
+        case {
+            "exprs": [
+                {
+                    "Function": {
+                        "input": [
+                            {
+                                "Selector": {
+                                    "Union": [
+                                        {
+                                            "ByDType": {
+                                                "AnyOf": [
+                                                    "Int8",
+                                                    "Int16",
+                                                    "Int32",
+                                                    "Int64",
+                                                    "Int128",
+                                                    "UInt8",
+                                                    "UInt16",
+                                                    "UInt32",
+                                                    "UInt64",
+                                                    "Float32",
+                                                    "Float64",
+                                                ]
+                                            }
+                                        },
+                                        {"ByDType": "Decimal"},
+                                    ]
+                                }
+                            },
+                            fill_expr,
+                        ],
+                        "function": function,
+                    }
+                }
+            ],
+            "options": {
+                "run_parallel": True,
+                "duplicate_check": True,
+                "should_broadcast": True,
+            },
+            **extras,
+        }:
+            assert_no_extras(extras)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported HStack: {payload}")
+
+    value = polars_expr_to_ibis_value(fill_expr)
+    match function:
+        case "FillNull":
+            return input_table.fill_null(value)  # type: ignore
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported HStack function: {function}")
+
+
 @table_handler("GroupBy")
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)

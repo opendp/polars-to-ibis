@@ -78,6 +78,9 @@ input_data = {
         "bytes": [b"C", b"B", b"C"],
     },
     "hundred": {"ints": list(range(101))},
+    "null_inf": {
+        "floats": [0.0, None, float("inf")],
+    },
 }
 
 

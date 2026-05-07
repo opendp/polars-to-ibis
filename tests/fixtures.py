@@ -242,4 +242,9 @@ fixtures = [
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
+    Fixture(
+        "null_inf",
+        "lf.select('floats').fill_null(111)",
+        {"floats": [0.0, 111.0, float("inf")]},
+    ),
 ]
