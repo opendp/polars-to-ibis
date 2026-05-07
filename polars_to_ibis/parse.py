@@ -161,7 +161,21 @@ def handle_binary_expr(payload: PolarsPlan):
     match payload:
         case {"left": left, "op": op, "right": right, **extras}:
             assert_no_extras(extras)
-            from operator import add, eq, ge, gt, le, lt, mod, mul, ne, sub, truediv
+            from operator import (
+                __and__,
+                __or__,
+                add,
+                eq,
+                ge,
+                gt,
+                le,
+                lt,
+                mod,
+                mul,
+                ne,
+                sub,
+                truediv,
+            )
 
             func = {
                 "Plus": add,
@@ -175,6 +189,8 @@ def handle_binary_expr(payload: PolarsPlan):
                 "GtEq": ge,
                 "Lt": lt,
                 "LtEq": le,
+                "And": __and__,
+                "Or": __or__,
             }[op]
             return func(
                 polars_expr_to_ibis_value(left), polars_expr_to_ibis_value(right)

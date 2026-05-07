@@ -232,4 +232,14 @@ fixtures = [
         "lf.filter(pl.col('values') <= 2).select('values')",
         {"values": [1, 2]},
     ),
+    Fixture(
+        "hundred",
+        "lf.filter((pl.col('ints') % 5 == 0) & (pl.col('ints') % 7 == 0))",
+        {"ints": [0, 35, 70]},
+    ),
+    Fixture(
+        "hundred",
+        "lf.filter((pl.col('ints') < 2) | (pl.col('ints') > 98))",
+        {"ints": [0, 1, 99, 100]},
+    ),
 ]
