@@ -3,7 +3,7 @@ from typing import Any
 import polars as pl  # type: ignore # noqa: F401
 import pytest
 
-from polars_to_ibis.serialize import replace, serialize  # type: ignore
+from polars_to_ibis._serialize import replace, serialize  # type: ignore
 
 io_pairs = [
     (

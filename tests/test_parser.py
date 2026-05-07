@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 
 from polars_to_ibis import convert_polars_to_ibis
-from polars_to_ibis.parse import update_polars_to_ibis
+from polars_to_ibis._parse import update_polars_to_ibis
 
 from .fixtures import Fixture, fixtures
 

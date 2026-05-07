@@ -263,7 +263,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "by_column": by_column,
             "sort_options": {
                 "descending": descending,
-                "nulls_last": _nulls_last,
+                "nulls_last": nulls_last,
                 "multithreaded": True,
                 "maintain_order": False,
                 "limit": None,
@@ -272,6 +272,8 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             **extras,
         }:
             assert_no_extras(extras)
+            if any(nulls_last):
+                raise NotImplementedError(f"Unsupported nulls_last: {nulls_last}")
             undirected_sort_keys = parse_sort_by_column(by_column)
             directed_sort_keys = [
                 ibis.desc(key) if desc else key
