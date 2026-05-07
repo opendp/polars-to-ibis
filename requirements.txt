@@ -6,16 +6,8 @@
 #
 atpublic==6.0.2
     # via ibis-framework
-attrs==26.1.0
-    # via
-    #   jsonschema
-    #   referencing
 ibis-framework==11.0.0
     # via -r requirements.in
-jsonschema==4.26.0
-    # via -r requirements.in
-jsonschema-specifications==2025.9.1
-    # via jsonschema
 parsy==2.2
     # via ibis-framework
 polars==1.35.1
@@ -24,14 +16,6 @@ polars-runtime-32==1.35.1
     # via polars
 python-dateutil==2.9.0.post0
     # via ibis-framework
-referencing==0.37.0
-    # via
-    #   jsonschema
-    #   jsonschema-specifications
-rpds-py==0.30.0
-    # via
-    #   jsonschema
-    #   referencing
 six==1.17.0
     # via python-dateutil
 sqlglot==27.29.0
@@ -39,8 +23,6 @@ sqlglot==27.29.0
 toolz==1.1.0
     # via ibis-framework
 typing-extensions==4.15.0
-    # via
-    #   ibis-framework
-    #   referencing
+    # via ibis-framework
 tzdata==2025.2
     # via ibis-framework

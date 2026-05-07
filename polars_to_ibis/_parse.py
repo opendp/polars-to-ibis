@@ -1,3 +1,7 @@
+"""
+This is a private module: The API may change.
+"""
+
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]

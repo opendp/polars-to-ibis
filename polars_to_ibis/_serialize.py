@@ -1,14 +1,11 @@
 """
-LazyFrame.serialize() does not return stable results between Polars versions,
-and may be dropped in the future.
-Pulling out the serialization and validation logic keeps the rest of the code simple.
+This is a private module: The API may change.
 """
 
 import json
 from collections.abc import Callable
 from typing import Any
 
-import jsonschema
 import polars as pl
 
 
@@ -21,21 +18,11 @@ def serialize(lf: pl.LazyFrame):
     # Vaidation:
     keys = serial.keys()
     if len(keys) != 1:  # type: ignore
-        raise UnexpectedPolarsException(  # pragma: no cover
+        raise NotImplementedError(  # pragma: no cover
             f"Expected only a single key, not: {keys}"
         )
 
-    jsonschema.validate(serial, {"type": "object"})  # type: ignore
-
     return serial
-
-
-class UnexpectedPolarsException(Exception):
-    """
-    JSON structure is not what we expected.
-    """
-
-    pass
 
 
 def norm_count_params(params: dict[str, Any] | list[Any] | str) -> Any:
