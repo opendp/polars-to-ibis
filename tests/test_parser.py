@@ -10,8 +10,6 @@ from polars_to_ibis._parse import update_polars_to_ibis
 
 from .fixtures import Fixture, fixtures, input_data
 
-ibis.set_backend("polars")
-
 # Utilities:
 
 
