@@ -1,4 +1,4 @@
-"""Convert Polars plans to Ibis tables"""
+"""Convert Polars LazyFrames to Ibis unbound tables"""
 
 from pathlib import Path
 from typing import Any
@@ -13,6 +13,8 @@ _min_polars = "1.32.0"
 # TODO: When we drop Polars 1.32 support, we could simplify things.
 # _min_polars = "1.33.0"
 _max_polars = "1.34.0"
+
+__all__ = ["convert_polars_to_ibis"]
 
 
 class PolarsToIbisWarning(Warning):
@@ -42,6 +44,13 @@ def _check_version():
 
 
 def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
+    """
+    Convert a Polars LazyFrame to an Ibis unbound table.
+
+    The name of the table in the target database is also required:
+    Ibis translates dataframe syntax to idiomatic SQL,
+    so it needs to have a table name to include in the SQL.
+    """
     from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
     from polars_to_ibis._serialize import serialize
 

@@ -6,6 +6,8 @@ Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/laz
 
 Polars and Ibis have similar APIs, but while Polars supports computation in-memory and on [Polars Cloud](https://cloud.pola.rs/), Ibis by itself does not handle computation: Instead it translates the dataframe expression into idiomatic SQL for a particular database.
 
+The public interface of `polars_to_ibis` consists of exactly one function: `convert_polars_to_ibis`.
+
 ## Example
 
 ```python
