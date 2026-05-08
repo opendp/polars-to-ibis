@@ -8,7 +8,7 @@ import pytest
 from polars_to_ibis import convert_polars_to_ibis
 from polars_to_ibis._parse import update_polars_to_ibis
 
-from .fixtures import Fixture, fixtures
+from .fixtures import Fixture, fixtures, input_data
 
 ibis.set_backend("polars")
 
@@ -55,34 +55,6 @@ backends = [
 exporters = {  # type: ignore
     "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
     "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
-}
-
-
-input_data = {
-    "numeric": {
-        "ints": [1, 2, 3, 4],
-        "floats": [0.1, 0.2, 0.3, 0.4],
-    },
-    "sorting": {
-        "ints": [9, 9, 1, 1],
-        "strs": ["Z", "A", "B", "C"],
-    },
-    "grouping": {
-        "keys": [0, 0, 1, 1],
-        "values": [1, 2, 3, 4],
-    },
-    "select": {
-        "ints": [1, 2, 3],
-        "strs": ["A", "B", "C"],
-        "bools": [True, True, True],
-        "bytes": [b"C", b"B", b"C"],
-    },
-    "hundred": {"ints": list(range(101))},
-    "nan_null_inf": {
-        "nan": [0.0, float("nan")],
-        "null": [0.0, None],
-        "inf": [0.0, float("inf")],
-    },
 }
 
 
