@@ -1,3 +1,8 @@
+"""
+Only those parts of Polars API which are exercised below are implemented,
+and even in that narrow scope you'll see a number of quirks.
+"""
+
 import dataclasses
 import math
 
