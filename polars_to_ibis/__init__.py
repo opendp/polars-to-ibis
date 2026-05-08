@@ -36,7 +36,8 @@ def _check_version():
     ):
         _warn(  # pragma: no cover
             f"Polars {pl.__version__} has not been tested! "
-            f"Try {_min_polars} to {_max_polars}."
+            f"Use {_min_polars} to {_max_polars}, "
+            f"or submit a PR to expand test coverage."
         )
 
 
