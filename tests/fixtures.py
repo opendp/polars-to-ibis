@@ -39,6 +39,7 @@ class Fixture:
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
+    skip_polars: bool = False
     expected_backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     expected_exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
@@ -49,6 +50,16 @@ fixtures = [
         "numeric",
         "lf.select(pl.len())",
         {"len": [4]},
+        expected_backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>"
+        },
+    ),
+    Fixture(
+        "numeric",
+        "lf.select(dp.len())",
+        {"len": [4]},
+        skip_polars=True,
         expected_backend_errors={
             "polars": "No translation rule for "
             "<class 'ibis.expr.operations.window.WindowFunction'>"

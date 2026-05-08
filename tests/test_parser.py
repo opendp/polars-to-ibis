@@ -2,6 +2,7 @@ import re
 from os import environ
 
 import ibis  # type: ignore
+import opendp.prelude as dp  # type: ignore # noqa: F401
 import polars as pl
 import pytest
 
@@ -67,8 +68,9 @@ exporters = {  # type: ignore
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Sanity check: Does the polars expression have the expected result?
     lf = pl.LazyFrame(input_data[fixture.category])
-    polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
-    assert polars_output == fixture.expected_output, "Typo in test?"
+    if not fixture.skip_polars:
+        polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
+        assert polars_output == fixture.expected_output, "Typo in test?"
 
     # Convert polars to ibis, but without any data:
     lf = pl.LazyFrame(schema=lf.collect_schema())

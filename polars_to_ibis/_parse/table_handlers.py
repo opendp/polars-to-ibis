@@ -113,18 +113,6 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
     match payload:
         case {
-            "expr": ["Len"],
-            "options": {
-                "duplicate_check": True,
-                "run_parallel": True,
-                "should_broadcast": True,
-            },
-            **extras,
-        }:
-            assert_no_extras(extras)
-            # TODO: This feels like a kludge:
-            return input_table.select(len=input_table.count()).head(1)
-        case {
             "expr": expr,
             "options": {
                 "duplicate_check": True,
@@ -134,14 +122,42 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             **extras,
         }:
             assert_no_extras(extras)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported Select: {payload}")
+
+    match expr:
+        case ["Len"]:
+            # TODO: This feels like a kludge:
+            return input_table.select(len=input_table.count()).head(1)
+        case [
+            {
+                "Function": {
+                    "input": [{"Literal": {"Scalar": {"Null": "Null"}}}],
+                    "function": {
+                        "FfiPlugin": {
+                            "flags": {
+                                "check_lengths": True,
+                                "flags": "RETURNS_SCALAR | LENGTH_PRESERVING",
+                            },
+                            "lib": _,
+                            "symbol": "dp_frame_len",
+                            "kwargs": [],
+                        }
+                    },
+                }
+            }
+        ]:
+            # TODO: Find a side-channel to return the opendp plugin information.
+            # TODO: Handle more OpenDP expressions.
+            # TODO: This is the same kludge as above!
+            return input_table.select(len=input_table.count()).head(1)
+        case _:
             select_kwargs, drop_args = parse_select_expr(expr)  # type: ignore
             if select_kwargs:
                 input_table = input_table.select(**select_kwargs)  # type: ignore
             if drop_args:
                 input_table = input_table.drop(*drop_args)  # type: ignore
             return input_table
-        case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Select: {payload}")
 
 
 @table_handler("Filter")
