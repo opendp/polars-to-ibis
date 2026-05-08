@@ -1,3 +1,7 @@
+"""
+This is a private module: The API may change.
+"""
+
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
@@ -149,15 +153,30 @@ def handle_column(payload: PolarsPlan):
 @value_handler("Function")
 def handle_function(payload: PolarsPlan):  # type: ignore
     match payload:
-        case {"input": [left, right], "function": {"Pow": "Generic"}, **extras}:
+        case {
+            "input": [left_expr, right_expr],
+            "function": {"Pow": "Generic"},
+            **extras,
+        }:
             assert_no_extras(extras)
-            return polars_expr_to_ibis_value(left) ** polars_expr_to_ibis_value(right)  # type: ignore
-        case {"input": [input], "function": {"Boolean": "Not"}, **extras}:
+            return polars_expr_to_ibis_value(left_expr) ** polars_expr_to_ibis_value(
+                right_expr
+            )  # type: ignore
+        case {"input": [input_expr], "function": {"Boolean": "Not"}, **extras}:
             assert_no_extras(extras)
-            return ~polars_expr_to_ibis_value(input)  # type: ignore
-        case {"input": [input], "function": "Negate", **extras}:
+            return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
+        case {"input": [input_expr], "function": "Negate", **extras}:
             assert_no_extras(extras)
-            return -polars_expr_to_ibis_value(input)  # type: ignore
+            return -polars_expr_to_ibis_value(input_expr)  # type: ignore
+        case {
+            "input": [input_expr, lower_expr, upper_expr],
+            "function": {"Clip": {"has_min": True, "has_max": True}},
+            **extras,
+        }:
+            assert_no_extras(extras)
+            lower = polars_expr_to_ibis_value(lower_expr)
+            upper = polars_expr_to_ibis_value(upper_expr)
+            return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Function: {payload}")
 
@@ -263,7 +282,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "by_column": by_column,
             "sort_options": {
                 "descending": descending,
-                "nulls_last": _nulls_last,
+                "nulls_last": nulls_last,
                 "multithreaded": True,
                 "maintain_order": False,
                 "limit": None,
@@ -272,6 +291,8 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             **extras,
         }:
             assert_no_extras(extras)
+            if any(nulls_last):
+                raise NotImplementedError(f"Unsupported nulls_last: {nulls_last}")
             undirected_sort_keys = parse_sort_by_column(by_column)
             directed_sort_keys = [
                 ibis.desc(key) if desc else key
@@ -285,6 +306,64 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Sort: {payload}")
+
+
+@table_handler("HStack")
+def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table)
+    match payload:
+        case {
+            "exprs": [
+                {
+                    "Function": {
+                        "input": [
+                            {
+                                "Selector": {
+                                    "Union": [
+                                        {
+                                            "ByDType": {
+                                                "AnyOf": [
+                                                    "Int8",
+                                                    "Int16",
+                                                    "Int32",
+                                                    "Int64",
+                                                    "Int128",
+                                                    "UInt8",
+                                                    "UInt16",
+                                                    "UInt32",
+                                                    "UInt64",
+                                                    "Float32",
+                                                    "Float64",
+                                                ]
+                                            }
+                                        },
+                                        {"ByDType": "Decimal"},
+                                    ]
+                                }
+                            },
+                            fill_expr,
+                        ],
+                        "function": function,
+                    }
+                }
+            ],
+            "options": {
+                "run_parallel": True,
+                "duplicate_check": True,
+                "should_broadcast": True,
+            },
+            **extras,
+        }:
+            assert_no_extras(extras)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported HStack: {payload}")
+
+    value = polars_expr_to_ibis_value(fill_expr)
+    match function:
+        case "FillNull":
+            return input_table.fill_null(value)  # type: ignore
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported HStack function: {function}")
 
 
 @table_handler("GroupBy")
@@ -330,6 +409,18 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"function": {"Stats": stats}, **extras}:
             assert_no_extras(extras)
+        case {"function": {"FillNan": fill_nan_expr}, **extras}:
+            assert_no_extras(extras)
+            fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
+            # No ibis "fill_nan()", so we do it by hand:
+            return input_table.select(
+                **{
+                    col: input_table[col]
+                    .isnan()  # type: ignore
+                    .ifelse(fill_nan_value, input_table[col])
+                    for col in input_table.columns
+                }  # type: ignore
+            )
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported MapFunction: {payload}")
 

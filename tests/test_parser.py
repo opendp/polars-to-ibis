@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 
 from polars_to_ibis import convert_polars_to_ibis
-from polars_to_ibis.parse import update_polars_to_ibis
+from polars_to_ibis._parse import update_polars_to_ibis
 
 from .fixtures import Fixture, fixtures
 
@@ -78,6 +78,11 @@ input_data = {
         "bytes": [b"C", b"B", b"C"],
     },
     "hundred": {"ints": list(range(101))},
+    "nan_null_inf": {
+        "nan": [0.0, float("nan")],
+        "null": [0.0, None],
+        "inf": [0.0, float("inf")],
+    },
 }
 
 

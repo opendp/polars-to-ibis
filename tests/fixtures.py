@@ -59,6 +59,14 @@ fixtures = [
         expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
+        "numeric",
+        "lf.select("
+        "    ints=pl.col('ints').clip(2.0,3.0),"
+        "    floats=pl.col('floats').clip(2,3)"
+        ")",
+        {"floats": [2.0, 2.0, 2.0, 2.0], "ints": [2, 2, 3, 3]},
+    ),
+    Fixture(
         "sorting",
         "lf.sort(by='strs')",
         {
@@ -241,5 +249,25 @@ fixtures = [
         "hundred",
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
+    ),
+    # TODO: Going through a DB, None is converted to nan, and test fails.
+    # Fixture(
+    #     "nan_null_inf",
+    #     # nan != nan, so drop it: We could compare serializations, if necessary.
+    #     "lf.drop('nan')",
+    #     {'inf': [0.0, float('inf')], 'null': [0.0, None]},
+    # ),
+    Fixture(
+        "nan_null_inf",
+        "lf.select('null').fill_null(111)",
+        {"null": [0.0, 111.0]},
+    ),
+    Fixture(
+        "nan_null_inf",
+        "lf.select('nan').fill_nan(111)",
+        {"nan": [0.0, 111.0]},
+        expected_backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined"
+        },
     ),
 ]
