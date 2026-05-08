@@ -1,5 +1,37 @@
+"""
+Only those parts of Polars API which are exercised below are implemented,
+and even in that narrow scope you'll see a number of quirks.
+"""
+
 import dataclasses
 import math
+
+input_data = {
+    "numeric": {
+        "ints": [1, 2, 3, 4],
+        "floats": [0.1, 0.2, 0.3, 0.4],
+    },
+    "sorting": {
+        "ints": [9, 9, 1, 1],
+        "strs": ["Z", "A", "B", "C"],
+    },
+    "grouping": {
+        "keys": [0, 0, 1, 1],
+        "values": [1, 2, 3, 4],
+    },
+    "select": {
+        "ints": [1, 2, 3],
+        "strs": ["A", "B", "C"],
+        "bools": [True, True, True],
+        "bytes": [b"C", b"B", b"C"],
+    },
+    "hundred": {"ints": list(range(101))},
+    "nan_null_inf": {
+        "nan": [0.0, float("nan")],
+        "null": [0.0, None],
+        "inf": [0.0, float("inf")],
+    },
+}
 
 
 @dataclasses.dataclass
