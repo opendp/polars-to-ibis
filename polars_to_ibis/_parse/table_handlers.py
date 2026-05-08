@@ -110,12 +110,38 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 @table_handler("Select")
 def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
-    select_kwargs, drop_args = parse_select_expr(payload["expr"])  # type: ignore
-    if select_kwargs:
-        input_table = input_table.select(**select_kwargs)  # type: ignore
-    if drop_args:
-        input_table = input_table.drop(*drop_args)  # type: ignore
-    return input_table
+
+    match payload:
+        case {
+            "expr": ["Len"],
+            "options": {
+                "duplicate_check": True,
+                "run_parallel": True,
+                "should_broadcast": True,
+            },
+            **extras,
+        }:
+            assert_no_extras(extras)
+            # TODO: This feels like a kludge:
+            return input_table.select(len=input_table.count()).head(1)
+        case {
+            "expr": expr,
+            "options": {
+                "duplicate_check": True,
+                "run_parallel": True,
+                "should_broadcast": True,
+            },
+            **extras,
+        }:
+            assert_no_extras(extras)
+            select_kwargs, drop_args = parse_select_expr(expr)  # type: ignore
+            if select_kwargs:
+                input_table = input_table.select(**select_kwargs)  # type: ignore
+            if drop_args:
+                input_table = input_table.drop(*drop_args)  # type: ignore
+            return input_table
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported Select: {payload}")
 
 
 @table_handler("Filter")
