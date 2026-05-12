@@ -9,7 +9,7 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._serialize import replace
+from .._utils import replace
 from .utils import assert_no_extras, split_tag_payload
 
 PolarsPlan = dict[str, Any]
