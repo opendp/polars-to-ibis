@@ -124,11 +124,42 @@ def assert_approx_equal(
 @pytest.mark.parametrize(
     "polars_plan,expected_error",
     [
-        ({}, "Expected single-key tagged dict"),
-        ({"Scan": {}}, "Unsupported Scan: {}"),
+        (
+            {},
+            "Expected single-key tagged dict",
+        ),
+        (
+            {"Scan": {}},
+            "Unsupported Scan",
+        ),
         (
             {"Scan": {"df": {}, "schema": {}}},
-            "Unsupported Scan: {'df': {}, 'schema': {}}",
+            "Unsupported Scan",
+        ),
+        (
+            # When/if Count *is* supported, this test won't work.
+            {
+                "Select": {
+                    "expr": [
+                        {
+                            "Agg": {
+                                "Count": {
+                                    "include_nulls": False,
+                                    "input": {"Selector": "Wildcard"},
+                                }
+                            }
+                        }
+                    ],
+                    "input": {"DataFrameScan": {"df": {}, "schema": {"fields": {}}}},
+                    "options": {
+                        "duplicate_check": True,
+                        "run_parallel": True,
+                        "should_broadcast": True,
+                    },
+                }
+            },
+            # Check that the input data structure is shown in error message.
+            "Unsupported Agg:\n{'Select'",
         ),
     ],
     ids=lambda plan: str(plan),

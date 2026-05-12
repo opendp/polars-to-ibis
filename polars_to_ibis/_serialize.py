@@ -18,9 +18,7 @@ def serialize(lf: pl.LazyFrame):
     # Vaidation:
     keys = serial.keys()
     if len(keys) != 1:  # type: ignore
-        raise NotImplementedError(  # pragma: no cover
-            f"Expected only a single key, not: {keys}"
-        )
+        raise ValueError(f"Expected only a single key, not: {keys}")  # pragma: no cover
 
     return serial
 
