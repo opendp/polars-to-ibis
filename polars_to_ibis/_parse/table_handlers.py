@@ -150,6 +150,9 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         ]:
             # TODO: Handle more OpenDP expressions.
             # TODO: This is the same kludge as above!
+
+            # Library location is not stable. Remove.
+            del expr[0]["Function"]["function"]["FfiPlugin"]["lib"]
             return input_table.select(
                 len=input_table.count(),
                 expr_json=ibis.literal(dumps(expr, indent=1)),  # type: ignore

@@ -78,8 +78,6 @@ fixtures = [
                 '      "check_lengths": true,\n'
                 '      "flags": "RETURNS_SCALAR | LENGTH_PRESERVING"\n'
                 "     },\n"
-                '     "lib": '
-                '"lib/python3.12/site-packages/opendp/lib/opendp.abi3.so",\n'
                 '     "symbol": "dp_frame_len",\n'
                 '     "kwargs": []\n'
                 "    }\n"
