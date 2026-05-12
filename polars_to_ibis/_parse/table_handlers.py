@@ -2,6 +2,7 @@
 This is a private module: The API may change.
 """
 
+from json import dumps
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
@@ -147,10 +148,12 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             }
         ]:
-            # TODO: Find a side-channel to return the opendp plugin information.
             # TODO: Handle more OpenDP expressions.
             # TODO: This is the same kludge as above!
-            return input_table.select(len=input_table.count()).head(1)
+            return input_table.select(
+                len=input_table.count(),
+                expr_json=ibis.literal(dumps(expr, indent=1)),  # type: ignore
+            ).head(1)
         case _:
             select_kwargs, drop_args = parse_select_expr(expr)  # type: ignore
             if select_kwargs:

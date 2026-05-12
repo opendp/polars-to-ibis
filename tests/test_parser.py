@@ -68,7 +68,7 @@ exporters = {  # type: ignore
 def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Sanity check: Does the polars expression have the expected result?
     lf = pl.LazyFrame(input_data[fixture.category])
-    if not fixture.skip_polars:
+    if not fixture.uses_plugin:
         polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
         assert polars_output == fixture.expected_output, "Typo in test?"
 

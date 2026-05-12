@@ -39,7 +39,7 @@ class Fixture:
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
-    skip_polars: bool = False
+    uses_plugin: bool = False
     expected_backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     expected_exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
@@ -58,8 +58,39 @@ fixtures = [
     Fixture(
         "numeric",
         "lf.select(dp.len())",
-        {"len": [4]},
-        skip_polars=True,
+        {
+            "expr_json": [
+                "[\n"
+                " {\n"
+                '  "Function": {\n'
+                '   "input": [\n'
+                "    {\n"
+                '     "Literal": {\n'
+                '      "Scalar": {\n'
+                '       "Null": "Null"\n'
+                "      }\n"
+                "     }\n"
+                "    }\n"
+                "   ],\n"
+                '   "function": {\n'
+                '    "FfiPlugin": {\n'
+                '     "flags": {\n'
+                '      "check_lengths": true,\n'
+                '      "flags": "RETURNS_SCALAR | LENGTH_PRESERVING"\n'
+                "     },\n"
+                '     "lib": '
+                '"lib/python3.12/site-packages/opendp/lib/opendp.abi3.so",\n'
+                '     "symbol": "dp_frame_len",\n'
+                '     "kwargs": []\n'
+                "    }\n"
+                "   }\n"
+                "  }\n"
+                " }\n"
+                "]",
+            ],
+            "len": [4],
+        },
+        uses_plugin=True,
         expected_backend_errors={
             "polars": "No translation rule for "
             "<class 'ibis.expr.operations.window.WindowFunction'>"
