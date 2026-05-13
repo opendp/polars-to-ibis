@@ -118,9 +118,9 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     select_kwargs, drop_args = parse_select_expr(payload["expr"])
     if select_kwargs:
-        input_table = input_table.select(**select_kwargs)  # type: ignore
+        input_table = input_table.select(**select_kwargs)
     if drop_args:
-        input_table = input_table.drop(*drop_args)  # type: ignore
+        input_table = input_table.drop(*drop_args)
     return input_table
 
 
@@ -130,7 +130,8 @@ def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"predicate": predicate, **extras}:
             assert_no_extras(extras)
-            return input_table.filter(polars_expr_to_ibis_value(predicate))  # type: ignore
+            value = polars_expr_to_ibis_value(predicate)
+            return input_table.filter(value)  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Filter")
 
@@ -175,9 +176,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             return update_polars_to_ibis(
                 payload["input"],
                 input_table,
-            ).order_by(
-                *directed_sort_keys  # type: ignore
-            )
+            ).order_by(*directed_sort_keys)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Sort")
 
