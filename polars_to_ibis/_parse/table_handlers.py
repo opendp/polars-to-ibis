@@ -176,7 +176,9 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             return update_polars_to_ibis(
                 payload["input"],
                 input_table,
-            ).order_by(*directed_sort_keys)
+            ).order_by(
+                *directed_sort_keys
+            )  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Sort")
 
