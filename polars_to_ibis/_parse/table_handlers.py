@@ -3,12 +3,14 @@ This is a private module: The API may change.
 """
 
 from json import dumps
+from pprint import pformat
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
+from .._utils import replace
 from .utils import assert_no_extras, split_tag_payload
 from .value_handlers import polars_expr_to_ibis_value
 
@@ -27,7 +29,11 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
         func = TABLE_REGISTRY[tag]
     except KeyError as e:  # pragma: no cover
         raise NotImplementedError(f"No table handler for {tag!r}") from e
-    return func(payload, table=table)
+    try:
+        return func(payload, table=table)
+    except NotImplementedError as e:
+        replace(polars_plan, "DataFrameScan", lambda _: "...")
+        raise NotImplementedError(f"{e}:\n{pformat(polars_plan)}")
 
 
 # Registry:
@@ -87,10 +93,8 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
                 },
             ):
                 drop_args += names
-            case ("Selector", _):  # pragma: no cover
-                raise NotImplementedError(f"No support for {tag} with {payload}")
             case _:  # pragma: no cover
-                raise NotImplementedError(f"No support for {tag}")
+                raise NotImplementedError(f"Unsupported {tag}")
     return (select_kwargs, drop_args)  # type: ignore
 
 
@@ -105,7 +109,7 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             assert_no_extras(extras)
             return table
         case _:
-            raise NotImplementedError(f"Unsupported Scan: {payload}")
+            raise NotImplementedError("Unsupported Scan")
 
 
 @table_handler("Select")
@@ -174,7 +178,7 @@ def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             assert_no_extras(extras)
             return input_table.filter(polars_expr_to_ibis_value(predicate))  # type: ignore
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Filter: {payload}")
+            raise NotImplementedError("Unsupported Filter")
 
 
 @table_handler("Slice")
@@ -187,7 +191,7 @@ def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 raise NotImplementedError(f"Unsupported offset: {offset}")
             return input_table.limit(len, offset=offset)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Slice: {payload}")
+            raise NotImplementedError("Unsupported Slice")
 
 
 @table_handler("Sort")
@@ -221,7 +225,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 *directed_sort_keys  # type: ignore
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Sort: {payload}")
+            raise NotImplementedError("Unsupported Sort")
 
 
 @table_handler("HStack")
@@ -272,7 +276,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         }:
             assert_no_extras(extras)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported HStack: {payload}")
+            raise NotImplementedError("Unsupported HStack")
 
     value = polars_expr_to_ibis_value(fill_expr)
     match function:
@@ -302,13 +306,13 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             grouped_table = input_table.group_by(group_by_keys)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported GroupBy: {payload}")
+            raise NotImplementedError("Unsupported GroupBy")
 
     match agg_payload_payload:
         case {"Column": column, **extras}:
             assert_no_extras(extras)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported GroupBy: {payload}")
+            raise NotImplementedError("Unsupported GroupBy")
 
     match agg_payload_tag:
         case "Sum" | "Mean" | "Median" | "Max" | "Min":
@@ -338,7 +342,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }  # type: ignore
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported MapFunction: {payload}")
+            raise NotImplementedError("Unsupported MapFunction")
 
     match stats:
         case "Sum" | "Mean" | "Median" | "Max" | "Min":
