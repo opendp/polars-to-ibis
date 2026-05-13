@@ -2,12 +2,14 @@
 This is a private module: The API may change.
 """
 
+from pprint import pformat
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
+from .._utils import replace
 from .utils import assert_no_extras, split_tag_payload
 
 PolarsPlan = dict[str, Any]
@@ -25,7 +27,11 @@ def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> NamedValue:
         func = VALUE_REGISTRY[tag]
     except KeyError as e:  # pragma: no cover
         raise NotImplementedError(f"No value handler for {tag!r}") from e
-    return func(payload)
+    try:
+        return func(payload)
+    except NotImplementedError as e:  # pragma: no cover
+        replace(polars_expr, "DataFrameScan", lambda _: "...")
+        raise NotImplementedError(f"{e}:\n{pformat(polars_expr)}")
 
 
 # Registry:
@@ -58,7 +64,7 @@ def handle_literal(payload: PolarsPlan):
             assert_no_extras(extras)
             return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Literal: {payload}")
+            raise NotImplementedError("Unsupported Literal")
 
 
 @value_handler("Column")
@@ -94,7 +100,7 @@ def handle_function(payload: PolarsPlan):  # type: ignore
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Function: {payload}")
+            raise NotImplementedError("Unsupported Function")
 
 
 @value_handler("BinaryExpr")
@@ -138,4 +144,4 @@ def handle_binary_expr(payload: PolarsPlan):
             )
             # return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported BinaryExpr: {payload}")
+            raise NotImplementedError("Unsupported BinaryExpr")
