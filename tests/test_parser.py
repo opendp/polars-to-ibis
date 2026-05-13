@@ -84,6 +84,12 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     lf = pl.LazyFrame(schema=lf.collect_schema())
     lf = eval(fixture.expression)
     table_name = "default_table"
+    if fixture.expected_conversion_error:
+        with pytest.raises(
+            Exception, match=re.escape(fixture.expected_conversion_error)
+        ):
+            convert_polars_to_ibis(lf, table_name)
+        pytest.xfail(f"expected error: {fixture.expected_conversion_error}")
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
     # Set up target database, with data:

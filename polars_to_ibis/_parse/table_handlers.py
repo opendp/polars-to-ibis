@@ -286,6 +286,25 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError(f"Unsupported HStack function: {function}")
 
 
+@table_handler("Function")
+def handle_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    match payload:
+        case {
+            "function": {
+                "FfiPlugin": {
+                    "flags": _,
+                    "kwargs": _,
+                    "lib": _,
+                    "symbol": _,
+                }
+            },
+            "input": _,
+        }:
+            raise Exception("TODO: FFI!")
+        case _:
+            raise NotImplementedError("Unsupported Function")
+
+
 @table_handler("GroupBy")
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
@@ -314,6 +333,8 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match agg_tag:
         case "Agg":
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+        case "Function":
+            return update_polars_to_ibis(aggs[0], table=table)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy aggs")
 

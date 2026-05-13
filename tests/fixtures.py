@@ -40,6 +40,7 @@ class Fixture:
     expression: str
     expected_output: dict[str, list[float | str]]
     uses_plugin: bool = False
+    expected_conversion_error: str | None = None
     expected_backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     expected_exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
@@ -286,12 +287,13 @@ fixtures = [
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
     ),
-    # Fixture(
-    #     "grouping",
-    #     "lf.group_by('keys').agg(pl.col('values').dp.sum(bounds=(0,1))).sort(by='keys')",
-    #     {"values": [3]},
-    #     uses_plugin=True,
-    # ),
+    Fixture(
+        "grouping",
+        "lf.group_by('keys').agg(pl.col('values').dp.sum(bounds=(0,1))).sort(by='keys')",
+        {"values": [3]},
+        uses_plugin=True,
+        expected_conversion_error="TODO: FFI!",
+    ),
     Fixture(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
