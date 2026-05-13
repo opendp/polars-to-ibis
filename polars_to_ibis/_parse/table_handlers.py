@@ -293,7 +293,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {
             "keys": keys,
-            "aggs": [{"Agg": agg_payload}],
+            "aggs": aggs,
             "maintain_order": False,
             "options": {"dynamic": None, "rolling": None, "slice": None},
             **extras,
@@ -304,15 +304,24 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             assert_no_extras(extras)
             group_by_keys = parse_sort_by_column(keys)
             grouped_table = input_table.group_by(group_by_keys)
-            agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy")
+
+    if len(aggs) > 1:
+        raise NotImplementedError("Unsupported len(aggs) > 1")
+
+    agg_tag, agg_payload = split_tag_payload(aggs[0])
+    match agg_tag:
+        case "Agg":
+            agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported GroupBy aggs")
 
     match agg_payload_payload:
         case {"Column": column, **extras}:
             assert_no_extras(extras)
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported GroupBy")
+            raise NotImplementedError("Unsupported GroupBy Agg")
 
     match agg_payload_tag:
         case "Sum" | "Mean" | "Median" | "Max" | "Min":

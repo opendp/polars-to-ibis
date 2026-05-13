@@ -69,7 +69,15 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Sanity check: Does the polars expression have the expected result?
     lf = pl.LazyFrame(input_data[fixture.category])
     if not fixture.uses_plugin:
-        polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
+        try:
+            polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
+        except pl.exceptions.ComputeError as e:
+            assert (
+                "OpenDP expressions must be passed through make_private_lazyframe"
+                in str(e)
+            )
+            pytest.fail("Add 'uses_plugin=True' to fixture?")
+
         assert polars_output == fixture.expected_output, "Typo in test?"
 
     # Convert polars to ibis, but without any data:
