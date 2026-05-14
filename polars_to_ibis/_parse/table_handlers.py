@@ -56,7 +56,9 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
     return [list(col.values())[0] for col in col_list]
 
 
-def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # type: ignore
+def parse_select_expr(
+    col_list: list[dict[str, Any]],
+) -> tuple[dict[str, ir.Value], list[str]]:
     """
     Given a polars serialization,
     return tuple of (kw)args to be used for select() or drop().
@@ -74,8 +76,8 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
     ({}, ['cols', 'to', 'drop'])
 
     """
-    select_kwargs = {}
-    drop_args = []
+    select_kwargs: dict[str, ir.Value] = {}
+    drop_args: list[str] = []
     for col in col_list:
         tag, payload = split_tag_payload(col)
         match (tag, payload):
@@ -95,7 +97,7 @@ def parse_select_expr(col_list: list[dict[str, Any]]) -> tuple[dict, list]:  # t
                 drop_args += names
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported {tag}")
-    return (select_kwargs, drop_args)  # type: ignore
+    return (select_kwargs, drop_args)
 
 
 # Table handlers:
@@ -176,7 +178,8 @@ def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"predicate": predicate, **extras}:
             assert_no_extras(extras)
-            return input_table.filter(polars_expr_to_ibis_value(predicate))  # type: ignore
+            value = polars_expr_to_ibis_value(predicate)
+            return input_table.filter(value)  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Filter")
 
@@ -369,7 +372,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                     .isnan()  # type: ignore
                     .ifelse(fill_nan_value, input_table[col])
                     for col in input_table.columns
-                }  # type: ignore
+                }
             )
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported MapFunction")
