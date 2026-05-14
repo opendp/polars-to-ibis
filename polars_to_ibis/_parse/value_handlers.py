@@ -13,15 +13,14 @@ from .._utils import replace
 from .utils import assert_no_extras, split_tag_payload
 
 PolarsPlan = dict[str, Any]
-NamedValue = tuple[str, ir.Value]
 ReturnsTable = Callable[..., ir.Table]
-ReturnsValue = Callable[..., NamedValue]
+ReturnsValue = Callable[..., ir.Value]
 
 
 # Main:
 
 
-def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> NamedValue:
+def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> ir.Value:
     tag, payload = split_tag_payload(polars_expr)
     try:
         func = VALUE_REGISTRY[tag]
@@ -73,7 +72,7 @@ def handle_column(payload: PolarsPlan):
 
 
 @value_handler("Function")
-def handle_function(payload: PolarsPlan):  # type: ignore
+def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
             "input": [left_expr, right_expr],
@@ -81,9 +80,9 @@ def handle_function(payload: PolarsPlan):  # type: ignore
             **extras,
         }:
             assert_no_extras(extras)
-            return polars_expr_to_ibis_value(left_expr) ** polars_expr_to_ibis_value(
-                right_expr
-            )  # type: ignore
+            left = polars_expr_to_ibis_value(left_expr)
+            right = polars_expr_to_ibis_value(right_expr)
+            return left**right  # type: ignore
         case {"input": [input_expr], "function": {"Boolean": "Not"}, **extras}:
             assert_no_extras(extras)
             return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
