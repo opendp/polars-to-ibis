@@ -177,8 +177,8 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 payload["input"],
                 input_table,
             ).order_by(
-                *directed_sort_keys
-            )  # type: ignore
+                *directed_sort_keys  # type: ignore
+            )
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Sort")
 
