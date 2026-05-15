@@ -54,6 +54,14 @@ fixtures = [
     ),
     Fixture(
         "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').mean(),"
+        "    ints=pl.col('ints').mean()"
+        ")",
+        {"floats": [0.25], "ints": [2.5]},
+    ),
+    Fixture(
+        "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
         expected_backend_errors={

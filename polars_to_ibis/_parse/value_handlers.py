@@ -71,6 +71,15 @@ def handle_column(payload: PolarsPlan):
     return defer[payload]  # pyright: ignore[reportArgumentType]
 
 
+@value_handler("Agg")
+def handle_agg(payload: PolarsPlan):
+    match payload:
+        case {"Mean": {"Column": column}}:
+            return defer[column].mean()
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported Agg")
+
+
 @value_handler("Function")
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
