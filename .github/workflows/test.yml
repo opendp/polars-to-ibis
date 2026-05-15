@@ -15,16 +15,10 @@ jobs:
           - '3.10'
           - '3.13'
         polars-version:
-          # We're using OpenDP to exercise Polars plugins.
-          # (The point of this project for us is to use OpenDP Polars plugin, after all!
-          # Using OpenDP is also easier than trying to build a toy plugin just for testing.)
           # OpenDP v0.14.1 pins Polars to 1.32.0:
           # https://github.com/opendp/opendp/blob/v0.14.1/python/setup.cfg#L52
           - '1.32.0'
-          # However, except for Polars plugins, we want the rest of polars-to-ibis
-          # to work with higher versions of Polars.
-          # (OpenDP will probably pin to a higher version at some point,
-          # so we should be ready.)
+          # Be prepared for the next Polars version:
           - '1.33.0'
           - '1.34.0'
 
