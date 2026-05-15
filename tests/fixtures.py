@@ -51,7 +51,10 @@ fixtures = [
         "numeric",
         "lf.mean()",
         {"floats": [0.25], "ints": [2.5]},
-        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
+        },
     ),
     Fixture(
         "numeric",
@@ -85,13 +88,19 @@ fixtures = [
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance={"postgres": 10e-6},
-        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
+        },
     ),
     Fixture(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
+        },
     ),
     Fixture(
         "numeric",
@@ -192,7 +201,10 @@ fixtures = [
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
+        },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
