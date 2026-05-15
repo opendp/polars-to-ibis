@@ -39,8 +39,9 @@ class Fixture:
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
-    expected_backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
-    expected_exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
 
 
@@ -50,14 +51,15 @@ fixtures = [
         "numeric",
         "lf.mean()",
         {"floats": [0.25], "ints": [2.5]},
-        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
         "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
-        expected_backend_errors={
-            "sqlite": "Compilation rule for 'Median' operation is not defined"
+        backend_errors={
+            "sqlite": "Compilation rule for 'Median' operation is not defined",
+            "mysql": "Compilation rule for 'Median' operation is not defined",
         },
     ),
     Fixture(
@@ -65,8 +67,9 @@ fixtures = [
         # This should return the same value as median, but it doesn't!
         "lf.quantile(0.5)",
         {"floats": [0.3], "ints": [3]},
-        expected_backend_errors={
-            "sqlite": "Compilation rule for 'Quantile' operation is not defined"
+        backend_errors={
+            "sqlite": "Compilation rule for 'Quantile' operation is not defined",
+            "mysql": "Compilation rule for 'Quantile' operation is not defined",
         },
         # BIG difference between the polars native version and the DB versions!
         tolerance={"postgres": 0.5, "duckdb": 0.5, "polars": 0.5},
@@ -82,13 +85,13 @@ fixtures = [
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance={"postgres": 10e-6},
-        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
     ),
     Fixture(
         "numeric",
@@ -159,37 +162,44 @@ fixtures = [
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=pl.lit('ten!'))",
         {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        expected_exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=False)",
         {"ints": [1, 2, 3], "ten": [False, False, False]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     # TODO: For now, names need to be explictly provided.
     # Fixture(
@@ -231,6 +241,7 @@ fixtures = [
         "select",
         "lf.select(plus_ten=(-pl.col('ints')) + 10)",
         {"plus_ten": [9, 8, 7]},
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "grouping",
@@ -293,12 +304,14 @@ fixtures = [
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
+        connection_errors={"mysql": "inf can not be used with MySQL"},
     ),
     Fixture(
         "nan_null_inf",
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
-        expected_backend_errors={
+        connection_errors={"mysql": "inf can not be used with MySQL"},
+        backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined"
         },
     ),
