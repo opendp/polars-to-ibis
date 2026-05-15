@@ -162,58 +162,44 @@ fixtures = [
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=pl.lit('ten!'))",
         {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         exporter_errors={"postgres+to_polars": "Could not convert Decimal"},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "select",
         "lf.select('ints', ten=False)",
         {"ints": [1, 2, 3], "ten": [False, False, False]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     # TODO: For now, names need to be explictly provided.
     # Fixture(
@@ -255,9 +241,7 @@ fixtures = [
         "select",
         "lf.select(plus_ten=(-pl.col('ints')) + 10)",
         {"plus_ten": [9, 8, 7]},
-        connection_errors={
-            "mysql": "You have an error in your SQL syntax",
-        },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
         "grouping",
@@ -320,17 +304,13 @@ fixtures = [
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
-        connection_errors={
-            "mysql": "inf can not be used with MySQL",
-        },
+        connection_errors={"mysql": "inf can not be used with MySQL"},
     ),
     Fixture(
         "nan_null_inf",
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
-        connection_errors={
-            "mysql": "inf can not be used with MySQL",
-        },
+        connection_errors={"mysql": "inf can not be used with MySQL"},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined"
         },
