@@ -10,8 +10,6 @@ __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
 # Polars 1.32 is needed to support OpenDP 0.14.1:
 _min_polars = "1.32.0"
-# TODO: When we drop Polars 1.32 support, we could simplify things.
-# _min_polars = "1.33.0"
 _max_polars = "1.34.0"
 
 __all__ = ["convert_polars_to_ibis"]

@@ -8,9 +8,7 @@ set -euo pipefail
 # but continue to exercise the install process in CI
 # so it doesn't break again.
 
-# TODO: Restore postgres: https://github.com/opendp/polars-to-ibis/issues/35
 # TODO: Restore mysql: https://github.com/opendp/polars-to-ibis/issues/34
-
 
 
 # PostgreSQL:
