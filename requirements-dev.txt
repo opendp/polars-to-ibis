@@ -42,7 +42,7 @@ flit==3.12.0
     # via -r requirements-dev.in
 flit-core==3.12.0
     # via flit
-ibis-framework[duckdb,polars,postgres,sqlite]==11.0.0
+ibis-framework[duckdb,polars,postgres,sqlite]==12.0.0
     # via
     #   -r requirements-dev.in
     #   -r requirements.in
