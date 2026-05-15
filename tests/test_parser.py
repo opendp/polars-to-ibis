@@ -44,9 +44,7 @@ backends = [
     "sqlite",
     "duckdb",
     pytest.param("postgres", marks=pytest.mark.extra_install),
-    # MySQL could be added, if needed, but for now
-    # we want to focus on a smaller number of backends.
-    # pytest.param("mysql", marks=pytest.mark.extra_install),
+    pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 
 
@@ -78,14 +76,17 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
 
     # Set up target database, with data:
     input_df = pl.DataFrame(input_data[fixture.category])
+    expected_connection_error = fixture.connection_errors.get(backend)
+    if expected_connection_error:
+        with pytest.raises(Exception, match=re.escape(expected_connection_error)):
+            get_connection(input_df, table_name=table_name, backend=backend)
+        pytest.xfail(f"expected error: {expected_connection_error}")
     connection = get_connection(input_df, table_name=table_name, backend=backend)
 
     # If errors are expected, confirm that they are raised:
     export = exporters[exporter_key]  # type: ignore
-    expected_backend_error = fixture.expected_backend_errors.get(backend)
-    expected_exporter_error = fixture.expected_exporter_errors.get(
-        f"{backend}+{exporter_key}"
-    )
+    expected_backend_error = fixture.backend_errors.get(backend)
+    expected_exporter_error = fixture.exporter_errors.get(f"{backend}+{exporter_key}")
     if expected_error := expected_backend_error or expected_exporter_error:
         with pytest.raises(Exception, match=re.escape(expected_error)):
             export(connection, ibis_table)
