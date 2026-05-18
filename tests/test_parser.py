@@ -51,6 +51,7 @@ backends = [
 exporters = {  # type: ignore
     "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
     "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
+    "to_pyarrow": lambda conn, table: conn.to_pyarrow(table).to_pydict(),  # type: ignore
 }
 
 
