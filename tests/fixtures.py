@@ -52,9 +52,15 @@ fixtures = [
         "lf.mean()",
         {"floats": [0.25], "ints": [2.5]},
         exporter_errors={
+            # Providing a Polars type can avoid this error. See next fixture.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
+    ),
+    Fixture(
+        "numeric",
+        "lf.mean().cast(pl.Float32)",
+        {"floats": [0.25], "ints": [2.5]},
     ),
     Fixture(
         "numeric",
