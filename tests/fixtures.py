@@ -46,6 +46,15 @@ class Fixture:
 
 
 fixtures = [
+    Fixture(
+        "numeric",
+        "lf.select(pl.len())",
+        {"len": [4]},
+        backend_errors={
+            "polars": "No translation rule for <class "
+            "'ibis.expr.operations.window.WindowFunction'>",
+        },
+    ),
     Fixture("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
     Fixture(
         "numeric",
