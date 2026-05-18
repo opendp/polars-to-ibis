@@ -190,6 +190,31 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case {
             "exprs": [
                 {
+                    "Cast": {
+                        "dtype": {"Literal": dtype_literal},
+                        "expr": {"Selector": "Wildcard"},
+                        "options": "Strict",
+                    }
+                }
+            ],
+            "input": input,
+            "options": {
+                "duplicate_check": True,
+                "run_parallel": True,
+                "should_broadcast": True,
+            },
+            **extras,
+        }:
+            assert_no_extras(extras)
+            all_columns = input["MapFunction"]["input"]["DataFrameScan"]["schema"][
+                "fields"
+            ].keys()
+            return update_polars_to_ibis(input, table=table).cast(  # type: ignore
+                {col: dtype_literal.lower() for col in all_columns}
+            )
+        case {
+            "exprs": [
+                {
                     "Function": {
                         "input": [
                             {

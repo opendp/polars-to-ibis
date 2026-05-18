@@ -52,9 +52,15 @@ fixtures = [
         "lf.mean()",
         {"floats": [0.25], "ints": [2.5]},
         exporter_errors={
+            # Providing a Polars type can avoid this error. See next fixture.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
+    ),
+    Fixture(
+        "numeric",
+        "lf.mean().cast(pl.Float32)",
+        {"floats": [0.25], "ints": [2.5]},
     ),
     Fixture(
         "numeric",
@@ -202,9 +208,16 @@ fixtures = [
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         exporter_errors={
+            # Providing a Polars type can avoid this error. See next fixture.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
+        connection_errors={"mysql": "You have an error in your SQL syntax"},
+    ),
+    Fixture(
+        "select",
+        "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
+        {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(

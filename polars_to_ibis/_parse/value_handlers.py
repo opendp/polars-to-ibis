@@ -71,6 +71,23 @@ def handle_column(payload: PolarsPlan):
     return defer[payload]  # pyright: ignore[reportArgumentType]
 
 
+@value_handler("Cast")
+def handle_cast(payload: PolarsPlan) -> ir.Value:
+    match payload:
+        case {
+            "dtype": {"Literal": dtype_literal},
+            "expr": expr,
+            "options": "Strict",
+            **extras,
+        }:
+            assert_no_extras(extras)
+            return ibis.literal(polars_expr_to_ibis_value(expr)).cast(  # type: ignore
+                dtype_literal.lower()
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported Cast")
+
+
 @value_handler("Function")
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
