@@ -379,13 +379,19 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case {"Var": {"ddof": 1}, **extras}:
             assert_no_extras(extras)
             return table.aggregate(
-                **{col: getattr(input_table, col).var() for col in table.columns}
+                **{
+                    col: getattr(input_table, col).var().cast("float32")
+                    for col in table.columns
+                }
             )
 
         case {"Std": {"ddof": 1}, **extras}:
             assert_no_extras(extras)
             return table.aggregate(
-                **{col: getattr(input_table, col).std() for col in table.columns}
+                **{
+                    col: getattr(input_table, col).std().cast("float32")
+                    for col in table.columns
+                }
             )
 
         case {

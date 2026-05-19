@@ -97,19 +97,24 @@ fixtures = [
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        tolerance={"postgres": 10e-6},
-        exporter_errors={
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
+        tolerance={
+            "postgres": 10e-6,
+            "polars": 10e-6,
+            "sqlite": 10e-6,
+            "duckdb": 10e-6,
+            "mysql": 10e-6,
         },
     ),
     Fixture(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        exporter_errors={
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
+        tolerance={
+            "postgres": 10e-6,
+            "polars": 10e-6,
+            "sqlite": 10e-6,
+            "duckdb": 10e-6,
+            "mysql": 10e-6,
         },
     ),
     Fixture(
