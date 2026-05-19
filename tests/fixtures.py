@@ -360,10 +360,5 @@ fixtures = [
             "polars": "No translation rule for "
             "<class 'ibis.expr.operations.window.WindowFunction'>"
         },
-        exporter_errors={
-            # Providing a Polars type can avoid this error. See next fixture.
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
-        },
     ),
 ]

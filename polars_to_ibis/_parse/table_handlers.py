@@ -71,7 +71,7 @@ def parse_select_expr(
     >>> parse_select_expr([{'Alias':
     ...     [{'Agg': {'Mean': {'Column': 'old_name'}}}, 'new_name']
     ... }])
-    ({}, {'new_name': _['old_name'].mean()}, [])
+    ({}, {'new_name': _['old_name'].mean().cast('float32')}, [])
 
     >>> parse_select_expr([{'Selector': {'Difference': ['Wildcard', {'ByName': {
     ...     'names': ['cols', 'to', 'drop'],
@@ -90,7 +90,9 @@ def parse_select_expr(
                 select_kwargs[payload] = payload
             case ("Alias", [expr, new_name]):
                 if split_tag_payload(expr)[0] == "Agg":
-                    agg_kwargs[new_name] = polars_expr_to_ibis_value(expr)
+                    agg_kwargs[new_name] = polars_expr_to_ibis_value(expr).cast(
+                        "float32"
+                    )
                 else:
                     select_kwargs[new_name] = polars_expr_to_ibis_value(expr)
             case (
