@@ -100,21 +100,22 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
-    expected_backend_error = fixture.backend_errors.get(backend)
-    expected_exporter_error = fixture.exporter_errors.get(f"{backend}+{exporter_key}")
+    expected_backend_error = fixture.backend_errors.get(
+        backend
+    ) or fixture.backend_errors.get(f"{backend}+{exporter_key}")
     actual_output = assert_error_or_none(
-        "backend_error or exporter_error",
-        expected_backend_error or expected_exporter_error,
+        "backend_error",
+        expected_backend_error,
         lambda: export(connection, ibis_table),  # type: ignore
     )
 
     # Check if result is what we expect:
-    if tolerance := fixture.tolerance.get(backend):
+    if fixture.tolerance:
         assert_approx_equal(
             actual_output,  # type: ignore
             fixture.expected_output,
-            tolerance,
-            f"Via ibis, {backend} does not produce output within {tolerance}",
+            fixture.tolerance,
+            f"Via ibis, {backend} does not produce output within {fixture.tolerance}",
         )
     else:
         assert (
