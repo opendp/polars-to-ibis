@@ -358,7 +358,17 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError("Unsupported MapFunction")
 
     match stats:
-        case "Sum" | "Mean" | "Median" | "Max" | "Min":
+        case "Mean":
+            return table.aggregate(
+                **{
+                    col: getattr(getattr(input_table, col), stats.lower())().cast(
+                        "float32"
+                    )
+                    for col in table.columns
+                }
+            )
+
+        case "Sum" | "Median" | "Max" | "Min":
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())()
