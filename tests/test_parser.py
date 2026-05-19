@@ -82,7 +82,10 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
         with pytest.raises(Exception, match=re.escape(expected_connection_error)):
             get_connection(input_df, table_name=table_name, backend=backend)
         pytest.xfail(f"expected error: {expected_connection_error}")
-    connection = get_connection(input_df, table_name=table_name, backend=backend)
+    try:
+        connection = get_connection(input_df, table_name=table_name, backend=backend)
+    except Exception as e:
+        pytest.fail(f"Add connection_error? {e}")
 
     # If errors are expected, confirm that they are raised:
     export = exporters[exporter_key]  # type: ignore
@@ -94,7 +97,10 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
         pytest.xfail(f"expected error: {expected_error}")
 
     # Otherwise check for approximate or exact match:
-    actual_output = export(connection, ibis_table)  # type: ignore
+    try:
+        actual_output = export(connection, ibis_table)  # type: ignore
+    except Exception as e:
+        pytest.fail(f"Add backend_error or exporter_error? {e}")
     if tolerance := fixture.tolerance.get(backend):
         assert_approx_equal(
             actual_output,  # type: ignore

@@ -235,7 +235,7 @@ fixtures = [
         {"ints": [1, 2, 3], "ten": [False, False, False]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    # TODO: For now, names need to be explictly provided.
+    # TODO: Names need to be explictly provided.
     # Fixture(
     #     "numeric",
     #     "lf.select(pl.col('ints') + pl.col('floats'))",
@@ -347,6 +347,23 @@ fixtures = [
         connection_errors={"mysql": "inf can not be used with MySQL"},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined"
+        },
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').mean(),"
+        "    ints=pl.col('ints').mean()"
+        ")",
+        {"floats": [0.25], "ints": [2.5]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>"
+        },
+        exporter_errors={
+            # Providing a Polars type can avoid this error. See next fixture.
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
         },
     ),
 ]
