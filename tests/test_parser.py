@@ -84,7 +84,7 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
         pytest.xfail(f"expected error: {expected_connection_error}")
     try:
         connection = get_connection(input_df, table_name=table_name, backend=backend)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         pytest.fail(f"Add connection_error? {e}")
 
     # If errors are expected, confirm that they are raised:
@@ -99,7 +99,7 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     # Otherwise check for approximate or exact match:
     try:
         actual_output = export(connection, ibis_table)  # type: ignore
-    except Exception as e:
+    except Exception as e:  # pragma: no cover
         pytest.fail(f"Add backend_error or exporter_error? {e}")
     if tolerance := fixture.tolerance.get(backend):
         assert_approx_equal(
