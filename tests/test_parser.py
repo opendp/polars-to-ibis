@@ -109,12 +109,12 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     )
 
     # Check if result is what we expect:
-    if tolerance := fixture.tolerance.get(backend):
+    if fixture.tolerance:
         assert_approx_equal(
             actual_output,  # type: ignore
             fixture.expected_output,
-            tolerance,
-            f"Via ibis, {backend} does not produce output within {tolerance}",
+            fixture.tolerance,
+            f"Via ibis, {backend} does not produce output within {fixture.tolerance}",
         )
     else:
         assert (

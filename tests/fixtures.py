@@ -42,7 +42,7 @@ class Fixture:
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
-    tolerance: dict[str, float] = dataclasses.field(default_factory=dict)  # type: ignore
+    tolerance: float = 0  # type: ignore
 
 
 fixtures = [
@@ -85,7 +85,7 @@ fixtures = [
             "mysql": "Compilation rule for 'Quantile' operation is not defined",
         },
         # BIG difference between the polars native version and the DB versions!
-        tolerance={"postgres": 0.5, "duckdb": 0.5, "polars": 0.5},
+        tolerance=0.5,
     ),
     Fixture(
         "numeric",
@@ -97,25 +97,13 @@ fixtures = [
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        tolerance={
-            "postgres": 10e-6,
-            "polars": 10e-6,
-            "sqlite": 10e-6,
-            "duckdb": 10e-6,
-            "mysql": 10e-6,
-        },
+        tolerance=10e-6,
     ),
     Fixture(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        tolerance={
-            "postgres": 10e-6,
-            "polars": 10e-6,
-            "sqlite": 10e-6,
-            "duckdb": 10e-6,
-            "mysql": 10e-6,
-        },
+        tolerance=10e-6,
     ),
     Fixture(
         "numeric",
@@ -399,12 +387,7 @@ fixtures = [
             "polars": "No translation rule for "
             "<class 'ibis.expr.operations.window.WindowFunction'>"
         },
-        tolerance={
-            "postgres": 0.00000001,
-            "sqlite": 0.00000001,
-            "duckdb": 0.00000001,
-            "mysql": 0.0000001,
-        },
+        tolerance=0.0000001,
     ),
     Fixture(
         "numeric",
@@ -417,12 +400,7 @@ fixtures = [
             "polars": "No translation rule for "
             "<class 'ibis.expr.operations.window.WindowFunction'>"
         },
-        tolerance={
-            "postgres": 0.00000001,
-            "sqlite": 0.00000001,
-            "duckdb": 0.00000001,
-            "mysql": 0.0000001,
-        },
+        tolerance=0.0000001,
     ),
     Fixture(
         "numeric",
@@ -436,7 +414,7 @@ fixtures = [
             "<class 'ibis.expr.operations.window.WindowFunction'>",
             "sqlite": "SQRT() may not be used as a window function",
         },
-        tolerance={"postgres": 0.0000001, "duckdb": 0.0000001, "mysql": 0.00001},
+        tolerance=0.00001,
     ),
     Fixture(
         "numeric",
@@ -450,7 +428,7 @@ fixtures = [
             "<class 'ibis.expr.operations.window.WindowFunction'>",
             "sqlite": "_IBIS_VAR_SAMPLE() may not be used as a window function",
         },
-        tolerance={"postgres": 0.0000001, "duckdb": 0.0000001, "mysql": 0.00001},
+        tolerance=0.00001,
     ),
     Fixture(
         "numeric",
@@ -466,6 +444,6 @@ fixtures = [
             "mysql": "Compilation rule for 'Quantile' operation is not defined",
             "postgres": "OVER is not supported for ordered-set aggregate",
         },
-        tolerance={"duckdb": 0.5},
+        tolerance=0.5,
     ),
 ]
