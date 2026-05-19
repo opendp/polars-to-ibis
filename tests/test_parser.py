@@ -1,5 +1,6 @@
 import re
 from os import environ
+from typing import Any, Callable
 
 import ibis  # type: ignore
 import polars as pl
@@ -58,6 +59,20 @@ exporters = {  # type: ignore
 # Tests:
 
 
+def assert_error_or_none(
+    error_type: str, expected_error: str | None, func: Callable[[], Any]
+) -> Any:
+    if expected_error:
+        with pytest.raises(Exception, match=re.escape(expected_error)):
+            func()
+        pytest.xfail(f"expected error: {expected_error}")
+    try:
+        result = func()
+    except Exception as e:  # pragma: no cover
+        pytest.fail(f"Add {error_type}? {e}")
+    return result
+
+
 @pytest.mark.parametrize(
     "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
 )
@@ -77,24 +92,23 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
 
     # Set up target database, with data:
     input_df = pl.DataFrame(input_data[fixture.category])
-    expected_connection_error = fixture.connection_errors.get(backend)
-    if expected_connection_error:
-        with pytest.raises(Exception, match=re.escape(expected_connection_error)):
-            get_connection(input_df, table_name=table_name, backend=backend)
-        pytest.xfail(f"expected error: {expected_connection_error}")
-    connection = get_connection(input_df, table_name=table_name, backend=backend)
+    connection = assert_error_or_none(
+        "connection_error",
+        fixture.connection_errors.get(backend),
+        lambda: get_connection(input_df, table_name=table_name, backend=backend),
+    )
 
-    # If errors are expected, confirm that they are raised:
+    # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
     expected_backend_error = fixture.backend_errors.get(backend)
     expected_exporter_error = fixture.exporter_errors.get(f"{backend}+{exporter_key}")
-    if expected_error := expected_backend_error or expected_exporter_error:
-        with pytest.raises(Exception, match=re.escape(expected_error)):
-            export(connection, ibis_table)
-        pytest.xfail(f"expected error: {expected_error}")
+    actual_output = assert_error_or_none(
+        "backend_error or exporter_error",
+        expected_backend_error or expected_exporter_error,
+        lambda: export(connection, ibis_table),  # type: ignore
+    )
 
-    # Otherwise check for approximate or exact match:
-    actual_output = export(connection, ibis_table)  # type: ignore
+    # Check if result is what we expect:
     if tolerance := fixture.tolerance.get(backend):
         assert_approx_equal(
             actual_output,  # type: ignore

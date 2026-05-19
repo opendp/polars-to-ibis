@@ -88,6 +88,44 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
             raise NotImplementedError("Unsupported Cast")
 
 
+@value_handler("Agg")
+def handle_agg(payload: PolarsPlan):
+    match payload:
+        case {"Mean": {"Column": column}, **extras}:
+            assert_no_extras(extras)
+            return defer[column].mean()
+        case {"Median": {"Column": column}, **extras}:
+            assert_no_extras(extras)
+            return defer[column].median()
+        case {"Sum": {"Column": column}, **extras}:
+            assert_no_extras(extras)
+            return defer[column].sum()
+        case {"Min": {"input": {"Column": column}, "propagate_nans": False}, **extras}:
+            assert_no_extras(extras)
+            return defer[column].min()
+        case {"Max": {"input": {"Column": column}, "propagate_nans": False}, **extras}:
+            assert_no_extras(extras)
+            return defer[column].max()
+        case {"Var": [{"Column": column}, 1], **extras}:
+            assert_no_extras(extras)
+            return defer[column].var()
+        case {"Std": [{"Column": column}, 1], **extras}:
+            assert_no_extras(extras)
+            return defer[column].std()
+        case {
+            "Quantile": {
+                "expr": {"Column": column},
+                "method": "Nearest",
+                "quantile": {"Literal": {"Dyn": {"Float": quantile}}},
+            },
+            **extras,
+        }:
+            assert_no_extras(extras)
+            return defer[column].quantile(quantile)
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported Agg")
+
+
 @value_handler("Function")
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
