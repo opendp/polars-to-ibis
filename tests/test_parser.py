@@ -100,11 +100,12 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
-    expected_backend_error = fixture.backend_errors.get(backend)
-    expected_exporter_error = fixture.exporter_errors.get(f"{backend}+{exporter_key}")
+    expected_backend_error = fixture.backend_errors.get(
+        backend
+    ) or fixture.backend_errors.get(f"{backend}+{exporter_key}")
     actual_output = assert_error_or_none(
-        "backend_error or exporter_error",
-        expected_backend_error or expected_exporter_error,
+        "backend_error",
+        expected_backend_error,
         lambda: export(connection, ibis_table),  # type: ignore
     )
 

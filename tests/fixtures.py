@@ -41,8 +41,7 @@ class Fixture:
     expected_output: dict[str, list[float | str]]
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
-    exporter_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
-    tolerance: float = 0  # type: ignore
+    tolerance: float = 0
 
 
 fixtures = [
@@ -204,7 +203,7 @@ fixtures = [
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        exporter_errors={
+        backend_errors={
             # Providing a Polars type can avoid this error. See next fixture.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
