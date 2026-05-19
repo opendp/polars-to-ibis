@@ -361,4 +361,111 @@ fixtures = [
             "<class 'ibis.expr.operations.window.WindowFunction'>"
         },
     ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').median(),"
+        "    ints=pl.col('ints').median()"
+        ")",
+        {"floats": [0.25], "ints": [2.5]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>",
+            "sqlite": "Compilation rule for 'Median' operation is not defined",
+            "mysql": "Compilation rule for 'Median' operation is not defined",
+            "postgres": "OVER is not supported for ordered-set aggregate",
+        },
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').sum(),"
+        "    ints=pl.col('ints').sum()"
+        ")",
+        {"floats": [1.0], "ints": [10]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>"
+        },
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').min(),"
+        "    ints=pl.col('ints').min()"
+        ")",
+        {"floats": [0.1], "ints": [1]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>"
+        },
+        tolerance={
+            "postgres": 0.00000001,
+            "sqlite": 0.00000001,
+            "duckdb": 0.00000001,
+            "mysql": 0.0000001,
+        },
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').max(),"
+        "    ints=pl.col('ints').max()"
+        ")",
+        {"floats": [0.4], "ints": [4]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>"
+        },
+        tolerance={
+            "postgres": 0.00000001,
+            "sqlite": 0.00000001,
+            "duckdb": 0.00000001,
+            "mysql": 0.0000001,
+        },
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').std(),"
+        "    ints=pl.col('ints').std()"
+        ")",
+        {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>",
+            "sqlite": "SQRT() may not be used as a window function",
+        },
+        tolerance={"postgres": 0.0000001, "duckdb": 0.0000001, "mysql": 0.00001},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').var(),"
+        "    ints=pl.col('ints').var()"
+        ")",
+        {"floats": [5 / 3 / 100], "ints": [5 / 3]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>",
+            "sqlite": "_IBIS_VAR_SAMPLE() may not be used as a window function",
+        },
+        tolerance={"postgres": 0.0000001, "duckdb": 0.0000001, "mysql": 0.00001},
+    ),
+    Fixture(
+        "numeric",
+        "lf.select("
+        "    floats=pl.col('floats').quantile(0.5),"
+        "    ints=pl.col('ints').quantile(0.5)"
+        ")",
+        {"floats": [0.3], "ints": [3.0]},
+        backend_errors={
+            "polars": "No translation rule for "
+            "<class 'ibis.expr.operations.window.WindowFunction'>",
+            "sqlite": "Compilation rule for 'Quantile' operation is not defined",
+            "mysql": "Compilation rule for 'Quantile' operation is not defined",
+            "postgres": "OVER is not supported for ordered-set aggregate",
+        },
+        tolerance={"duckdb": 0.5},
+    ),
 ]

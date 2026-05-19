@@ -89,12 +89,11 @@ def parse_select_expr(
             case ("Column", _):
                 select_kwargs[payload] = payload
             case ("Alias", [expr, new_name]):
+                ibis_value = polars_expr_to_ibis_value(expr)
                 if split_tag_payload(expr)[0] == "Agg":
-                    agg_kwargs[new_name] = polars_expr_to_ibis_value(expr).cast(
-                        "float32"
-                    )
+                    agg_kwargs[new_name] = ibis_value.cast("float32")
                 else:
-                    select_kwargs[new_name] = polars_expr_to_ibis_value(expr)
+                    select_kwargs[new_name] = ibis_value
             case (
                 "Selector",
                 {
