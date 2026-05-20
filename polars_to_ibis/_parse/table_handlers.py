@@ -149,8 +149,7 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             if select_kwargs:
                 input_table = input_table.select(**select_kwargs)
             if agg_kwargs:
-                # TODO: kludge!
-                input_table = input_table.select(**agg_kwargs).head(1)
+                input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
             if drop_args:
                 input_table = input_table.drop(*drop_args)
             return input_table

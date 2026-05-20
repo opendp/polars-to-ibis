@@ -7,7 +7,7 @@ set -euo pipefail
 PG='postgresql@16'
 brew install $PG
 brew services stop $PG || echo "$PG not already running? Continue..."
-brew services start $PG
+brew services restart $PG
 PG_PRE=$( brew --prefix $PG )/bin
 
 for ((I = 0 ; I < 20 ; I++)); do
@@ -28,7 +28,7 @@ brew install pkg-config
 MY='mysql@8.4'
 brew install $MY
 brew services stop $MY || echo "$MY not already running? Continue..."
-brew services start $MY
+brew services restart $MY
 MY_PRE=$( brew --prefix $MY )/bin
 
 for ((I = 0 ; I < 20 ; I++))
