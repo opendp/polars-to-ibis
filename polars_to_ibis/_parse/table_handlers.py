@@ -143,15 +143,13 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
     match expr:
         case ["Len"]:
-            # TODO: This feels like a kludge:
-            return input_table.select(len=input_table.count()).head(1)
+            return input_table.aggregate(len=input_table.count())
         case _:
             select_kwargs, agg_kwargs, drop_args = parse_select_expr(payload["expr"])
             if select_kwargs:
                 input_table = input_table.select(**select_kwargs)
             if agg_kwargs:
-                # TODO: kludge!
-                input_table = input_table.select(**agg_kwargs).head(1)
+                input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
             if drop_args:
                 input_table = input_table.drop(*drop_args)
             return input_table
