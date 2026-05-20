@@ -353,7 +353,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case {"Agg": agg_payload, **extras_1}:
             assert_no_extras(extras_1)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
-        case "Len":
+        case "Len":  # pragma: no cover
             raise NotImplementedError("Unsupported Len")
             # see https://github.com/ibis-project/ibis/issues/11608
             # return input_table.group_by("keys").agg(new_len=input_table.count())
