@@ -99,10 +99,15 @@ def parse_select_expr(
                 {
                     "Difference": [
                         "Wildcard",
-                        {"ByName": {"names": names, "strict": True}},
-                    ]
+                        {
+                            "ByName": {"names": names, "strict": True, **extras_1},
+                            **extras_2,
+                        },
+                    ],
+                    **extras_3,
                 },
             ):
+                assert_no_extras({**extras_1, **extras_2, **extras_3})
                 drop_args += names
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported {tag}")
@@ -116,8 +121,8 @@ def parse_select_expr(
 @table_handler("DataFrameScan")
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
-        case {"df": _, "schema": {"fields": _}, **extras}:
-            assert_no_extras(extras)
+        case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return table
         case _:
             raise NotImplementedError("Unsupported Scan")
@@ -134,10 +139,11 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 "duplicate_check": True,
                 "run_parallel": True,
                 "should_broadcast": True,
+                **extras_1,
             },
-            **extras,
+            **extras_2,
         }:
-            assert_no_extras(extras)
+            assert_no_extras({**extras_1, **extras_2})
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Select: {payload}")
 
@@ -222,10 +228,12 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "exprs": [
                 {
                     "Cast": {
-                        "dtype": {"Literal": dtype_literal},
-                        "expr": {"Selector": "Wildcard"},
+                        "dtype": {"Literal": dtype_literal, **extras_1},
+                        "expr": {"Selector": "Wildcard", **extras_2},
                         "options": "Strict",
-                    }
+                        **extras_3,
+                    },
+                    **extras_4,
                 }
             ],
             "input": input,
@@ -233,10 +241,13 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 "duplicate_check": True,
                 "run_parallel": True,
                 "should_broadcast": True,
+                **extras_5,
             },
-            **extras,
+            **extras_6,
         }:
-            assert_no_extras(extras)
+            assert_no_extras(
+                {**extras_1, **extras_2, **extras_3, **extras_4, **extras_5, **extras_6}
+            )
             all_columns = input["MapFunction"]["input"]["DataFrameScan"]["schema"][
                 "fields"
             ].keys()
@@ -265,27 +276,46 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                                                     "UInt64",
                                                     "Float32",
                                                     "Float64",
-                                                ]
-                                            }
+                                                ],
+                                                **extras_1,
+                                            },
+                                            **extras_2,
                                         },
-                                        {"ByDType": "Decimal"},
-                                    ]
-                                }
+                                        {"ByDType": "Decimal", **extras_3},
+                                    ],
+                                    **extras_4,
+                                },
+                                **extras_5,
                             },
                             fill_expr,
                         ],
                         "function": function,
-                    }
+                        **extras_6,
+                    },
+                    **extras_7,
                 }
             ],
             "options": {
                 "run_parallel": True,
                 "duplicate_check": True,
                 "should_broadcast": True,
+                **extras_8,
             },
-            **extras,
+            **extras_9,
         }:
-            assert_no_extras(extras)
+            assert_no_extras(
+                {
+                    **extras_1,
+                    **extras_2,
+                    **extras_3,
+                    **extras_4,
+                    **extras_5,
+                    **extras_6,
+                    **extras_7,
+                    **extras_8,
+                    **extras_9,
+                }
+            )
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported HStack")
 
@@ -304,15 +334,15 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {
             "keys": keys,
-            "aggs": [{"Agg": agg_payload}],
+            "aggs": [{"Agg": agg_payload, **extras_1}],
             "maintain_order": False,
-            "options": {"dynamic": None, "rolling": None, "slice": None},
-            **extras,
+            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_2},
+            **extras_3,
         }:
-            if "apply" in extras and extras["apply"] is None:
+            if "apply" in extras_3 and extras_3["apply"] is None:
                 # Added in new polars versions.
-                del extras["apply"]  # pragma: no cover
-            assert_no_extras(extras)
+                del extras_3["apply"]  # pragma: no cover
+            assert_no_extras({**extras_1, **extras_2, **extras_3})
             group_by_keys = parse_sort_by_column(keys)
             grouped_table = input_table.group_by(group_by_keys)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
@@ -338,10 +368,10 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
-        case {"function": {"Stats": stats}, **extras}:
-            assert_no_extras(extras)
-        case {"function": {"FillNan": fill_nan_expr}, **extras}:
-            assert_no_extras(extras)
+        case {"function": {"Stats": stats, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
+        case {"function": {"FillNan": fill_nan_expr, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
             # No ibis "fill_nan()", so we do it by hand:
             return input_table.select(
@@ -374,8 +404,8 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case {"Var": {"ddof": 1}, **extras}:
-            assert_no_extras(extras)
+        case {"Var": {"ddof": 1, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).var().cast("float32")
@@ -383,8 +413,8 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case {"Std": {"ddof": 1}, **extras}:
-            assert_no_extras(extras)
+        case {"Std": {"ddof": 1, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).std().cast("float32")
@@ -394,12 +424,18 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
         case {
             "Quantile": {
-                "quantile": {"Literal": {"Dyn": {"Float": quantile}}},
+                "quantile": {
+                    "Literal": {"Dyn": {"Float": quantile, **extras_1}, **extras_2},
+                    **extras_3,
+                },
                 "method": "Nearest",
+                **extras_4,
             },
-            **extras,
+            **extras_5,
         }:
-            assert_no_extras(extras)
+            assert_no_extras(
+                {**extras_1, **extras_2, **extras_3, **extras_4, **extras_5}
+            )
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).quantile(quantile)
