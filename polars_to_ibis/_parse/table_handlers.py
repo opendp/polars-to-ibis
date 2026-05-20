@@ -346,12 +346,22 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy")
 
+    group_by_keys = parse_sort_by_column(keys)
+    grouped_table = input_table.group_by(group_by_keys)
+
     match agg:
         case {"Agg": agg_payload, **extras_1}:
             assert_no_extras(extras_1)
-            group_by_keys = parse_sort_by_column(keys)
-            grouped_table = input_table.group_by(group_by_keys)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
+        case "Len":
+            raise NotImplementedError("Unsupported Len")
+            # see https://github.com/ibis-project/ibis/issues/11608
+            # return input_table.group_by("keys").agg(new_len=input_table.count())
+            # return grouped_table.mutate(len=defer.count())
+            # return grouped_table.count()
+            # return grouped_table.agg(new_len=input_table.count())
+            # return input_table.group_by('keys').agg(len=defer.count())
+            # return grouped_table.aggregate(len=input_table.count()) # type: ignore
         case _:
             raise NotImplementedError("Unsupported GroupBy agg")
 
