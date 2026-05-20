@@ -53,14 +53,14 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 def handle_literal(payload: PolarsPlan):
     match payload:
         case (
-            {"Dyn": {"Int": value}, **extras}
-            | {"Dyn": {"Float": value}, **extras}
-            | {"Scalar": {"Boolean": value}, **extras}
+            {"Dyn": {"Int": value, **extras_1}, **extras_2}
+            | {"Dyn": {"Float": value, **extras_1}, **extras_2}
+            | {"Scalar": {"Boolean": value, **extras_1}, **extras_2}
         ):
-            assert_no_extras(extras)
+            assert_no_extras({**extras_1, **extras_2})
             return value
-        case {"Scalar": {"String": value}, **extras}:
-            assert_no_extras(extras)
+        case {"Scalar": {"String": value, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Literal")
@@ -75,12 +75,12 @@ def handle_column(payload: PolarsPlan):
 def handle_cast(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
-            "dtype": {"Literal": dtype_literal},
+            "dtype": {"Literal": dtype_literal, **extras_1},
             "expr": expr,
             "options": "Strict",
-            **extras,
+            **extras_2,
         }:
-            assert_no_extras(extras)
+            assert_no_extras({**extras_1, **extras_2})
             return ibis.literal(polars_expr_to_ibis_value(expr)).cast(  # type: ignore
                 dtype_literal.lower()
             )
@@ -91,36 +91,55 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
 @value_handler("Agg")
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {"Mean": {"Column": column}, **extras}:
-            assert_no_extras(extras)
+        case {"Mean": {"Column": column, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return defer[column].mean()
-        case {"Median": {"Column": column}, **extras}:
-            assert_no_extras(extras)
+        case {"Median": {"Column": column, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return defer[column].median()
-        case {"Sum": {"Column": column}, **extras}:
-            assert_no_extras(extras)
+        case {"Sum": {"Column": column, **extras_1}, **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return defer[column].sum()
-        case {"Min": {"input": {"Column": column}, "propagate_nans": False}, **extras}:
-            assert_no_extras(extras)
+        case {
+            "Min": {
+                "input": {"Column": column, **extras_1},
+                "propagate_nans": False,
+                **extras_2,
+            },
+            **extras_3,
+        }:
+            assert_no_extras({**extras_1, **extras_2, **extras_3})
             return defer[column].min()
-        case {"Max": {"input": {"Column": column}, "propagate_nans": False}, **extras}:
-            assert_no_extras(extras)
+        case {
+            "Max": {
+                "input": {"Column": column, **extras_1},
+                "propagate_nans": False,
+                **extras_2,
+            },
+            **extras_3,
+        }:
+            assert_no_extras({**extras_1, **extras_2, **extras_3})
             return defer[column].max()
-        case {"Var": [{"Column": column}, 1], **extras}:
-            assert_no_extras(extras)
+        case {"Var": [{"Column": column, **extras_1}, 1], **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return defer[column].var()
-        case {"Std": [{"Column": column}, 1], **extras}:
-            assert_no_extras(extras)
+        case {"Std": [{"Column": column, **extras_1}, 1], **extras_2}:
+            assert_no_extras({**extras_1, **extras_2})
             return defer[column].std()
         case {
             "Quantile": {
-                "expr": {"Column": column},
+                "expr": {"Column": column, **extras_1},
                 "method": "Nearest",
-                "quantile": {"Literal": {"Dyn": {"Float": quantile}}},
+                "quantile": {
+                    "Literal": {"Dyn": {"Float": quantile, **extras_2}, **extras_3},
+                    **extras_4,
+                },
             },
-            **extras,
+            **extras_5,
         }:
-            assert_no_extras(extras)
+            assert_no_extras(
+                {**extras_1, **extras_2, **extras_3, **extras_4, **extras_5}
+            )
             return defer[column].quantile(quantile)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Agg")
@@ -131,25 +150,32 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
             "input": [left_expr, right_expr],
-            "function": {"Pow": "Generic"},
-            **extras,
+            "function": {"Pow": "Generic", **extras_1},
+            **extras_2,
         }:
-            assert_no_extras(extras)
+            assert_no_extras({**extras_1, **extras_2})
             left = polars_expr_to_ibis_value(left_expr)
             right = polars_expr_to_ibis_value(right_expr)
             return left**right  # type: ignore
-        case {"input": [input_expr], "function": {"Boolean": "Not"}, **extras}:
-            assert_no_extras(extras)
+        case {
+            "input": [input_expr],
+            "function": {"Boolean": "Not", **extras_1},
+            **extras_2,
+        }:
+            assert_no_extras({**extras_1, **extras_2})
             return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {"input": [input_expr], "function": "Negate", **extras}:
             assert_no_extras(extras)
             return -polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {
             "input": [input_expr, lower_expr, upper_expr],
-            "function": {"Clip": {"has_min": True, "has_max": True}},
-            **extras,
+            "function": {
+                "Clip": {"has_min": True, "has_max": True, **extras_1},
+                **extras_2,
+            },
+            **extras_3,
         }:
-            assert_no_extras(extras)
+            assert_no_extras({**extras_1, **extras_2, **extras_3})
             lower = polars_expr_to_ibis_value(lower_expr)
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
