@@ -265,6 +265,11 @@ fixtures = [
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
     ),
+    # Fixture(
+    #     "grouping",
+    #     "lf.group_by('keys').agg(pl.len()).sort(by='keys')",
+    #     {'keys': [0, 1], 'len': [2, 2]},
+    # ),
     Fixture(
         "grouping",
         "lf.filter(pl.col('values') != 1)",

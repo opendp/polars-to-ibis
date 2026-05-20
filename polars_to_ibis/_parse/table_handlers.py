@@ -334,26 +334,32 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {
             "keys": keys,
-            "aggs": [{"Agg": agg_payload, **extras_1}],
+            "aggs": [agg],
             "maintain_order": False,
-            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_2},
-            **extras_3,
+            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
+            **extras_2,
         }:
-            if "apply" in extras_3 and extras_3["apply"] is None:
+            if "apply" in extras_2 and extras_2["apply"] is None:
                 # Added in new polars versions.
-                del extras_3["apply"]  # pragma: no cover
-            assert_no_extras({**extras_1, **extras_2, **extras_3})
+                del extras_2["apply"]  # pragma: no cover
+            assert_no_extras({**extras_1, **extras_2})
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported GroupBy")
+
+    match agg:
+        case {"Agg": agg_payload, **extras_1}:
+            assert_no_extras(extras_1)
             group_by_keys = parse_sort_by_column(keys)
             grouped_table = input_table.group_by(group_by_keys)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
-        case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported GroupBy")
+        case _:
+            raise NotImplementedError("Unsupported GroupBy agg")
 
     match agg_payload_payload:
         case {"Column": column, **extras}:
             assert_no_extras(extras)
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported GroupBy")
+            raise NotImplementedError("Unsupported GroupBy agg payload")
 
     match agg_payload_tag:
         case "Sum" | "Mean" | "Median" | "Max" | "Min":
@@ -361,7 +367,9 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 **{column: getattr(defer[column], agg_payload_tag.lower())()}
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported Agg: {agg_payload_tag}")
+            raise NotImplementedError(
+                f"Unsupported GroupBy agg stat: {agg_payload_tag}"
+            )
 
 
 @table_handler("MapFunction")
