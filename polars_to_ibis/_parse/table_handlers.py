@@ -143,8 +143,7 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
     match expr:
         case ["Len"]:
-            # TODO: This feels like a kludge:
-            return input_table.select(len=input_table.count()).head(1)
+            return input_table.aggregate(len=input_table.count())
         case _:
             select_kwargs, agg_kwargs, drop_args = parse_select_expr(payload["expr"])
             if select_kwargs:

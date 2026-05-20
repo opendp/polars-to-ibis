@@ -3,14 +3,6 @@
 set -euo pipefail
 
 
-
-# Databases not currently used downstream,
-# but continue to exercise the install process in CI
-# so it doesn't break again.
-
-# TODO: Restore mysql: https://github.com/opendp/polars-to-ibis/issues/34
-
-
 # PostgreSQL:
 PG='postgresql@16'
 brew install $PG
