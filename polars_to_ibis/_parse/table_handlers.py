@@ -198,11 +198,12 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 "multithreaded": True,
                 "maintain_order": False,
                 "limit": None,
+                **extras_1,
             },
             "slice": None,
-            **extras,
+            **extras_2,
         }:
-            assert_no_extras(extras)
+            assert_no_extras(extras_1, extras_2)
             if any(nulls_last):
                 raise NotImplementedError(f"Unsupported nulls_last: {nulls_last}")
             undirected_sort_keys = parse_sort_by_column(by_column)
