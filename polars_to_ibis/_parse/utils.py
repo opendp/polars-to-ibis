@@ -22,7 +22,11 @@ def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
             )  # pragma: no cover
 
 
-def assert_no_extras(extras: dict[str, Any]) -> None:
-    unexpected = extras.keys() - {"input"}
-    if unexpected:
-        raise NotImplementedError(f"Unsupported extra parameters: {unexpected}")
+def assert_no_extras(*extras_dicts: dict[str, Any]) -> None:
+    errors: list[str] = []
+    for i, extras in enumerate(extras_dicts):
+        unexpected = extras.keys() - {"input"}
+        if unexpected:
+            errors.append(f"{i+1}: {unexpected}")
+    if errors:
+        raise NotImplementedError(f"Unsupported extra parameters: {'; '.join(errors)}")
