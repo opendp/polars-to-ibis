@@ -19,6 +19,9 @@ input_data = {
         "keys": [0, 0, 1, 1],
         "values": [1, 2, 3, 4],
     },
+    "triangle": {
+        "keys": [1, 2, 2, 3, 3, 3, 4, 4, 4, 4],
+    },
     "select": {
         "ints": [1, 2, 3],
         "strs": ["A", "B", "C"],
@@ -265,6 +268,11 @@ fixtures = [
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
     ),
+    # Fixture(
+    #     "triangle",
+    #     "lf.group_by('keys').agg(pl.len()).sort(by='keys')",
+    #     {'keys': [1, 2, 3, 4], 'len': [1, 2, 3, 4]},
+    # ),
     Fixture(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
