@@ -107,7 +107,7 @@ def parse_select_expr(
                     **extras_3,
                 },
             ):
-                assert_no_extras({**extras_1, **extras_2, **extras_3})
+                assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported {tag}")
@@ -122,7 +122,7 @@ def parse_select_expr(
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
             return table
         case _:
             raise NotImplementedError("Unsupported Scan")
@@ -143,7 +143,7 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_2,
         }:
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Select: {payload}")
 
@@ -198,11 +198,12 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 "multithreaded": True,
                 "maintain_order": False,
                 "limit": None,
+                **extras_1,
             },
             "slice": None,
-            **extras,
+            **extras_2,
         }:
-            assert_no_extras(extras)
+            assert_no_extras(extras_1, extras_2)
             if any(nulls_last):
                 raise NotImplementedError(f"Unsupported nulls_last: {nulls_last}")
             undirected_sort_keys = parse_sort_by_column(by_column)
@@ -245,9 +246,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_6,
         }:
-            assert_no_extras(
-                {**extras_1, **extras_2, **extras_3, **extras_4, **extras_5, **extras_6}
-            )
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
             all_columns = input["MapFunction"]["input"]["DataFrameScan"]["schema"][
                 "fields"
             ].keys()
@@ -304,17 +303,15 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             **extras_9,
         }:
             assert_no_extras(
-                {
-                    **extras_1,
-                    **extras_2,
-                    **extras_3,
-                    **extras_4,
-                    **extras_5,
-                    **extras_6,
-                    **extras_7,
-                    **extras_8,
-                    **extras_9,
-                }
+                extras_1,
+                extras_2,
+                extras_3,
+                extras_4,
+                extras_5,
+                extras_6,
+                extras_7,
+                extras_8,
+                extras_9,
             )
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported HStack")
@@ -342,7 +339,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             if "apply" in extras_2 and extras_2["apply"] is None:
                 # Added in new polars versions.
                 del extras_2["apply"]  # pragma: no cover
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy")
 
@@ -387,9 +384,9 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
         case {"function": {"Stats": stats, **extras_1}, **extras_2}:
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
         case {"function": {"FillNan": fill_nan_expr, **extras_1}, **extras_2}:
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
             # No ibis "fill_nan()", so we do it by hand:
             return input_table.select(
@@ -423,7 +420,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
 
         case {"Var": {"ddof": 1, **extras_1}, **extras_2}:
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).var().cast("float32")
@@ -432,7 +429,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
 
         case {"Std": {"ddof": 1, **extras_1}, **extras_2}:
-            assert_no_extras({**extras_1, **extras_2})
+            assert_no_extras(extras_1, extras_2)
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).std().cast("float32")
@@ -451,9 +448,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_5,
         }:
-            assert_no_extras(
-                {**extras_1, **extras_2, **extras_3, **extras_4, **extras_5}
-            )
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).quantile(quantile)

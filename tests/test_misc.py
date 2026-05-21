@@ -59,14 +59,14 @@ def test_extras_in_case_statements():
             # remove white space:
             case_match = re.sub(r"\s+", "", case_match)
             # remove trailing commas:
-            case_match = re.sub(r",([\])}])", "\1", case_match)
+            case_match = re.sub(r",([\])}])", r"\1", case_match)
             # look just before closing braces:
             extra_matches = re.findall(r"(?:\w*)\}", case_match)
             for extra_match in extra_matches:
                 has_extras = extra_match.startswith("extras")
-                extra_matches_str = "\n".join(extra_matches)
-                assert has_extras, f'Add "**extras" to {case_match}\n\n'
-                f"All dicts should end with **extras:\n{extra_matches_str}"
+                assert (
+                    has_extras
+                ), f'Add "**extras" near "{extra_match}" in:\n{case_match}\n\n'
 
 
 # @pytest.mark.parametrize(
