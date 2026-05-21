@@ -23,6 +23,15 @@ def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
 
 
 def assert_no_extras(*extras_dicts: dict[str, Any]) -> None:
+    """
+    >>> extras_1 = {}
+    >>> extras_2 = {'surprise': True}
+    >>> extras_3 = {}
+    >>> assert_no_extras(extras_1, extras_2, extras_3)
+    Traceback (most recent call last):
+    ...
+    NotImplementedError: Unsupported extra parameters: 2: {'surprise'}
+    """
     errors: list[str] = []
     for i, extras in enumerate(extras_dicts):
         unexpected = extras.keys() - {"input"}

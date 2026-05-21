@@ -134,10 +134,11 @@ def handle_agg(payload: PolarsPlan):
                     "Literal": {"Dyn": {"Float": quantile, **extras_2}, **extras_3},
                     **extras_4,
                 },
+                **extras_5,
             },
-            **extras_5,
+            **extras_6,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
             return defer[column].quantile(quantile)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Agg")
