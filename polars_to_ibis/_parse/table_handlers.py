@@ -362,7 +362,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             # return grouped_table.agg(new_len=input_table.count())
             # return input_table.group_by('keys').agg(len=defer.count())
             # return grouped_table.aggregate(len=input_table.count()) # type: ignore
-        case _:
+        case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy agg")
 
     match agg_payload_payload:
