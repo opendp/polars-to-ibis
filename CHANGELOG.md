@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v0.0.0
+## v0.1.0
 
 Initial release. This provides one public function, `convert_polars_to_ibis`, which converts Polars LazyFrames to Ibis unbound tables.
 
