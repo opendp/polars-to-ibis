@@ -56,6 +56,7 @@ def handle_literal(payload: PolarsPlan):
             {"Dyn": {"Int": value, **extras_1}, **extras_2}
             | {"Dyn": {"Float": value, **extras_1}, **extras_2}
             | {"Scalar": {"Boolean": value, **extras_1}, **extras_2}
+            | {"Scalar": {"Float32": value, **extras_1}, **extras_2}
         ):
             assert_no_extras(extras_1, extras_2)
             return value
