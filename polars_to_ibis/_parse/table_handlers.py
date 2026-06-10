@@ -336,9 +336,11 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
             **extras_2,
         }:
+            # Ignore options added in later versions:
             if "apply" in extras_2 and extras_2["apply"] is None:
-                # Added in new polars versions.
                 del extras_2["apply"]  # pragma: no cover
+            if "predicates" in extras_2 and extras_2["predicates"] == []:
+                del extras_2["predicates"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy")
