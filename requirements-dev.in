@@ -25,5 +25,8 @@ pytest
 pyright
 pytest-cov
 
+# TODO: Eventually, remove this and make a light-weight plugin just for testing.
+opendp[polars]==0.15.1
+
 # Package dependencies:
 -r requirements.in
