@@ -20,6 +20,7 @@ jobs:
           # If this library has wider usage, we can add intermediate versions.
           - '1.32.0' # OpenDP v0.14.1
           - '1.36.1' # OpenDP v0.15.1
+          # NOTE: Update README ("Limitations") if there are changes.
 
     steps:
       - name: Checkout repository

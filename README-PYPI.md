@@ -59,7 +59,7 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 ## Limitations
 
 - Python versions: Tested against Python 3.10 and 3.13.
-- Polars versions: Tested against Polars 1.32.0, 1.33.0, and 1.34.0.
+- Polars versions: Tested against Polars 1.32.0, and 1.36.1.
 - Ibis version: Tested against Ibis 11.0.0.
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API, and even within that range there are often quirks in how a query is handled by a given database. The best summary is the collection of [test fixtures](https://github.com/opendp/polars-to-ibis/blob/main/tests/fixtures.py).
 
