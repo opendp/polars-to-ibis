@@ -179,7 +179,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             lower = polars_expr_to_ibis_value(lower_expr)
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
-        case {
+        case {  # pragma: no cover (polars<1.41.2)
             "input": [
                 input_expr,
                 _quantile_expr,  # noqa: F841 (unused)
