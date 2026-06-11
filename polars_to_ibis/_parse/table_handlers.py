@@ -122,6 +122,8 @@ def parse_select_expr(
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
+            if "metadata" in extras_1 and extras_1["metadata"] is None:
+                del extras_1["metadata"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
             return table
         case _:
