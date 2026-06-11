@@ -127,7 +127,7 @@ def handle_agg(payload: PolarsPlan):
         case {"Std": [{"Column": column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].std()
-        case {
+        case {  # pragma: no cover (polars>=1.41.2)
             "Quantile": {
                 "expr": {"Column": column, **extras_1},
                 "method": "Nearest",
@@ -179,6 +179,16 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             lower = polars_expr_to_ibis_value(lower_expr)
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
+        case {
+            "input": [
+                input_expr,
+                _quantile_expr,  # noqa: F841 (unused)
+            ],
+            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
+            **extras_3,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3)
+            raise NotImplementedError("Unsupported Function Quantile")
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Function")
 

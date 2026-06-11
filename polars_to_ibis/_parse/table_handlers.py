@@ -265,19 +265,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                                     "Union": [
                                         {
                                             "ByDType": {
-                                                "AnyOf": [
-                                                    "Int8",
-                                                    "Int16",
-                                                    "Int32",
-                                                    "Int64",
-                                                    "Int128",
-                                                    "UInt8",
-                                                    "UInt16",
-                                                    "UInt32",
-                                                    "UInt64",
-                                                    "Float32",
-                                                    "Float64",
-                                                ],
+                                                "AnyOf": _,  # Numeric types
                                                 **extras_1,
                                             },
                                             **extras_2,

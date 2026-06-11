@@ -88,7 +88,11 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
     lf = pl.LazyFrame(schema=lf.collect_schema())
     lf = eval(fixture.expression)
     table_name = "default_table"
-    ibis_table = convert_polars_to_ibis(lf, table_name)
+    ibis_table = assert_error_or_none(
+        "convert_error",
+        fixture.convert_errors.get(f"polars=={pl.__version__}"),
+        lambda: convert_polars_to_ibis(lf, table_name),
+    )
 
     # Set up target database, with data:
     input_df = pl.DataFrame(input_data[fixture.category])
@@ -100,7 +104,6 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
-    pl.__version__
     expected_backend_error = (
         fixture.backend_errors.get(backend)
         or fixture.backend_errors.get(f"{backend}+{exporter_key}")
