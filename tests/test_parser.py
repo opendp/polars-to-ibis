@@ -100,7 +100,6 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
-    pl.__version__
     expected_backend_error = (
         fixture.backend_errors.get(backend)
         or fixture.backend_errors.get(f"{backend}+{exporter_key}")
