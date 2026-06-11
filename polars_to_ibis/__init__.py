@@ -8,9 +8,8 @@ import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
-# Polars 1.32 is needed to support OpenDP 0.14.1:
 _min_polars = "1.32.0"
-_max_polars = "1.36.1"
+_max_polars = "1.41.2"
 
 __all__ = ["convert_polars_to_ibis"]
 

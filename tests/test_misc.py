@@ -7,6 +7,10 @@ import yaml
 
 import polars_to_ibis
 
+min_pl = polars_to_ibis._min_polars  # pyright: ignore[reportPrivateUsage]
+max_pl = polars_to_ibis._max_polars  # pyright: ignore[reportPrivateUsage]
+
+
 tests = {
     "flake8 linting": "flake8 . --count --show-source --statistics",
     "pyright type checking": "pyright",
@@ -30,23 +34,29 @@ def test_readme():
     assert short in long
 
 
-def test_polars_versions():
+def test_polars_versions_in_ci_matrix():
     test_workflow = yaml.safe_load(
         (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
     )
     ci_matrix = test_workflow["jobs"]["test"]["strategy"]["matrix"]["polars-version"]
-    from polars_to_ibis import _max_polars  # pyright: ignore[reportPrivateUsage]
-    from polars_to_ibis import _min_polars  # pyright: ignore[reportPrivateUsage]
 
-    assert _min_polars in ci_matrix
-    assert _max_polars in ci_matrix
+    assert min_pl in ci_matrix
+    assert max_pl in ci_matrix
 
+
+def test_polars_versions_in_requirements():
     requirements_in = (Path(__file__).parent.parent / "requirements.in").read_text()
     polars_requirement = [
         line for line in requirements_in.splitlines() if "polars" in line
     ]
     assert len(polars_requirement) == 1
-    assert f">={_min_polars}" in polars_requirement[0]
+    assert f">={min_pl}" in polars_requirement[0]
+
+
+def test_polars_versions_in_readme():
+    readme = (Path(__file__).parent.parent / "README.md").read_text()
+    assert min_pl in readme
+    assert max_pl in readme
 
 
 def test_extras_in_case_statements():
