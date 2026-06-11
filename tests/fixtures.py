@@ -203,7 +203,7 @@ fixtures = [
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            # Providing a Polars type can avoid this error. See next fixture.
+            # Providing a Polars type may avoid this error. See next fixture.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
@@ -213,6 +213,12 @@ fixtures = [
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
+        backend_errors={
+            # TODO: This starts failing in the lastest Polars releases,
+            # but that should be isolated from the backend.
+            "postgres+to_polars+polars==1.36.1": "Could not convert Decimal",
+            "postgres+to_pyarrow+polars==1.36.1": "Could not convert Decimal",
+        },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
