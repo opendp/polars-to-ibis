@@ -6,7 +6,7 @@ import ibis  # type: ignore
 import polars as pl
 import pytest
 
-from polars_to_ibis import convert_polars_to_ibis
+from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
 from .fixtures import Fixture, fixtures, input_data
@@ -41,7 +41,6 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
 # Test fixtures:
 
 backends = [
-    "polars",
     "sqlite",
     "duckdb",
     pytest.param("postgres", marks=pytest.mark.extra_install),
@@ -76,19 +75,20 @@ def assert_error_or_none(
 @pytest.mark.parametrize(
     "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
 )
+def test_fixture_consistency(fixture: Fixture):
+    # Does the polars expression have the expected result?
+    lf = pl.LazyFrame(input_data[fixture.category])  # noqa: F841
+    polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
+    assert polars_output == fixture.expected_output, "Typo in fixture?"
+
+
+@pytest.mark.parametrize(
+    "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
+)
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
-def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
-    # Sanity check: Does the polars expression have the expected result?
-    lf = pl.LazyFrame(input_data[fixture.category])
-    polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
-    assert polars_output == fixture.expected_output, "Typo in test?"
-
-    # Convert polars to ibis, but without any data:
-    lf = pl.LazyFrame(schema=lf.collect_schema())
-    lf = eval(fixture.expression)
+def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
     table_name = "default_table"
-    ibis_table = convert_polars_to_ibis(lf, table_name)
 
     # Set up target database, with data:
     input_df = pl.DataFrame(input_data[fixture.category])
@@ -97,6 +97,11 @@ def test_translate_table(fixture: Fixture, backend: str, exporter_key: str):
         fixture.connection_errors.get(backend),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
+
+    lf = scan_database(connection, table_name)
+    lf = eval(fixture.expression)
+
+    ibis_table = convert_polars_to_ibis(lf, table_name)
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore

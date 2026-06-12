@@ -41,6 +41,11 @@ def _check_version():
         )
 
 
+def scan_database(connection: Any, table_name: str):
+    ibis_schema = connection.get_schema(table_name)
+    return pl.LazyFrame(schema=ibis_schema.to_polars())
+
+
 def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     """
     Convert a Polars LazyFrame to an Ibis unbound table.
