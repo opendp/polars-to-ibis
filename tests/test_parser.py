@@ -25,16 +25,7 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
         else {}
     )
     connection = getattr(ibis, backend).connect(**kwargs)
-
-    # Ensure a clean slate.
-    # Each backend raises its own error type
-    # if the table doesn't already exist.
-    try:
-        connection.drop_table(table_name)
-    except BaseException:  # noqa: B036
-        pass
-    connection.create_table(table_name, df)
-
+    connection.create_table(table_name, df, overwrite=True)
     return connection
 
 
