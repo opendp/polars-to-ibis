@@ -77,8 +77,8 @@ def assert_error_or_none(
 )
 def test_fixture_consistency(fixture: Fixture):
     # Does the polars expression have the expected result?
-    lf = pl.LazyFrame(input_data[fixture.category])  # noqa: F841
-    polars_output = eval(fixture.expression).collect().to_dict(as_series=False)
+    globals = {"lf": pl.LazyFrame(input_data[fixture.category]), "pl": pl}
+    polars_output = eval(fixture.expression, globals).collect().to_dict(as_series=False)
     assert polars_output == fixture.expected_output, "Typo in fixture?"
 
 
@@ -98,8 +98,8 @@ def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
-    lf = scan_database(connection, table_name)
-    lf = eval(fixture.expression)
+    globals = {"lf": scan_database(connection, table_name), "pl": pl}
+    lf = eval(fixture.expression, globals)
 
     ibis_table = convert_polars_to_ibis(lf, table_name)
 
