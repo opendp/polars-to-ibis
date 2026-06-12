@@ -59,8 +59,8 @@ To read a database table's schema and create from that a LazyFrame, use `scan_da
 
 ```python
 >>> from polars_to_ibis import scan_database
->>> scan_database(connection, table_name).collect_schema()
-Schema([('ints', Int64)])
+>>> dict(scan_database(connection, table_name).collect_schema())
+{'ints': Int64}
 
 ```
 
