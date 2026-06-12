@@ -1,9 +1,8 @@
-import ibis
+from typing import Any
+
 import polars as pl
 
 
-def scan_database(ibis_backend_name: str, table_name: str, **connect_kwargs: str):
-    connection = getattr(ibis, ibis_backend_name).connect(**connect_kwargs)
-    schema = connection.get_schema(table_name)
-
-    pl.LazyFrame(schema=schema)
+def scan_database(connection: Any, table_name: str):
+    ibis_schema = connection.get_schema(table_name)
+    return pl.LazyFrame(schema=ibis_schema.to_polars())

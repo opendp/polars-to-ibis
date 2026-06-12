@@ -18,6 +18,4 @@ def test_scan_database():
     )
 
     connection.create_table(table_name, input_df, overwrite=True)  # type: ignore
-
-    # TODO: Fix ibis.common.exceptions.TableNotFound
-    scan_database(backend, table_name)
+    scan_database(connection, table_name)
