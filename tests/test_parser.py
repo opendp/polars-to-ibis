@@ -41,6 +41,8 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
 # Test fixtures:
 
 backends = [
+    # Polars could be tested, but there's an error getting the schema,
+    # and since it's not a realistic target for us, drop it from coverage.
     "sqlite",
     "duckdb",
     pytest.param("postgres", marks=pytest.mark.extra_install),
