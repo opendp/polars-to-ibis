@@ -6,8 +6,6 @@ Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/laz
 
 Polars and Ibis have similar APIs, but while Polars supports computation in-memory and on [Polars Cloud](https://cloud.pola.rs/), Ibis by itself does not handle computation: Instead it translates the dataframe expression into idiomatic SQL for a particular database.
 
-The public interface of `polars_to_ibis` consists of exactly one function: `convert_polars_to_ibis`.
-
 ## Example
 
 ```python
@@ -37,11 +35,7 @@ Now we'll actually connect to the database, and create a very small table:
 ```python
 >>> import ibis
 >>> connection = ibis.sqlite.connect()
->>> try:  # Ensure a clean slate.
-...     connection.drop_table(table_name)
-... except BaseException:
-...     pass
->>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}))
+>>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}), overwrite=True)
 DatabaseTable: readme_example
   ints int64
 
@@ -52,6 +46,17 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 ```python
 >>> connection.to_polars(ibis_unbound_table).to_dict(as_series=False)
 {'ints': [10]}
+
+```
+
+In this example we somewhat artificially started with a Polars LazyFrame.
+In the real world, you more likely would start with a database.
+To read a database table's schema and create from that a LazyFrame, use `scan_database`:
+
+```python
+>>> from polars_to_ibis import scan_database
+>>> dict(scan_database(connection, table_name).collect_schema())
+{'ints': Int64}
 
 ```
 
