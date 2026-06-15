@@ -6,10 +6,8 @@ import pytest
 import yaml
 
 import polars_to_ibis
-
-min_pl = polars_to_ibis._min_polars  # pyright: ignore[reportPrivateUsage]
-max_pl = polars_to_ibis._max_polars  # pyright: ignore[reportPrivateUsage]
-
+from polars_to_ibis import _MAX_POLARS as MAX_POLARS
+from polars_to_ibis import _MIN_POLARS as MIN_POLARS
 
 tests = {
     "flake8 linting": "flake8 . --count --show-source --statistics",
@@ -40,8 +38,8 @@ def test_polars_versions_in_ci_matrix():
     )
     ci_matrix = test_workflow["jobs"]["test"]["strategy"]["matrix"]["polars-version"]
 
-    assert min_pl in ci_matrix
-    assert max_pl in ci_matrix
+    assert MIN_POLARS in ci_matrix
+    assert MAX_POLARS in ci_matrix
 
 
 def test_polars_versions_in_requirements():
@@ -50,13 +48,13 @@ def test_polars_versions_in_requirements():
         line for line in requirements_in.splitlines() if "polars" in line
     ]
     assert len(polars_requirement) == 1
-    assert f">={min_pl}" in polars_requirement[0]
+    assert f">={MIN_POLARS}" in polars_requirement[0]
 
 
 def test_polars_versions_in_readme():
     readme = (Path(__file__).parent.parent / "README.md").read_text()
-    assert min_pl in readme
-    assert max_pl in readme
+    assert MIN_POLARS in readme
+    assert MAX_POLARS in readme
 
 
 def test_extras_in_case_statements():

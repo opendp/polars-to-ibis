@@ -8,8 +8,8 @@ import polars as pl
 
 __version__ = (Path(__file__).parent / "VERSION").read_text().strip()
 
-_min_polars = "1.32.0"
-_max_polars = "1.41.2"
+_MIN_POLARS: str = "1.32.0"
+_MAX_POLARS: str = "1.41.2"
 
 __all__ = ["convert_polars_to_ibis"]
 
@@ -29,13 +29,13 @@ def _warn(message: str):  # pragma: no cover
 
 def _check_version():
     if not (
-        _min_polars.split(".")  # Oldest supported
+        _MIN_POLARS.split(".")  # Oldest supported
         <= pl.__version__.split(".")  # Installed
-        <= _max_polars.split(".")  # Newest supported
+        <= _MAX_POLARS.split(".")  # Newest supported
     ):
         _warn(  # pragma: no cover
             f"Polars {pl.__version__} has not been tested! "
-            f"Use {_min_polars} to {_max_polars}, "
+            f"Use {_MIN_POLARS} to {_MAX_POLARS}, "
             f"or submit a PR to expand test coverage."
         )
 
