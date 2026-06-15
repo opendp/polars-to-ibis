@@ -29,6 +29,7 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
     # Ensure a clean slate.
     # Each backend raises its own error type
     # if the table doesn't already exist.
+    # NOTE: overwrite=True would be simpler, but not supported by MySQL.
     try:
         connection.drop_table(table_name)
     except BaseException:  # noqa: B036

@@ -37,11 +37,7 @@ Now we'll actually connect to the database, and create a very small table:
 ```python
 >>> import ibis
 >>> connection = ibis.sqlite.connect()
->>> try:  # Ensure a clean slate.
-...     connection.drop_table(table_name)
-... except BaseException:
-...     pass
->>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}))
+>>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}), overwrite=True)
 DatabaseTable: readme_example
   ints int64
 
