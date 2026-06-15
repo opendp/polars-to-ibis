@@ -56,6 +56,7 @@ def handle_literal(payload: PolarsPlan):
             {"Dyn": {"Int": value, **extras_1}, **extras_2}
             | {"Dyn": {"Float": value, **extras_1}, **extras_2}
             | {"Scalar": {"Boolean": value, **extras_1}, **extras_2}
+            | {"Scalar": {"Float32": value, **extras_1}, **extras_2}
         ):
             assert_no_extras(extras_1, extras_2)
             return value
@@ -73,7 +74,7 @@ def handle_column(payload: PolarsPlan):
 
 @value_handler("Cast")
 def handle_cast(payload: PolarsPlan) -> ir.Value:
-    match payload:
+    match payload:  # pragma: no cover (Only for polars==1.36.1)
         case {
             "dtype": {"Literal": dtype_literal, **extras_1},
             "expr": expr,
