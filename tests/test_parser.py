@@ -103,7 +103,11 @@ def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
     globals = {"lf": scan_database(connection, table_name), "pl": pl}
     lf = eval(fixture.expression, globals)
 
-    ibis_table = convert_polars_to_ibis(lf, table_name)
+    ibis_table = assert_error_or_none(
+        "convert_error",
+        fixture.convert_errors.get(f"polars=={pl.__version__}"),
+        lambda: convert_polars_to_ibis(lf, table_name),
+    )
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
