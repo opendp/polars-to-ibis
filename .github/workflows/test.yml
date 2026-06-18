@@ -17,9 +17,10 @@ jobs:
         polars-version:
           # See setup.cfg for the pinned Polars version:
           # https://github.com/opendp/opendp/blob/stable/python/setup.cfg
-          # If this library has wider usage, we can add intermediate versions.
+          # If this library has wider usage, we can test intermediate versions.
           - '1.32.0' # OpenDP v0.14.1
           - '1.36.1' # OpenDP v0.15.1
+          - '1.41.2' # Latest release
           # NOTE: Update README ("Limitations") if there are changes.
 
     steps:
