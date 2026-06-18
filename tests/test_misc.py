@@ -32,22 +32,22 @@ def test_readme():
     assert short in long
 
 
-test_workflow = yaml.safe_load(
-    (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
-)
-tested_polars_versions = test_workflow["jobs"]["test"]["strategy"]["matrix"][
-    "polars-version"
-]
+def get_tested_polars_versions():
+    test_workflow = yaml.safe_load(
+        (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
+    )
+    return test_workflow["jobs"]["test"]["strategy"]["matrix"]["polars-version"]
 
 
 def test_polars_versions_in_ci_matrix():
+    tested_polars_versions = get_tested_polars_versions()
     assert MIN_POLARS in tested_polars_versions
     assert MAX_POLARS in tested_polars_versions
 
 
 def test_polars_versions_in_readme():
     readme = (Path(__file__).parent.parent / "README.md").read_text()
-    assert all(v in readme for v in tested_polars_versions)
+    assert all(v in readme for v in get_tested_polars_versions())
 
 
 def test_polars_versions_in_requirements():
