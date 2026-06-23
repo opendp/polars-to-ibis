@@ -8,14 +8,40 @@ Polars and Ibis have similar APIs, but while Polars supports computation in-memo
 
 ## Example
 
+First, we'll write to the database so we have something to query.
+To connect to a particular database, you will need to install the appropriate extra.
+Taking SQLite as an example:
+
+```shell
+pip install 'ibis-framework[sqlite]'
+```
+
+Create the table for our example:
+
 ```python
+>>> import ibis
 >>> import polars as pl
->>> from polars_to_ibis import convert_polars_to_ibis
-
->>> polars_lazy = pl.LazyFrame(schema=pl.Schema({"ints": pl.Int32}))
->>> polars_query = polars_lazy.sum()
-
+>>> connection = ibis.sqlite.connect()
 >>> table_name = 'readme_example'
+>>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}), overwrite=True)
+DatabaseTable: readme_example
+  ints int64
+
+```
+
+Now we can demonstrate the typical use of polars-to-ibis.
+To read a database table's schema and create a LazyFrame, use `scan_database`:
+
+```python
+>>> from polars_to_ibis import scan_database, convert_polars_to_ibis
+>>> polars_lazy = scan_database(connection, table_name)
+
+```
+
+Next, make a query starting with that LazyFrame:
+
+```python
+>>> polars_query = polars_lazy.sum()
 >>> ibis_unbound_table = convert_polars_to_ibis(polars_query, table_name=table_name)
 >>> print(ibis_unbound_table.to_sql())
 SELECT
@@ -24,39 +50,11 @@ FROM "readme_example" AS "t0"
 
 ```
 
-This is generic SQL: To connect to a particular database, you will need to install the appropriate extra. Taking SQLite as an example:
-
-```shell
-pip install 'ibis-framework[sqlite]'
-```
-
-Now we'll actually connect to the database, and create a very small table:
-
-```python
->>> import ibis
->>> connection = ibis.sqlite.connect()
->>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}), overwrite=True)
-DatabaseTable: readme_example
-  ints int64
-
-```
-
 Finally, we can execute in SQLite the query which we constructed in Polars and translated to Ibis:
 
 ```python
 >>> connection.to_polars(ibis_unbound_table).to_dict(as_series=False)
 {'ints': [10]}
-
-```
-
-In this example we somewhat artificially started with a Polars LazyFrame.
-In the real world, you more likely would start with a database.
-To read a database table's schema and create from that a LazyFrame, use `scan_database`:
-
-```python
->>> from polars_to_ibis import scan_database
->>> dict(scan_database(connection, table_name).collect_schema())
-{'ints': Int64}
 
 ```
 
