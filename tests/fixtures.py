@@ -42,6 +42,7 @@ class Fixture:
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
+    convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: float = 0
@@ -203,7 +204,7 @@ fixtures = [
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            # Providing a Polars type can avoid this error. See next fixture.
+            # Providing a Polars type may avoid this error. See next fixture.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
@@ -213,6 +214,12 @@ fixtures = [
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
+        backend_errors={
+            "postgres+to_polars+polars==1.36.1": "Could not convert Decimal",
+            "postgres+to_pyarrow+polars==1.36.1": "Could not convert Decimal",
+            "postgres+to_polars+polars==1.41.2": "Could not convert Decimal",
+            "postgres+to_pyarrow+polars==1.41.2": "Could not convert Decimal",
+        },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     Fixture(
@@ -411,6 +418,7 @@ fixtures = [
         "    ints=pl.col('ints').quantile(0.5)"
         ")",
         {"floats": [0.3], "ints": [3.0]},
+        convert_errors={"polars==1.41.2": "Unsupported Function Quantile"},
         backend_errors={
             "sqlite": "Compilation rule for 'Quantile' operation is not defined",
             "mysql": "Compilation rule for 'Quantile' operation is not defined",

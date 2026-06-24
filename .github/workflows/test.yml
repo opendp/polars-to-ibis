@@ -15,12 +15,13 @@ jobs:
           - '3.10'
           - '3.13'
         polars-version:
-          # OpenDP v0.14.1 pins Polars to 1.32.0:
-          # https://github.com/opendp/opendp/blob/v0.14.1/python/setup.cfg#L52
-          - '1.32.0'
-          # Be prepared for the next Polars version:
-          - '1.33.0'
-          - '1.34.0'
+          # See setup.cfg for the pinned Polars version:
+          # https://github.com/opendp/opendp/blob/stable/python/setup.cfg
+          # If this library has wider usage, we can test intermediate versions.
+          - '1.32.0' # OpenDP v0.14.1
+          - '1.36.1' # OpenDP v0.15.1
+          - '1.41.2' # Latest release
+          # NOTE: Update README ("Limitations") if there are changes.
 
     steps:
       - name: Checkout repository

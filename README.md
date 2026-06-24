@@ -6,8 +6,6 @@ Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/laz
 
 Polars and Ibis have similar APIs, but while Polars supports computation in-memory and on [Polars Cloud](https://cloud.pola.rs/), Ibis by itself does not handle computation: Instead it translates the dataframe expression into idiomatic SQL for a particular database.
 
-The public interface of `polars_to_ibis` consists of exactly one function: `convert_polars_to_ibis`.
-
 ## Example
 
 ```python
@@ -37,11 +35,7 @@ Now we'll actually connect to the database, and create a very small table:
 ```python
 >>> import ibis
 >>> connection = ibis.sqlite.connect()
->>> try:  # Ensure a clean slate.
-...     connection.drop_table(table_name)
-... except BaseException:
-...     pass
->>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}))
+>>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}), overwrite=True)
 DatabaseTable: readme_example
   ints int64
 
@@ -55,11 +49,22 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 
 ```
 
+In this example we somewhat artificially started with a Polars LazyFrame.
+In the real world, you more likely would start with a database.
+To read a database table's schema and create from that a LazyFrame, use `scan_database`:
+
+```python
+>>> from polars_to_ibis import scan_database
+>>> dict(scan_database(connection, table_name).collect_schema())
+{'ints': Int64}
+
+```
+
 
 ## Limitations
 
 - Python versions: Tested against Python 3.10 and 3.13.
-- Polars versions: Tested against Polars 1.32.0, 1.33.0, and 1.34.0.
+- Polars versions: Tested against Polars 1.32.0, 1.36.1, and 1.41.2.
 - Ibis version: Tested against Ibis 11.0.0.
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API, and even within that range there are often quirks in how a query is handled by a given database. The best summary is the collection of [test fixtures](https://github.com/opendp/polars-to-ibis/blob/main/tests/fixtures.py).
 

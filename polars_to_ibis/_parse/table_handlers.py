@@ -122,6 +122,8 @@ def parse_select_expr(
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
+            if "metadata" in extras_1 and extras_1["metadata"] is None:
+                del extras_1["metadata"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
             return table
         case _:
@@ -263,19 +265,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                                     "Union": [
                                         {
                                             "ByDType": {
-                                                "AnyOf": [
-                                                    "Int8",
-                                                    "Int16",
-                                                    "Int32",
-                                                    "Int64",
-                                                    "Int128",
-                                                    "UInt8",
-                                                    "UInt16",
-                                                    "UInt32",
-                                                    "UInt64",
-                                                    "Float32",
-                                                    "Float64",
-                                                ],
+                                                "AnyOf": _,  # Numeric types
                                                 **extras_1,
                                             },
                                             **extras_2,
@@ -336,9 +326,11 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
             **extras_2,
         }:
+            # Ignore options added in later versions:
             if "apply" in extras_2 and extras_2["apply"] is None:
-                # Added in new polars versions.
                 del extras_2["apply"]  # pragma: no cover
+            if "predicates" in extras_2 and extras_2["predicates"] == []:
+                del extras_2["predicates"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy")
