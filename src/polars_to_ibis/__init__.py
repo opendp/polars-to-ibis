@@ -6,12 +6,12 @@ from typing import Any
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
-__version__ = version("dp_wizard")
+__version__ = version("polars_to_ibis")
 
 _MIN_POLARS: str = "1.32.0"
 _MAX_POLARS: str = "1.41.2"
 
-__all__ = ["convert_polars_to_ibis"]
+__all__ = ["convert_polars_to_ibis", "scan_database"]
 
 
 class PolarsToIbisWarning(Warning):
