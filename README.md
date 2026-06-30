@@ -13,7 +13,8 @@ To connect to a particular database, you will need to install the appropriate ex
 Taking SQLite as an example:
 
 ```shell
-pip install 'ibis-framework[sqlite]'
+$ pip install 'polars-to-ibis'
+$ pip install 'ibis-framework[sqlite]'
 ```
 
 Create the table for our example:
