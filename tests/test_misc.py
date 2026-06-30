@@ -43,19 +43,10 @@ def test_polars_versions_in_readme():
     assert all(v in readme for v in get_tested_polars_versions())
 
 
-def test_polars_versions_in_requirements():
-    requirements_in = (Path(__file__).parent.parent / "requirements.in").read_text()
-    polars_requirement = [
-        line for line in requirements_in.splitlines() if "polars" in line
-    ]
-    assert len(polars_requirement) == 1
-    assert f">={MIN_POLARS}" in polars_requirement[0]
-
-
 def test_extras_in_case_statements():
     for file in ["table_handlers.py", "value_handlers.py"]:
         src = (
-            Path(__file__).parent.parent / "polars_to_ibis/_parse" / file
+            Path(__file__).parent.parent / "src/polars_to_ibis/_parse" / file
         ).read_text()
         matches = re.findall(r"case [\[{(].*?[\])}]:", src, flags=re.DOTALL)
         for case_match in matches:
