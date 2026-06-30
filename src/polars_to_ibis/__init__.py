@@ -1,12 +1,12 @@
 """Convert Polars LazyFrames to Ibis unbound tables"""
 
-from pathlib import Path
+from importlib.metadata import version
 from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
-__version__ = (Path(__file__).parent / "VERSION").read_text().strip()
+__version__ = version("dp_wizard")
 
 _MIN_POLARS: str = "1.32.0"
 _MAX_POLARS: str = "1.41.2"
