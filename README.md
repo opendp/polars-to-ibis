@@ -93,6 +93,7 @@ $ git clone https://github.com/opendp/polars-to-ibis.git
 $ cd polars-to-ibis
 $ pip install uv
 $ uv sync
+$ uv run pre-commit install
 ```
 
 ### Testing
