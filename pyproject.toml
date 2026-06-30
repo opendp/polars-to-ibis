@@ -1,6 +1,6 @@
 [build-system]
-requires = ["flit_core >=3.11,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["uv_build>=0.11.24,<0.12"]
+build-backend = "uv_build"
 
 [project]
 name = "polars_to_ibis"
@@ -11,7 +11,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
 ]
-dynamic = ["version", "description"]
+version = "0.1.0"
+description = "Convert Polars LazyFrames to Ibis unbound tables"
 dependencies = [
     "ibis-framework",
     "polars>=1.32.0",
@@ -30,6 +31,14 @@ strict = ["**"]
 [tool.isort]
 profile = "black"
 skip_glob = [".venv*/*"]
+
+[tool.uv.workspace]
+members = [
+    ".",
+]
+
+[tool.uv.sources]
+polars-to-ibis = { workspace = true, editable = true }
 
 [dependency-groups]
 dev = [
