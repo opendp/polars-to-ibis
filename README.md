@@ -23,7 +23,11 @@ Create the table for our example:
 >>> import polars as pl
 >>> connection = ibis.sqlite.connect()
 >>> table_name = 'readme_example'
->>> connection.create_table(table_name, pl.DataFrame({"ints": [1, 2, 3, 4]}), overwrite=True)
+>>> connection.create_table(
+...      table_name,
+...      pl.DataFrame({"ints": [1, 2, 3, 4]}),
+...      overwrite=True,
+... )
 DatabaseTable: readme_example
   ints int64
 
@@ -42,7 +46,10 @@ Next, make a query starting with that LazyFrame:
 
 ```python
 >>> polars_query = polars_lazy.sum()
->>> ibis_unbound_table = convert_polars_to_ibis(polars_query, table_name=table_name)
+>>> ibis_unbound_table = convert_polars_to_ibis(
+...     polars_query,
+...     table_name=table_name,
+... )
 >>> print(ibis_unbound_table.to_sql())
 SELECT
   SUM("t0"."ints") AS "ints"
@@ -80,45 +87,37 @@ If you have an idea that goes beyond just expanding coverage, please file an iss
 
 ### Getting Started
 
-`polars_to_ibis` supports multiple Python versions, but for the fewest surprises during development, it makes sense to use the oldest supported version in a virtual environment. On MacOS:
 ```shell
 $ git clone https://github.com/opendp/polars-to-ibis.git
 $ cd polars-to-ibis
-$ brew install python@3.10
-$ python3.10 -m venv .venv
-$ source .venv/bin/activate
-$ pip install -r requirements-dev.txt
-$ pre-commit install
-$ pip install --editable .
+$ pip install uv
+$ uv sync
 ```
 
 ### Testing
 
-In-memory databases are handled by python and pip, but other databases covered by the tests will require installation and startup. (If you don't want to install extra database engines right now, they can be skipped during test runs: `pytest -k 'not extra_install'`)
+In-memory databases are handled by python and pip, but other databases covered by the tests will require installation and startup. (If you don't want to install extra database engines right now, they can be skipped during test runs: `uv run pytest -k 'not extra_install'`)
 
 On MacOS we recommend:
 ```shell
-$ scripts/setup.sh
+$ uv run scripts/setup.sh
 ```
 
 At this point, tests should pass, and code coverage should be complete (except blocks we explicitly ignore):
 ```shell
-$ scripts/ci.sh
+$ uv run scripts/ci.sh
 ```
 
 ### Release
 
-- Make sure you're up to date, and have the git-ignored credentials file `.pypirc`.
 - Make one last feature branch with the new version number in the name:
-  - Run `scripts/changelog.py` to update the `CHANGELOG.md`.
+  - Run `uv run scripts/changelog.py` to update the `CHANGELOG.md`.
   - Review the updates and pull a couple highlights to the top.
-  - Bump `polars_to_ibis/VERSION`, and add the new number at the top of the `CHANGELOG.md`.
+  - `uv version --bump minor`, and add the new number at the top of the `CHANGELOG.md`.
   - Commit your changes, make a PR, and merge this branch to main.
 - Update `main` with the latest changes: `git checkout main; git pull`
-- Publish: `flit publish --pypirc .pypirc`
+- With `~/.pypirc` in place, run `uvx uv-publish`.
 
 ### Conventions
 
 Branch names should be of the form `NNNN-short-description`, where `NNNN` is the issue number being addressed.
-
-Add developer-only dependencies in `requirements-dev.in`; Add other dependencies in `requirements.in`. After an edit to either file run `scripts/requirements.py` to install the new dependency locally and update `pyproject.toml`.
