@@ -25,13 +25,6 @@ def test_version():
     assert re.match(r"\d+\.\d+\.\d+", polars_to_ibis.__version__)
 
 
-def test_readme():
-    root = Path(__file__).parent.parent
-    long = (root / "README.md").read_text().strip()
-    short = (root / "README-PYPI.md").read_text().strip()
-    assert short in long
-
-
 def get_tested_polars_versions():
     test_workflow = yaml.safe_load(
         (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
@@ -84,7 +77,6 @@ def test_extras_in_case_statements():
 #     [
 #         "polars_to_ibis/__init__.py",
 #         "README.md",
-#         "README-PYPI.md",
 #         ".github/workflows/test.yml",
 #         "pyproject.toml",
 #     ],
