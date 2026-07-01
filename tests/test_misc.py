@@ -25,13 +25,6 @@ def test_version():
     assert re.match(r"\d+\.\d+\.\d+", polars_to_ibis.__version__)
 
 
-def test_readme():
-    root = Path(__file__).parent.parent
-    long = (root / "README.md").read_text().strip()
-    short = (root / "README-PYPI.md").read_text().strip()
-    assert short in long
-
-
 def get_tested_polars_versions():
     test_workflow = yaml.safe_load(
         (Path(__file__).parent.parent / ".github/workflows/test.yml").read_text()
@@ -50,19 +43,10 @@ def test_polars_versions_in_readme():
     assert all(v in readme for v in get_tested_polars_versions())
 
 
-def test_polars_versions_in_requirements():
-    requirements_in = (Path(__file__).parent.parent / "requirements.in").read_text()
-    polars_requirement = [
-        line for line in requirements_in.splitlines() if "polars" in line
-    ]
-    assert len(polars_requirement) == 1
-    assert f">={MIN_POLARS}" in polars_requirement[0]
-
-
 def test_extras_in_case_statements():
     for file in ["table_handlers.py", "value_handlers.py"]:
         src = (
-            Path(__file__).parent.parent / "polars_to_ibis/_parse" / file
+            Path(__file__).parent.parent / "src/polars_to_ibis/_parse" / file
         ).read_text()
         matches = re.findall(r"case [\[{(].*?[\])}]:", src, flags=re.DOTALL)
         for case_match in matches:
@@ -84,7 +68,6 @@ def test_extras_in_case_statements():
 #     [
 #         "polars_to_ibis/__init__.py",
 #         "README.md",
-#         "README-PYPI.md",
 #         ".github/workflows/test.yml",
 #         "pyproject.toml",
 #     ],

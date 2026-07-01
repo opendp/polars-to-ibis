@@ -1,17 +1,18 @@
 [build-system]
-requires = ["flit_core >=3.11,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["uv_build>=0.11.24,<0.12"]
+build-backend = "uv_build"
 
 [project]
 name = "polars_to_ibis"
 authors = [{name = "The OpenDP Project", email = "contact@opendp.org"}]
-readme = "README-PYPI.md"
+readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
 ]
-dynamic = ["version", "description"]
+version = "0.1.0"
+description = "Convert Polars LazyFrames to Ibis unbound tables"
 dependencies = [
     "ibis-framework",
     "polars>=1.32.0",
@@ -30,3 +31,31 @@ strict = ["**"]
 [tool.isort]
 profile = "black"
 skip_glob = [".venv*/*"]
+
+[tool.uv.workspace]
+members = [
+    ".",
+]
+
+[tool.uv.sources]
+polars-to-ibis = { workspace = true, editable = true }
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1",
+    "flake8>=7.3.0",
+    "flake8-bugbear>=25.11.29",
+    "flit>=3.12.0",
+    "ibis-framework[duckdb,mysql,polars,postgres,sqlite]>=12.0.0",
+    "isort>=8.0.1",
+    "pip==25.3",
+    "pip-tools==7.5.3",
+    "polars>=1.32.0",
+    "pre-commit>=4.6.0",
+    "psycopg-binary>=3.3.4",
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pyyaml>=6.0.3",
+    "tomlkit>=0.15.0",
+]

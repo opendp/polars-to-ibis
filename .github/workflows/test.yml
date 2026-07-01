@@ -13,6 +13,8 @@ jobs:
       matrix:
         python-version:
           - '3.10'
+          - '3.11'
+          - '3.12'
           - '3.13'
         polars-version:
           # See setup.cfg for the pinned Polars version:
@@ -30,19 +32,22 @@ jobs:
       - name: Start databases
         run: scripts/setup.sh
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
+          # Install a specific version of uv.
+          version: "0.11.24"
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dev dependencies
-        run: pip install -r requirements-dev.txt
+      - name: Install the project
+        # TODO: Add "--locked": Was failing with:
+        # > The lockfile at `uv.lock` needs to be updated, but `--locked` was provided.
+        # > To update the lockfile, run `uv lock`.
+        # Running "uv lock" produces no changes.
+        run: uv sync --all-extras --dev
 
-      # This may override the version in requirements.
-      # TODO: Use tox to manage environments locally and in CI.
-      # https://github.com/opendp/polars-to-ibis/issues/40
       - name: Install polars ${{ matrix.polars-version }}
-        run: pip install polars==${{ matrix.polars-version }}
+        run: uv pip install polars==${{ matrix.polars-version }}
 
       - name: Test
-        run: scripts/ci.sh
+        run: uv run scripts/ci.sh

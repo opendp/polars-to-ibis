@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 import re
 import subprocess
+from importlib.metadata import version
 from pathlib import Path
 
 root_path = Path(__file__).parent.parent
-
-
-def get_prev_version():
-    """
-    >>> len(get_prev_version().splitlines())
-    1
-    """
-    return (root_path / "polars_to_ibis" / "VERSION").read_text().strip()
 
 
 def log_until(match):  # pragma: no cover
@@ -52,7 +45,7 @@ def main():  # pragma: no cover
     old_changelog_lines = (root_path / "CHANGELOG.md").read_text().splitlines()
     new_changelog_lines = []
 
-    prev_version = get_prev_version()
+    prev_version = version("polars_to_ibis")
     log_lines = log_until(prev_version)
     changelog_update = parse_log(log_lines)
 
