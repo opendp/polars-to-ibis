@@ -7,6 +7,68 @@ import opendp.prelude as dp
 import polars as pl
 
 
+def test_split_low_level():
+    polars_plan = {
+        "Select": {
+            "expr": [
+                {
+                    "Function": {
+                        "function": {
+                            "FfiPlugin": {
+                                "flags": {
+                                    "check_lengths": True,
+                                    "flags": "RETURNS_SCALAR",
+                                },
+                                "kwargs": [],
+                                "lib": "lib/python3.10/site-packages/opendp/lib/opendp.abi3.so",
+                                "symbol": "dp_sum",
+                            }
+                        },
+                        "input": [
+                            {
+                                "Function": {
+                                    "function": "FillNull",
+                                    "input": [
+                                        {
+                                            "Cast": {
+                                                "dtype": {"Literal": "Int64"},
+                                                "expr": {"Column": "HWUSUAL"},
+                                                "options": "Strict",
+                                            }
+                                        },
+                                        {"Literal": {"Dyn": {"Int": 35}}},
+                                    ],
+                                }
+                            },
+                            {"Literal": {"Dyn": {"Int": 0}}},
+                            {"Literal": {"Dyn": {"Int": 80}}},
+                            {"Literal": {"Scalar": {"Null": "Null"}}},
+                        ],
+                    }
+                }
+            ],
+            "input": {
+                "Filter": {
+                    "input": {"DataFrameScan": "..."},
+                    "predicate": {
+                        "BinaryExpr": {
+                            "left": {"Column": "HWUSUAL"},
+                            "op": "NotEq",
+                            "right": {"Literal": {"Dyn": {"Float": 99.0}}},
+                        }
+                    },
+                }
+            },
+            "options": {
+                "duplicate_check": True,
+                "run_parallel": True,
+                "should_broadcast": True,
+            },
+        }
+    }
+    assert polars_plan  # TODO: test splitting
+
+
 def test_split_lazyframe():
     # Example copied from opendp:
     dp.enable_features("contrib")
@@ -28,11 +90,12 @@ def test_split_lazyframe():
         # compute the DP sum
         .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
     )
+    # More OpenDP serialization should help here.
+    # See https://github.com/opendp/polars-to-ibis/pull/93
     with NamedTemporaryFile(mode="w") as temp:
         # TODO: Don't write to filesystem.
         query_work_hours._ldf.serialize_json(temp.name)
         polars_plan = json.loads(Path(temp.name).read_text())
-        # breakpoint()
 
     from polars_to_ibis import _get_input_schema
 
