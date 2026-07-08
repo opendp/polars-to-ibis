@@ -9,7 +9,6 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
 ]
 version = "0.1.0"
 description = "Convert Polars LazyFrames to Ibis unbound tables"
@@ -17,12 +16,13 @@ dependencies = [
     "ibis-framework",
     "polars>=1.32.0",
 ]
+requires-python = ">=3.10"
 
 [project.urls]
 Home = "https://github.com/opendp/polars-to-ibis"
 
 [options]
-python_requires = ">=3.10"
+python_requires = ">=3.10" # TODO: Is this a mistake? What uses it?
 
 [tool.pyright]
 include = ["polars_to_ibis"]
