@@ -1,4 +1,0 @@
-# After making changes here, run scripts/requirements.py.
-
-polars>=1.32.0
-ibis-framework
