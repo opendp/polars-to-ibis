@@ -3,6 +3,7 @@ This is a private module: The API may change.
 """
 
 from collections.abc import Callable
+from pprint import pformat
 from typing import Any
 
 
@@ -26,3 +27,8 @@ def replace(
                 source[k] = function(v)
             elif isinstance(source[k], (dict, list)):
                 replace(source[k], key, function)
+
+
+def abbreviate(source: dict[str, Any]) -> str:
+    replace(source, "DataFrameScan", lambda _: "...")
+    return pformat(source)

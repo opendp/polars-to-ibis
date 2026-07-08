@@ -32,6 +32,7 @@ def test_split_lazyframe():
         # TODO: Don't write to filesystem.
         query_work_hours._ldf.serialize_json(temp.name)
         polars_plan = json.loads(Path(temp.name).read_text())
+        # breakpoint()
 
     from polars_to_ibis import _get_input_schema
 

@@ -2,14 +2,13 @@
 This is a private module: The API may change.
 """
 
-from pprint import pformat
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import replace
+from .._utils import abbreviate
 from .utils import assert_no_extras, split_tag_payload
 
 PolarsPlan = dict[str, Any]
@@ -29,8 +28,7 @@ def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> ir.Value:
     try:
         return func(payload)
     except NotImplementedError as e:  # pragma: no cover
-        replace(polars_expr, "DataFrameScan", lambda _: "...")
-        raise NotImplementedError(f"{e}:\n{pformat(polars_expr)}")
+        raise NotImplementedError(f"{e}:\n{abbreviate(polars_expr)}")
 
 
 # Registry:
