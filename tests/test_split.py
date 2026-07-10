@@ -7,66 +7,14 @@ import opendp.prelude as dp
 import polars as pl
 
 
-def test_split_low_level():
-    polars_plan = {
-        "Select": {
-            "expr": [
-                {
-                    "Function": {
-                        "function": {
-                            "FfiPlugin": {
-                                "flags": {
-                                    "check_lengths": True,
-                                    "flags": "RETURNS_SCALAR",
-                                },
-                                "kwargs": [],
-                                "lib": "lib/python3.10/site-packages/opendp/lib/opendp.abi3.so",
-                                "symbol": "dp_sum",
-                            }
-                        },
-                        "input": [
-                            {
-                                "Function": {
-                                    "function": "FillNull",
-                                    "input": [
-                                        {
-                                            "Cast": {
-                                                "dtype": {"Literal": "Int64"},
-                                                "expr": {"Column": "HWUSUAL"},
-                                                "options": "Strict",
-                                            }
-                                        },
-                                        {"Literal": {"Dyn": {"Int": 35}}},
-                                    ],
-                                }
-                            },
-                            {"Literal": {"Dyn": {"Int": 0}}},
-                            {"Literal": {"Dyn": {"Int": 80}}},
-                            {"Literal": {"Scalar": {"Null": "Null"}}},
-                        ],
-                    }
-                }
-            ],
-            "input": {
-                "Filter": {
-                    "input": {"DataFrameScan": "..."},
-                    "predicate": {
-                        "BinaryExpr": {
-                            "left": {"Column": "HWUSUAL"},
-                            "op": "NotEq",
-                            "right": {"Literal": {"Dyn": {"Float": 99.0}}},
-                        }
-                    },
-                }
-            },
-            "options": {
-                "duplicate_check": True,
-                "run_parallel": True,
-                "should_broadcast": True,
-            },
-        }
-    }
-    assert polars_plan  # TODO: test splitting
+def split(polars_plan):
+    # TODO: Generalize
+    # TODO: Don't modify original
+    # TODO: Return parameters for the plugin as well
+    # TODO: Move into public interface
+    polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
+        "Function"
+    ]["input"][0]["Function"]
 
 
 def test_split_lazyframe():
@@ -97,6 +45,8 @@ def test_split_lazyframe():
         query_work_hours._ldf.serialize_json(temp.name)
         polars_plan = json.loads(Path(temp.name).read_text())
 
+    split(polars_plan)
+
     from polars_to_ibis import _get_input_schema
 
     input_schema = _get_input_schema(polars_plan)
@@ -106,8 +56,19 @@ def test_split_lazyframe():
     from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
     updated_table = update_polars_to_ibis(
-        polars_plan=polars_plan["Select"]["input"],
+        polars_plan=polars_plan,
         table=ibis_table,
     )
 
-    assert "UnboundTable" in str(updated_table)
+    def norm_sql(sql: str):
+        import re
+
+        return re.sub(r"\s+", " ", sql).replace('"', "").strip()
+
+    sql = norm_sql(updated_table.to_sql())
+    expected_sql = norm_sql("""
+        SELECT COALESCE(CAST(t0.HWUSUAL AS BIGINT), 35) AS HWUSUAL
+        FROM placeholder AS t0
+        WHERE t0.HWUSUAL <> 99.0
+    """)
+    assert sql == expected_sql

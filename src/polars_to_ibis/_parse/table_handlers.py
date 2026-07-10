@@ -107,8 +107,39 @@ def parse_select_expr(
             ):
                 assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
+            case (
+                "Function",
+                {"function": "FillNull", "input": [{"Column": name}, expr]},
+            ):
+                select_kwargs[name] = defer[name].fill_null(
+                    polars_expr_to_ibis_value(expr)
+                )
+            case (
+                "Function",
+                {
+                    "function": "FillNull",
+                    "input": [
+                        {
+                            "Cast": {
+                                "dtype": {"Literal": dtype_literal},
+                                # TODO: We need the column name at the top-level,
+                                # but it could be buried in an expression.
+                                # How can it be pulled out without special case expressions?
+                                "expr": {"Column": name},
+                                "options": "Strict",
+                            }
+                        },
+                        fill_expr,
+                    ],
+                },
+            ):
+                select_kwargs[name] = (
+                    defer[name]
+                    .cast(dtype_literal.lower())
+                    .fill_null(polars_expr_to_ibis_value(fill_expr))
+                )
             case _:  # pragma: no cover
-                raise NotImplementedError(f"Unsupported {tag}")
+                raise NotImplementedError(f"Unsupported select expr {tag}")
     return (select_kwargs, agg_kwargs, drop_args)
 
 

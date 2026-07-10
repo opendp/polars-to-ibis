@@ -348,6 +348,11 @@ fixtures = [
         },
     ),
     Fixture(
+        "nan_null_inf",
+        "lf.select(pl.col.null.fill_null(999))",
+        {"null": [0, 999]},
+    ),
+    Fixture(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').mean(),"

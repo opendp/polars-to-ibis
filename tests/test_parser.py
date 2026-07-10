@@ -71,7 +71,7 @@ def assert_error_or_none(
     try:
         result = func()
     except Exception as e:  # pragma: no cover
-        pytest.fail(f"Add {error_type}? {e}")
+        pytest.fail(f"(If this is expected, add {error_type} to fixture.) {e}")
     return result
 
 
