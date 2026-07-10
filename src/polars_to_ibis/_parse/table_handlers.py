@@ -109,8 +109,13 @@ def parse_select_expr(
                 drop_args += names
             case (
                 "Function",
-                {"function": "FillNull", "input": [{"Column": name}, expr]},
+                {
+                    "function": "FillNull",
+                    "input": [{"Column": name, **extras_1}, expr],
+                    **extras_2,
+                },
             ):
+                assert_no_extras(extras_1, extras_2)
                 select_kwargs[name] = defer[name].fill_null(
                     polars_expr_to_ibis_value(expr)
                 )
@@ -121,18 +126,22 @@ def parse_select_expr(
                     "input": [
                         {
                             "Cast": {
-                                "dtype": {"Literal": dtype_literal},
+                                "dtype": {"Literal": dtype_literal, **extras_1},
                                 # TODO: We need the column name at the top-level,
                                 # but it could be buried in an expression.
-                                # How can it be pulled out without special case expressions?
-                                "expr": {"Column": name},
+                                # How to extract w/o special case expressions?
+                                "expr": {"Column": name, **extras_2},
                                 "options": "Strict",
-                            }
+                                **extras_3,
+                            },
+                            **extras_4,
                         },
                         fill_expr,
                     ],
+                    **extras_5,
                 },
             ):
+                assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
                 select_kwargs[name] = (
                     defer[name]
                     .cast(dtype_literal.lower())
