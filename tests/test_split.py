@@ -11,7 +11,7 @@ def split(polars_plan):
     # TODO: Generalize
     # TODO: Don't modify original
     # TODO: Return parameters for the plugin as well
-    # TODO: Move into public interface
+    # TODO: Move into public API
     polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
         "Function"
     ]["input"][0]["Function"]
@@ -32,6 +32,9 @@ def test_split_lazyframe():
             dp.polars.Margin(max_length=150_000 * 36),
         ],
     )
+    # TODO: Fix upstream docs, and then fix this;
+    # Any nulls would be dropped by the filter, leaving nothing to impute.
+    # https://github.com/opendp/opendp/issues/2788
     query_work_hours = (
         # 99 represents "Not applicable"
         context.query().filter(pl.col("HWUSUAL") != 99.0)

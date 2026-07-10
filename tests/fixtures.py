@@ -351,6 +351,13 @@ fixtures = [
         "nan_null_inf",
         "lf.select(pl.col.null.fill_null(999))",
         {"null": [0, 999]},
+        connection_errors={"mysql": "inf can not be used with MySQL"},
+    ),
+    Fixture(
+        "nan_null_inf",
+        "lf.filter(pl.col('null') != 0)",
+        {"inf": [], "nan": [], "null": []},
+        connection_errors={"mysql": "inf can not be used with MySQL"},
     ),
     Fixture(
         "numeric",

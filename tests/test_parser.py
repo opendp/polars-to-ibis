@@ -191,7 +191,7 @@ def assert_approx_equal(
                 }
             },
             # Check that the input data structure is shown in error message.
-            "Unsupported Agg:\n{'Select'",
+            "Unsupported select expr Agg:\n{'Select'",
         ),
     ],
     ids=lambda plan: str(plan),
