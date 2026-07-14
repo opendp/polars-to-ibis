@@ -136,7 +136,7 @@ def split_polars_on_ffi(
     query: pl.LazyFrame, table_name: str
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """
-    Split a polars LazyFrame on an FFI plugin,
+    Split a Polars LazyFrame on an FFI plugin,
     returning an Ibis unbound table ready to be executed on a SQL database,
     and a dict of parameters for the plugin.
     """
@@ -145,12 +145,9 @@ def split_polars_on_ffi(
 
     # TODO: Generalize
     polars_plan = json.loads(query.serialize(format="json"))
-    plugin_parameters = polars_plan["Select"]["expr"][0]["Function"]["function"][
-        "FfiPlugin"
-    ]
-    polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
-        "Function"
-    ]["input"][0]["Function"]
+    func_node = polars_plan["Select"]["expr"][0]["Function"]
+    plugin_parameters = func_node["function"]["FfiPlugin"]
+    polars_plan["Select"]["expr"][0]["Function"] = func_node["input"][0]["Function"]
 
     input_schema = _get_input_schema(polars_plan)
 
