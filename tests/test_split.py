@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -9,12 +10,13 @@ import polars as pl
 
 def split(polars_plan):
     # TODO: Generalize
-    # TODO: Don't modify original
     # TODO: Return parameters for the plugin as well
     # TODO: Move into public API
-    polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
+    plan_copy = deepcopy(polars_plan)
+    plan_copy["Select"]["expr"][0]["Function"] = plan_copy["Select"]["expr"][0][
         "Function"
     ]["input"][0]["Function"]
+    return plan_copy
 
 
 def test_split_lazyframe():
@@ -44,18 +46,18 @@ def test_split_lazyframe():
 
     polars_plan = json.loads(query_work_hours.serialize(format="json"))
 
-    split(polars_plan)
+    db_plan = split(polars_plan)
 
     from polars_to_ibis import _get_input_schema
 
-    input_schema = _get_input_schema(polars_plan)
+    input_schema = _get_input_schema(db_plan)
     table_name = "placeholder"
     ibis_table = ibis.table(input_schema, name=table_name)  # type: ignore
 
     from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
     updated_table = update_polars_to_ibis(
-        polars_plan=polars_plan,
+        polars_plan=db_plan,
         table=ibis_table,
     )
 
