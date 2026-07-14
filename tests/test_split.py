@@ -10,20 +10,31 @@ import opendp.prelude as dp
 import polars as pl
 
 
-def split(polars_plan) -> tuple[dict[str, Any], dict[str, Any]]:
+def split(query) -> tuple[dict[str, Any], dict[str, Any]]:
     # TODO: Generalize
     # TODO: Move into public API
-    plan_copy = deepcopy(polars_plan)
-    plugin_parameters = plan_copy["Select"]["expr"][0]["Function"]["function"][
+
+    polars_plan = json.loads(query.serialize(format="json"))
+    plugin_parameters = polars_plan["Select"]["expr"][0]["Function"]["function"][
         "FfiPlugin"
     ]
-    plan_copy["Select"]["expr"][0]["Function"] = plan_copy["Select"]["expr"][0][
+    polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
         "Function"
     ]["input"][0]["Function"]
-    return plan_copy, plugin_parameters
+    return polars_plan, plugin_parameters
+
+
+def norm_sql(sql: str):
+    import re
+
+    return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
 def test_split_lazyframe():
+    # TODO: If end-users need these, add to public API.
+    from polars_to_ibis import _get_input_schema
+    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
+
     # Example copied from opendp:
     dp.enable_features("contrib")
     context = dp.Context.compositor(
@@ -48,12 +59,9 @@ def test_split_lazyframe():
         .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
     )
 
-    polars_plan = json.loads(query_work_hours.serialize(format="json"))
-
-    db_plan, plugin_parameters = split(polars_plan)
+    db_plan, plugin_parameters = split(query_work_hours)
 
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
-
     assert plugin_parameters == {
         "flags": {"check_lengths": True, "flags": "RETURNS_SCALAR"},
         "kwargs": [],
@@ -61,28 +69,18 @@ def test_split_lazyframe():
         "symbol": "dp_sum",
     }
 
-    from polars_to_ibis import _get_input_schema
-
     input_schema = _get_input_schema(db_plan)
     table_name = "placeholder"
-    ibis_table = ibis.table(input_schema, name=table_name)  # type: ignore
 
-    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
-
-    updated_table = update_polars_to_ibis(
+    ibis_table = update_polars_to_ibis(
         polars_plan=db_plan,
-        table=ibis_table,
+        table=ibis.table(input_schema, name=table_name),
     )
 
-    def norm_sql(sql: str):
-        import re
-
-        return re.sub(r"\s+", " ", sql).replace('"', "").strip()
-
-    sql = norm_sql(updated_table.to_sql())
-    expected_sql = norm_sql("""
+    sql = norm_sql(ibis_table.to_sql())
+    expected_sql = norm_sql(f"""
         SELECT COALESCE(CAST(t0.HWUSUAL AS BIGINT), 35) AS HWUSUAL
-        FROM placeholder AS t0
+        FROM {table_name} AS t0
         WHERE t0.HWUSUAL <> 99.0
     """)
     assert sql == expected_sql
