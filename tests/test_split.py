@@ -1,22 +1,26 @@
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Any
 
 import ibis
 import opendp.prelude as dp
 import polars as pl
 
 
-def split(polars_plan):
+def split(polars_plan) -> tuple[dict[str, Any], dict[str, Any]]:
     # TODO: Generalize
-    # TODO: Return parameters for the plugin as well
     # TODO: Move into public API
     plan_copy = deepcopy(polars_plan)
+    plugin_parameters = plan_copy["Select"]["expr"][0]["Function"]["function"][
+        "FfiPlugin"
+    ]
     plan_copy["Select"]["expr"][0]["Function"] = plan_copy["Select"]["expr"][0][
         "Function"
     ]["input"][0]["Function"]
-    return plan_copy
+    return plan_copy, plugin_parameters
 
 
 def test_split_lazyframe():
@@ -46,7 +50,16 @@ def test_split_lazyframe():
 
     polars_plan = json.loads(query_work_hours.serialize(format="json"))
 
-    db_plan = split(polars_plan)
+    db_plan, plugin_parameters = split(polars_plan)
+
+    plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
+
+    assert plugin_parameters == {
+        "flags": {"check_lengths": True, "flags": "RETURNS_SCALAR"},
+        "kwargs": [],
+        "lib": ".../opendp.abi3.so",
+        "symbol": "dp_sum",
+    }
 
     from polars_to_ibis import _get_input_schema
 
