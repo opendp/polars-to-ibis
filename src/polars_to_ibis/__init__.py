@@ -132,7 +132,12 @@ def _get_type(polars_type_name: str) -> type:
     )  # pragma: no cover
 
 
-def split(query: pl.LazyFrame) -> tuple[dict[str, Any], dict[str, Any]]:
+def split(
+    query: pl.LazyFrame, table_name: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+
+    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
+
     # TODO: Generalize
     polars_plan = json.loads(query.serialize(format="json"))
     plugin_parameters = polars_plan["Select"]["expr"][0]["Function"]["function"][
@@ -141,4 +146,11 @@ def split(query: pl.LazyFrame) -> tuple[dict[str, Any], dict[str, Any]]:
     polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
         "Function"
     ]["input"][0]["Function"]
-    return polars_plan, plugin_parameters
+
+    input_schema = _get_input_schema(polars_plan)
+
+    ibis_table = update_polars_to_ibis(
+        polars_plan=polars_plan,
+        table=ibis.table(input_schema, name=table_name),
+    )
+    return ibis_table, plugin_parameters

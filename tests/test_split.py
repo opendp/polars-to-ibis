@@ -1,6 +1,5 @@
 import re
 
-import ibis
 import opendp.prelude as dp
 import polars as pl
 
@@ -12,10 +11,6 @@ def norm_sql(sql: str):
 
 
 def test_split_lazyframe():
-    # TODO: If end-users need these, add to public API.
-    from polars_to_ibis import _get_input_schema
-    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
-
     # Example copied from opendp:
     dp.enable_features("contrib")
     context = dp.Context.compositor(
@@ -40,7 +35,8 @@ def test_split_lazyframe():
         .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
     )
 
-    db_plan, plugin_parameters = split(query_work_hours)
+    table_name = "placeholder"
+    ibis_table, plugin_parameters = split(query_work_hours, table_name=table_name)
 
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
     assert plugin_parameters == {
@@ -49,14 +45,6 @@ def test_split_lazyframe():
         "lib": ".../opendp.abi3.so",
         "symbol": "dp_sum",
     }
-
-    input_schema = _get_input_schema(db_plan)
-    table_name = "placeholder"
-
-    ibis_table = update_polars_to_ibis(
-        polars_plan=db_plan,
-        table=ibis.table(input_schema, name=table_name),
-    )
 
     sql = norm_sql(ibis_table.to_sql())
     expected_sql = norm_sql(f"""
