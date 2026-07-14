@@ -12,7 +12,7 @@ __version__ = version("polars_to_ibis")
 _MIN_POLARS: str = "1.32.0"
 _MAX_POLARS: str = "1.41.2"
 
-__all__ = ["convert_polars_to_ibis", "scan_database", "split"]
+__all__ = ["convert_polars_to_ibis", "scan_database", "split_polars_on_ffi"]
 
 
 class PolarsToIbisWarning(Warning):
@@ -132,9 +132,14 @@ def _get_type(polars_type_name: str) -> type:
     )  # pragma: no cover
 
 
-def split(
+def split_polars_on_ffi(
     query: pl.LazyFrame, table_name: str
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Split a polars LazyFrame on an FFI plugin,
+    returning an Ibis unbound table ready to be executed on a SQL database,
+    and a dict of parameters for the plugin.
+    """
 
     from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 

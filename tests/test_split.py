@@ -3,7 +3,7 @@ import re
 import opendp.prelude as dp
 import polars as pl
 
-from polars_to_ibis import split
+from polars_to_ibis import split_polars_on_ffi
 
 
 def norm_sql(sql: str):
@@ -36,7 +36,10 @@ def test_split_lazyframe():
     )
 
     table_name = "placeholder"
-    ibis_table, plugin_parameters = split(query_work_hours, table_name=table_name)
+    ibis_table, plugin_parameters = split_polars_on_ffi(
+        query_work_hours,
+        table_name=table_name,
+    )
 
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
     assert plugin_parameters == {
