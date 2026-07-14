@@ -1,5 +1,6 @@
 """Convert Polars LazyFrames to Ibis unbound tables"""
 
+import json
 from importlib.metadata import version
 from typing import Any
 
@@ -11,7 +12,7 @@ __version__ = version("polars_to_ibis")
 _MIN_POLARS: str = "1.32.0"
 _MAX_POLARS: str = "1.41.2"
 
-__all__ = ["convert_polars_to_ibis", "scan_database"]
+__all__ = ["convert_polars_to_ibis", "scan_database", "split"]
 
 
 class PolarsToIbisWarning(Warning):
@@ -129,3 +130,15 @@ def _get_type(polars_type_name: str) -> type:
     raise Exception(
         f"No python type defined for {polars_type_name}"
     )  # pragma: no cover
+
+
+def split(query: pl.LazyFrame) -> tuple[dict[str, Any], dict[str, Any]]:
+    # TODO: Generalize
+    polars_plan = json.loads(query.serialize(format="json"))
+    plugin_parameters = polars_plan["Select"]["expr"][0]["Function"]["function"][
+        "FfiPlugin"
+    ]
+    polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
+        "Function"
+    ]["input"][0]["Function"]
+    return polars_plan, plugin_parameters

@@ -1,32 +1,13 @@
-import json
 import re
-from copy import deepcopy
-from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import Any
 
 import ibis
 import opendp.prelude as dp
 import polars as pl
 
-
-def split(query) -> tuple[dict[str, Any], dict[str, Any]]:
-    # TODO: Generalize
-    # TODO: Move into public API
-
-    polars_plan = json.loads(query.serialize(format="json"))
-    plugin_parameters = polars_plan["Select"]["expr"][0]["Function"]["function"][
-        "FfiPlugin"
-    ]
-    polars_plan["Select"]["expr"][0]["Function"] = polars_plan["Select"]["expr"][0][
-        "Function"
-    ]["input"][0]["Function"]
-    return polars_plan, plugin_parameters
+from polars_to_ibis import split
 
 
 def norm_sql(sql: str):
-    import re
-
     return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
