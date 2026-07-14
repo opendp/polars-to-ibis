@@ -41,12 +41,8 @@ def test_split_lazyframe():
         # compute the DP sum
         .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
     )
-    # More OpenDP serialization should help here.
-    # See https://github.com/opendp/polars-to-ibis/pull/93
-    with NamedTemporaryFile(mode="w") as temp:
-        # TODO: Don't write to filesystem.
-        query_work_hours._ldf.serialize_json(temp.name)
-        polars_plan = json.loads(Path(temp.name).read_text())
+
+    polars_plan = json.loads(query_work_hours.serialize(format="json"))
 
     split(polars_plan)
 
