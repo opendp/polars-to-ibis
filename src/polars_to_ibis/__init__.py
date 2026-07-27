@@ -103,7 +103,7 @@ def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
 
     """
     if not isinstance(polars_plan, dict):  # type: ignore
-        return
+        raise TypeError(f"Expected dict, not {type(polars_plan)}")
     if "DataFrameScan" in polars_plan:
         input_schema = {
             k: _get_type(v)
@@ -141,18 +141,18 @@ def split_polars_on_ffi(
     and a dict of parameters for the plugin.
     """
 
+    from opendp import prelude as dp
+
+    dp.enable_features("honest-but-curious")
+
     from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-    # TODO: Generalize
-    polars_plan = json.loads(query.serialize(format="json"))
-    func_node = polars_plan["Select"]["expr"][0]["Function"]
-    plugin_parameters = func_node["function"]["FfiPlugin"]
-    polars_plan["Select"]["expr"][0]["Function"] = func_node["input"][0]["Function"]
-
+    polars_plan = json.loads(query.release().lazy().serialize(format="json"))
+    breakpoint()
     input_schema = _get_input_schema(polars_plan)
 
     ibis_table = update_polars_to_ibis(
         polars_plan=polars_plan,
         table=ibis.table(input_schema, name=table_name),
     )
-    return ibis_table, plugin_parameters
+    return ibis_table, {}

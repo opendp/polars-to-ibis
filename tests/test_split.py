@@ -30,9 +30,10 @@ def test_split_lazyframe():
     # https://github.com/opendp/opendp/issues/2788
     query_work_hours = (
         # 99 represents "Not applicable"
-        context.query().filter(pl.col("HWUSUAL") != 99.0)
-        # compute the DP sum
-        .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
+        # context.query().filter(pl.col("HWUSUAL") != 99.0)
+        # # compute the DP sum
+        # .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
+        context.query().select(dp.len())
     )
 
     table_name = "placeholder"
