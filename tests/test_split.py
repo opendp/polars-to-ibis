@@ -2,7 +2,6 @@ import re
 
 import opendp.prelude as dp
 import polars as pl
-import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
