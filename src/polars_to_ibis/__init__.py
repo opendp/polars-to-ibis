@@ -141,23 +141,34 @@ def split_polars_on_ffi(
     and a dict of parameters for the plugin.
     """
 
-    # from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
+    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
     from polars_to_ibis._utils import extract
 
     polars_plan = json.loads(query.serialize(format="json"))
     input_schema = _get_input_schema(polars_plan)
     assert input_schema
 
-    # TODO: Extract non-plugin expression
-    # non_plugin_polars_plan = polars_plan
-    # TODO: Extract plugin params more robustly
     plugin_parameters = extract(polars_plan, "FfiPlugin")
 
-    # TODO: Convert non_plugin_polars_plan to ibis
-    ibis_table = None
-    # ibis_table = update_polars_to_ibis(
-    #     polars_plan=non_plugin_polars_plan,
-    #     table=ibis.table(input_schema, name=table_name),
-    # )
+    # TODO: Make more robust
+    # {'Select': {
+    #   'expr': [
+    # -    {'Function': {'function': {'FfiPlugin': ...}, 'input': ['Len']}
+    # +    ...
+    #   ]
+    #   'input': {...},
+    #   'options': {...}
+    # }}
+    #
+    # Goal:
+    # {'Select': {'expr': ['Len'], 'input':
+    polars_plan["Select"]["expr"] = polars_plan["Select"]["expr"][0]["Function"][
+        "input"
+    ]
+
+    ibis_table = update_polars_to_ibis(
+        polars_plan=polars_plan,
+        table=ibis.table(input_schema, name=table_name),
+    )
 
     return ibis_table, plugin_parameters

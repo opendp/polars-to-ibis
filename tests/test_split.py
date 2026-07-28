@@ -56,9 +56,8 @@ def test_split_lazyframe():
         "kwargs": "bytes",
     }
 
-    # actual_sql = norm_sql(ibis_table.to_sql())
-    # TODO
-    # expected_sql = norm_sql("""
-    #     ...
-    # """)
-    # assert actual_sql == expected_sql
+    actual_sql = norm_sql(ibis_table.to_sql())
+    expected_sql = norm_sql(f"""
+        SELECT COUNT(*) AS len FROM {table_name} AS t0
+    """)
+    assert actual_sql == expected_sql
