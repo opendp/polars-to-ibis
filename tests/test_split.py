@@ -2,6 +2,7 @@ import re
 
 import opendp.prelude as dp
 import polars as pl
+import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
@@ -12,15 +13,28 @@ def norm_sql(sql: str):
     return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
-def test_split_lazyframe():
+table_name = "default_table"
+
+
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        (
+            "context.query().select(dp.len())",
+            f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
+        )
+    ],
+)
+def test_split_lazyframe(fixture):
+    expression, expected_sql = fixture
+
     # Set up database:
-    table_name = "default_table"
     connection = get_connection(
         pl.DataFrame({"ints": [1, 2, 3, 4]}), table_name, "sqlite"
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
-    # (If there is non-OpenDP boilerplate, try to move it into polars-to-ibis.)
+    # (If there is non-OpenDP boilerplate, move it into the package.)
     dp.enable_features("contrib", "honest-but-curious")
     lf = scan_database(connection, table_name)
     context = dp.Context.compositor(
@@ -32,15 +46,11 @@ def test_split_lazyframe():
             dp.polars.Margin(max_length=1_000_000),
         ],
     )
-    query_lf = (
-        context.query()
-        .select(
-            # TODO: Parameterize this test and add complex examples.
-            dp.len()
-        )
-        .release()
-        .lazy()
-    )
+    globals = {
+        "context": context,
+        "dp": dp,
+    }
+    query_lf = eval(expression, globals).release().lazy()
 
     ibis_table, plugin_parameters = split_polars_on_ffi(
         query_lf,
@@ -57,7 +67,4 @@ def test_split_lazyframe():
     }
 
     actual_sql = norm_sql(ibis_table.to_sql())
-    expected_sql = norm_sql(f"""
-        SELECT COUNT(*) AS len FROM {table_name} AS t0
-    """)
     assert actual_sql == expected_sql
