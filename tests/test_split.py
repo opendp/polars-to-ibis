@@ -48,12 +48,12 @@ def test_split_lazyframe():
     )
 
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
-    plugin_parameters["kwargs"] = "bytes"
+    assert all(0 <= arg <= 255 for arg in plugin_parameters["kwargs"])
+    del plugin_parameters["kwargs"]
     assert plugin_parameters == {
         "flags": {"check_lengths": True, "flags": "ROW_SEPARABLE | LENGTH_PRESERVING"},
         "lib": ".../opendp.abi3.so",
         "symbol": "noise_plugin",
-        "kwargs": "bytes",
     }
 
     actual_sql = norm_sql(ibis_table.to_sql())
