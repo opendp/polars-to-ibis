@@ -24,6 +24,7 @@ table_name = "default_table"
             f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
         )
     ],
+    ids=lambda fixture: "-".join(fixture),
 )
 def test_split_lazyframe(fixture):
     expression, expected_sql = fixture

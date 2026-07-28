@@ -29,6 +29,40 @@ def extract(
                     return r
 
 
+def replace_ffi_with_input(
+    source: dict[str, Any] | list[Any] | str,
+):
+    """
+    >>> source = {
+    ...     'Select': {
+    ...         'expr': [{
+    ...             'Function': {
+    ...                 'function': {'FfiPlugin': {}},
+    ...                 'input': ['Len']
+    ...             }
+    ...         }]
+    ...     }
+    ... }
+    >>> replace_ffi_with_input(source)
+    >>> source
+    {'Select': {'expr': ['Len']}}
+    """
+    if isinstance(source, list):
+        for i in source:
+            replace_ffi_with_input(i)
+    elif isinstance(source, dict):
+        for k, v in source.items():
+            if k == "expr":
+                ffi_plugin = (
+                    v[0].get("Function", {}).get("function", {}).get("FfiPlugin")
+                )
+                ffi_input = v[0].get("Function", {}).get("input")
+                if ffi_plugin is not None:
+                    source[k] = ffi_input
+            elif isinstance(v, (dict, list)):
+                replace_ffi_with_input(v)
+
+
 def replace(
     source: dict[str, Any] | list[Any] | str,
     key: str,
