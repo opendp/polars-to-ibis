@@ -48,6 +48,7 @@ def test_extras_in_case_statements():
         src = (
             Path(__file__).parent.parent / "src/polars_to_ibis/_parse" / file
         ).read_text()
+        src = re.sub(r"#.*", "", src)  # Strip comments
         matches = re.findall(r"case [\[{(].*?[\])}]:", src, flags=re.DOTALL)
         for case_match in matches:
             # remove white space:

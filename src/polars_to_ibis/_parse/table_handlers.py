@@ -119,34 +119,35 @@ def parse_select_expr(
                 select_kwargs[name] = defer[name].fill_null(
                     polars_expr_to_ibis_value(expr)
                 )
-            case (
-                "Function",
-                {
-                    "function": "FillNull",
-                    "input": [
-                        {
-                            "Cast": {
-                                "dtype": {"Literal": dtype_literal, **extras_1},
-                                # TODO: We need the column name at the top-level,
-                                # but it could be buried in an expression.
-                                # How to extract w/o special case expressions?
-                                "expr": {"Column": name, **extras_2},
-                                "options": "Strict",
-                                **extras_3,
-                            },
-                            **extras_4,
-                        },
-                        fill_expr,
-                    ],
-                    **extras_5,
-                },
-            ):
-                assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
-                select_kwargs[name] = (
-                    defer[name]
-                    .cast(dtype_literal.lower())
-                    .fill_null(polars_expr_to_ibis_value(fill_expr))
-                )
+            # TODO: No test coverage. Add fixture and restore?
+            # case (
+            #     "Function",
+            #     {
+            #         "function": "FillNull",
+            #         "input": [
+            #             {
+            #                 "Cast": {
+            #                     "dtype": {"Literal": dtype_literal, **extras_1},
+            #                     # TODO: We need the column name at the top-level,
+            #                     # but it could be buried in an expression.
+            #                     # How to extract w/o special case expressions?
+            #                     "expr": {"Column": name, **extras_2},
+            #                     "options": "Strict",
+            #                     **extras_3,
+            #                 },
+            #                 **extras_4,
+            #             },
+            #             fill_expr,
+            #         ],
+            #         **extras_5,
+            #     },
+            # ):
+            #     assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
+            #     select_kwargs[name] = (
+            #         defer[name]
+            #         .cast(dtype_literal.lower())
+            #         .fill_null(polars_expr_to_ibis_value(fill_expr))
+            #     )
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported select expr {tag}")
     return (select_kwargs, agg_kwargs, drop_args)
@@ -162,7 +163,7 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             # TODO: Confirm behavior
             assert_no_extras(extras_1)
             return table
-        case _:
+        case _:  # pragma: no cover
             raise NotImplementedError("Unsupported IR")
 
 
