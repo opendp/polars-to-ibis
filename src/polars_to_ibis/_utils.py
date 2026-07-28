@@ -25,6 +25,12 @@ def replace_ffi_with_input(
     'flags-lib-symbol-kwargs'
     >>> source
     {'Select': {'expr': ['Len']}}
+
+    >>> source = []
+    >>> replace_ffi_with_input(source)
+    Traceback (most recent call last):
+      ...
+    ValueError: Expected dict or list
     """
     if isinstance(source, list):
         for i in source:
@@ -41,6 +47,7 @@ def replace_ffi_with_input(
                     return ffi_plugin
             elif isinstance(v, (dict, list)):
                 return replace_ffi_with_input(v)
+    raise ValueError("Expected dict or list")
 
 
 def replace(
