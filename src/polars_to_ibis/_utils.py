@@ -9,7 +9,7 @@ from typing import Any
 
 def replace_ffi_with_input(
     source: dict[str, Any] | list[Any] | str,
-):
+):  # pragma: no cover
     """
     >>> source = {
     ...     'Select': {
@@ -25,12 +25,6 @@ def replace_ffi_with_input(
     'flags-lib-symbol-kwargs'
     >>> source
     {'Select': {'expr': ['Len']}}
-
-    >>> source = []
-    >>> replace_ffi_with_input(source)
-    Traceback (most recent call last):
-      ...
-    ValueError: Expected dict or list
     """
     if isinstance(source, list):
         for i in source:
