@@ -155,6 +155,17 @@ def parse_select_expr(
 # Table handlers:
 
 
+@table_handler("IR")
+def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    match payload:
+        case {"dsl": _, "version": _, **extras_1}:
+            # TODO: Confirm behavior
+            assert_no_extras(extras_1)
+            return table
+        case _:
+            raise NotImplementedError("Unsupported IR")
+
+
 @table_handler("Scan")
 @table_handler("DataFrameScan")
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:

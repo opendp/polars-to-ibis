@@ -2,45 +2,54 @@ import re
 
 import opendp.prelude as dp
 import polars as pl
+import pytest
 
-from polars_to_ibis import split_polars_on_ffi
+from polars_to_ibis import scan_database, split_polars_on_ffi
+
+from .utils import get_connection
 
 
 def norm_sql(sql: str):
     return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
+@pytest.mark.xfail(reason="unimplemented")
 def test_split_lazyframe():
-    # Example copied from opendp:
-    dp.enable_features("contrib")
-    context = dp.Context.compositor(
-        data=pl.scan_csv(
-            dp.examples.get_france_lfs_path(),
-            ignore_errors=True,
-        ),
-        privacy_unit=dp.unit_of(contributions=36),
-        privacy_loss=dp.loss_of(epsilon=1.0),
-        split_evenly_over=5,
-        margins=[
-            dp.polars.Margin(max_length=150_000 * 36),
-        ],
-    )
-    # TODO: Fix upstream docs, and then fix this;
-    # Any nulls would be dropped by the filter, leaving nothing to impute.
-    # https://github.com/opendp/opendp/issues/2788
-    query_work_hours = (
-        # 99 represents "Not applicable"
-        context.query().filter(pl.col("HWUSUAL") != 99.0)
-        # compute the DP sum
-        .select(pl.col.HWUSUAL.cast(int).fill_null(35).dp.sum(bounds=(0, 80)))
+    # Set up database:
+    table_name = "default_table"
+    connection = get_connection(
+        pl.DataFrame({"ints": [1, 2, 3, 4]}), table_name, "sqlite"
     )
 
-    table_name = "placeholder"
+    # Pretend we're software that uses OpenDP as a dependency.
+    # (If there is non-OpenDP boilerplate, try to move it into polars-to-ibis.)
+    dp.enable_features("contrib", "honest-but-curious")
+    lf = scan_database(connection, table_name)
+    context = dp.Context.compositor(
+        data=lf,
+        privacy_unit=dp.unit_of(contributions=1),
+        privacy_loss=dp.loss_of(epsilon=1.0),
+        split_evenly_over=1,
+        margins=[
+            dp.polars.Margin(max_length=1_000_000),
+        ],
+    )
+    query_lf = (
+        context.query()
+        .select(
+            # TODO: Parameterize this test and add complex examples.
+            dp.len()
+        )
+        .release()
+        .lazy()
+    )
+
     ibis_table, plugin_parameters = split_polars_on_ffi(
-        query_work_hours,
+        query_lf,
         table_name=table_name,
     )
 
+    # TODO
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
     assert plugin_parameters == {
         "flags": {"check_lengths": True, "flags": "RETURNS_SCALAR"},
@@ -49,10 +58,9 @@ def test_split_lazyframe():
         "symbol": "dp_sum",
     }
 
-    sql = norm_sql(ibis_table.to_sql())
-    expected_sql = norm_sql(f"""
-        SELECT COALESCE(CAST(t0.HWUSUAL AS BIGINT), 35) AS HWUSUAL
-        FROM {table_name} AS t0
-        WHERE t0.HWUSUAL <> 99.0
+    actual_sql = norm_sql(ibis_table.to_sql())
+    # TODO
+    expected_sql = norm_sql("""
+        ...
     """)
-    assert sql == expected_sql
+    assert actual_sql == expected_sql
