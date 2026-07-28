@@ -7,28 +7,6 @@ from pprint import pformat
 from typing import Any
 
 
-def extract(
-    source: dict[str, Any] | list[Any] | str,
-    key: str,
-) -> Any:
-    """
-    >>> source = {"foo": [{"bar": 42}]}
-    >>> extract(source, "bar")
-    42
-    """
-    if isinstance(source, list):
-        for i in source:
-            if (r := extract(i, key)) is not None:
-                return r
-    elif isinstance(source, dict):
-        for k, v in source.items():
-            if k == key:
-                return v
-            elif isinstance(v, (dict, list)):
-                if (r := extract(v, key)) is not None:
-                    return r
-
-
 def replace_ffi_with_input(
     source: dict[str, Any] | list[Any] | str,
 ):
@@ -37,19 +15,20 @@ def replace_ffi_with_input(
     ...     'Select': {
     ...         'expr': [{
     ...             'Function': {
-    ...                 'function': {'FfiPlugin': {}},
+    ...                 'function': {'FfiPlugin': 'flags-lib-symbol-kwargs'},
     ...                 'input': ['Len']
     ...             }
     ...         }]
     ...     }
     ... }
     >>> replace_ffi_with_input(source)
+    'flags-lib-symbol-kwargs'
     >>> source
     {'Select': {'expr': ['Len']}}
     """
     if isinstance(source, list):
         for i in source:
-            replace_ffi_with_input(i)
+            return replace_ffi_with_input(i)
     elif isinstance(source, dict):
         for k, v in source.items():
             if k == "expr":
@@ -59,8 +38,9 @@ def replace_ffi_with_input(
                 ffi_input = v[0].get("Function", {}).get("input")
                 if ffi_plugin is not None:
                     source[k] = ffi_input
+                    return ffi_plugin
             elif isinstance(v, (dict, list)):
-                replace_ffi_with_input(v)
+                return replace_ffi_with_input(v)
 
 
 def replace(

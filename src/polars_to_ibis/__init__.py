@@ -142,14 +142,12 @@ def split_polars_on_ffi(
     """
 
     from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
-    from polars_to_ibis._utils import extract, replace_ffi_with_input
+    from polars_to_ibis._utils import replace_ffi_with_input
 
     polars_plan = json.loads(query.serialize(format="json"))
     input_schema = _get_input_schema(polars_plan)
 
-    # TODO: Combine these functions
-    plugin_parameters = extract(polars_plan, "FfiPlugin")
-    replace_ffi_with_input(polars_plan)
+    plugin_parameters = replace_ffi_with_input(polars_plan)
 
     ibis_table = update_polars_to_ibis(
         polars_plan=polars_plan,
