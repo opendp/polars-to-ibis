@@ -148,12 +148,16 @@ def split_polars_on_ffi(
 
     # TODO: Extract non-plugin expression
     non_plugin_polars_plan = polars_plan
-    # TODO: Extract plugin params
-    plugin_parameters = {}
+    # TODO: Extract plugin params more robustly
+    plugin_parameters = polars_plan["Select"]["expr"][0]["Function"]["function"][
+        "FfiPlugin"
+    ]
 
-    ibis_table = update_polars_to_ibis(
-        polars_plan=non_plugin_polars_plan,
-        table=ibis.table(input_schema, name=table_name),
-    )
+    # TODO: Convert non_plugin_polars_plan to ibis
+    ibis_table = None
+    # ibis_table = update_polars_to_ibis(
+    #     polars_plan=non_plugin_polars_plan,
+    #     table=ibis.table(input_schema, name=table_name),
+    # )
 
     return ibis_table, plugin_parameters
