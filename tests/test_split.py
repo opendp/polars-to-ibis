@@ -101,14 +101,25 @@ def test_split_lazyframe(fixture):
     assert private_result == expected_result
     private_item = list(private_result.items())[0][1][0]
 
-    # TODO: Also support Gaussian.
     # TODO: Confirm that we don't need any more information from the serialization.
-    support = int if kwargs["support"] == "Integer" else float
+    match kwargs["support"]:
+        case "Integer":
+            support = int
+        case "Float":  # pragma: no cover
+            support = float
+        case _:  # pragma: no cover
+            raise ValueError(f"Expected 'Integer' or 'Float', not {kwargs['support']}")
     input_space = dp.atom_domain(T=support, nan=False), dp.absolute_distance(T=support)
 
-    make = (
-        dp.m.make_laplace if kwargs["distribution"] == "Laplace" else dp.m.make_gaussian
-    )
+    match kwargs["distribution"]:
+        case "Laplace":
+            make = dp.m.make_laplace
+        case "Gaussian":  # pragma: no cover
+            make = dp.m.make_gaussian
+        case _:  # pragma: no cover
+            raise ValueError(
+                f"Expected 'Laplace' or 'Gaussian', not {kwargs['distribution']}"
+            )
     measurement = make(*input_space, scale=kwargs["scale"])
 
     assert isinstance(measurement(private_item), support)
