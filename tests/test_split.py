@@ -22,7 +22,11 @@ table_name = "default_table"
         (
             "context.query().select(dp.len())",
             f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
-        )
+        ),
+        # (
+        #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
+        #     f"... FROM {table_name} AS t0",
+        # ),
     ],
     ids=lambda fixture: "-".join(fixture),
 )
@@ -31,7 +35,14 @@ def test_split_lazyframe(fixture):
 
     # Set up database:
     connection = get_connection(
-        pl.DataFrame({"ints": [1, 2, 3, 4]}), table_name, "sqlite"
+        pl.DataFrame(
+            {
+                "ints": [1, 2, 3, 4],
+                "floats": [0.1, 0.2, 0.3, 0.4],
+            }
+        ),
+        table_name,
+        "sqlite",
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
@@ -50,6 +61,7 @@ def test_split_lazyframe(fixture):
     globals = {
         "context": context,
         "dp": dp,
+        "pl": pl,
     }
     query_lf = eval(expression, globals).release().lazy()
 

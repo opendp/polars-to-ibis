@@ -119,6 +119,12 @@ def parse_select_expr(
                 select_kwargs[name] = defer[name].fill_null(
                     polars_expr_to_ibis_value(expr)
                 )
+            case (
+                "Agg",
+                {"Sum": {"Column": name, **extras_1}, **extras_2},
+            ):
+                assert_no_extras(extras_1, extras_2)
+                agg_kwargs[name] = defer[name].sum()
             # TODO: No test coverage. Add fixture and restore?
             # case (
             #     "Function",
