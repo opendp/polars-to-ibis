@@ -141,7 +141,7 @@ def assert_approx_equal(
                 }
             },
             # Check that the input data structure is shown in error message.
-            "Unsupported select expr Agg:\n{'Select'",
+            "No value handler for 'Count'",
         ),
     ],
     ids=lambda plan: str(plan),

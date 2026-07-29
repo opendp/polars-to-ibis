@@ -30,7 +30,7 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
     try:
         return func(payload, table=table)
     except NotImplementedError as e:
-        raise NotImplementedError(f"{e}:\n{abbreviate(polars_plan)}")
+        raise NotImplementedError(f"{e}\nin {abbreviate(polars_plan)}")
 
 
 # Registry:
@@ -121,10 +121,12 @@ def parse_select_expr(
                 )
             case (
                 "Agg",
-                {"Sum": {"Column": name, **extras_1}, **extras_2},
+                expr,
             ):
-                assert_no_extras(extras_1, extras_2)
-                agg_kwargs[name] = defer[name].sum()
+                from .._utils import find
+
+                name = find(expr, "Column")
+                agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             # TODO: No test coverage. Add fixture and restore?
             # case (
             #     "Function",

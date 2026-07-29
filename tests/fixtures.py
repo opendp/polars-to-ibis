@@ -56,6 +56,7 @@ fixtures = [
     ),
     Fixture("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
     Fixture("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
+    Fixture("numeric", "lf.select(pl.col.ints.clip(0,1).sum())", {"ints": [4]}),
     Fixture(
         "numeric",
         "lf.mean()",

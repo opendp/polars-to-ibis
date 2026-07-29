@@ -28,7 +28,7 @@ def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> ir.Value:
     try:
         return func(payload)
     except NotImplementedError as e:  # pragma: no cover
-        raise NotImplementedError(f"{e}:\n{abbreviate(polars_expr)}")
+        raise NotImplementedError(f"{e}\nin {abbreviate(polars_expr)}")
 
 
 # Registry:
@@ -85,6 +85,11 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
             )
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Cast")
+
+
+@value_handler("Sum")
+def handle_sum(payload: PolarsPlan):
+    return polars_expr_to_ibis_value(payload).sum()
 
 
 @value_handler("Agg")

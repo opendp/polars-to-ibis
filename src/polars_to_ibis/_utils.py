@@ -43,6 +43,26 @@ def replace_ffi_with_input(
     raise ValueError("Expected dict or list")
 
 
+def find(
+    source: dict[str, Any] | list[Any] | str,
+    key: str,
+) -> Any:  # pragma: no cover
+    """
+    >>> source = {"foo": [{"bar": 42}]}
+    >>> find(source, "bar")
+    42
+    """
+    if isinstance(source, list):
+        for i in source:
+            return find(i, key)
+    elif isinstance(source, dict):
+        for k, v in source.items():
+            if k == key:
+                return v
+            elif isinstance(v, (dict, list)):
+                return find(v, key)
+
+
 def replace(
     source: dict[str, Any] | list[Any] | str,
     key: str,
