@@ -22,16 +22,17 @@ table_name = "default_table"
         (
             "context.query().select(dp.len())",
             f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
+            {"len": [4]},
         ),
         # (
         #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
         #     f"... FROM {table_name} AS t0",
         # ),
     ],
-    ids=lambda fixture: "-".join(fixture),
+    ids=lambda fixture: "-".join(fixture[:2]),
 )
 def test_split_lazyframe(fixture):
-    expression, expected_sql = fixture
+    expression, expected_sql, expected_result = fixture
 
     # Set up database:
     connection = get_connection(
@@ -70,20 +71,19 @@ def test_split_lazyframe(fixture):
         table_name=table_name,
     )
 
-    # TODO: For completeness, actually run SQL to get un-noised data.
     actual_sql = norm_sql(ibis_table.to_sql())
     assert actual_sql == expected_sql
 
-    # TODO: Demonstrate how we actually add calibrated noise, using this information.
+    # TODO: Make a util in OpenDP so the user doesn't need to unpickle,
+    # and isn't tempted to look at private data.
+
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
-    assert all(0 <= arg <= 255 for arg in plugin_parameters["kwargs"])
 
     # TODO: Probably replace with https://github.com/google/saferpickle
     import pickle
 
-    plugin_parameters["unpickled_kwargs"] = pickle.loads(
-        bytes(plugin_parameters["kwargs"])
-    )
+    unpickled_kwargs = pickle.loads(bytes(plugin_parameters["kwargs"]))
+    plugin_parameters["unpickled_kwargs"] = unpickled_kwargs
     del plugin_parameters["kwargs"]
 
     assert plugin_parameters == {
@@ -96,3 +96,13 @@ def test_split_lazyframe(fixture):
             "support": "Integer",
         },
     }
+
+    private_result = connection.to_polars(ibis_table).to_dict(as_series=False)
+    assert private_result == expected_result
+    private_item = list(private_result.items())[0][1][0]
+
+    # TODO: Also support Gaussian.
+    # TODO: Confirm that we don't need any more information from the serialization.
+    input_space = dp.atom_domain(T=float, nan=False), dp.absolute_distance(T=float)
+    measurement = dp.m.make_laplace(*input_space, scale=unpickled_kwargs["scale"])
+    assert isinstance(measurement(private_item), float)
