@@ -82,8 +82,8 @@ def test_split_lazyframe(fixture):
     # TODO: Probably replace with https://github.com/google/saferpickle
     import pickle
 
-    unpickled_kwargs = pickle.loads(bytes(plugin_parameters["kwargs"]))
-    plugin_parameters["unpickled_kwargs"] = unpickled_kwargs
+    kwargs = pickle.loads(bytes(plugin_parameters["kwargs"]))
+    plugin_parameters["unpickled_kwargs"] = kwargs
     del plugin_parameters["kwargs"]
 
     assert plugin_parameters == {
@@ -103,6 +103,7 @@ def test_split_lazyframe(fixture):
 
     # TODO: Also support Gaussian.
     # TODO: Confirm that we don't need any more information from the serialization.
-    input_space = dp.atom_domain(T=float, nan=False), dp.absolute_distance(T=float)
-    measurement = dp.m.make_laplace(*input_space, scale=unpickled_kwargs["scale"])
-    assert isinstance(measurement(private_item), float)
+    support = int if kwargs["support"] == "Integer" else float
+    input_space = dp.atom_domain(T=support, nan=False), dp.absolute_distance(T=support)
+    measurement = dp.m.make_laplace(*input_space, scale=kwargs["scale"])
+    assert isinstance(measurement(private_item), support)
