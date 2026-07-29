@@ -105,5 +105,10 @@ def test_split_lazyframe(fixture):
     # TODO: Confirm that we don't need any more information from the serialization.
     support = int if kwargs["support"] == "Integer" else float
     input_space = dp.atom_domain(T=support, nan=False), dp.absolute_distance(T=support)
-    measurement = dp.m.make_laplace(*input_space, scale=kwargs["scale"])
+
+    make = (
+        dp.m.make_laplace if kwargs["distribution"] == "Laplace" else dp.m.make_gaussian
+    )
+    measurement = make(*input_space, scale=kwargs["scale"])
+
     assert isinstance(measurement(private_item), support)
