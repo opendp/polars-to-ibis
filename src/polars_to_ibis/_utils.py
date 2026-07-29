@@ -32,10 +32,9 @@ def replace_ffi_with_input(
     elif isinstance(source, dict):
         for k, v in source.items():
             if k == "expr":
-                ffi_plugin = (
-                    v[0].get("Function", {}).get("function", {}).get("FfiPlugin")
-                )
-                ffi_input = v[0].get("Function", {}).get("input")
+                function_payload = v[0].get("Function", {})
+                ffi_plugin = function_payload.get("function", {}).get("FfiPlugin")
+                ffi_input = function_payload.get("input")
                 if ffi_plugin is not None:
                     source[k] = ffi_input
                     return ffi_plugin

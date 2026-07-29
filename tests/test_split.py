@@ -58,14 +58,29 @@ def test_split_lazyframe(fixture):
         table_name=table_name,
     )
 
+    # TODO: For completeness, actually run SQL to get un-noised data.
+    actual_sql = norm_sql(ibis_table.to_sql())
+    assert actual_sql == expected_sql
+
+    # TODO: Demonstrate how we actually add calibrated noise, using this information.
     plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
     assert all(0 <= arg <= 255 for arg in plugin_parameters["kwargs"])
+
+    # TODO: Probably replace with https://github.com/google/saferpickle
+    import pickle
+
+    plugin_parameters["unpickled_kwargs"] = pickle.loads(
+        bytes(plugin_parameters["kwargs"])
+    )
     del plugin_parameters["kwargs"]
+
     assert plugin_parameters == {
         "flags": {"check_lengths": True, "flags": "ROW_SEPARABLE | LENGTH_PRESERVING"},
         "lib": ".../opendp.abi3.so",
         "symbol": "noise_plugin",
+        "unpickled_kwargs": {
+            "distribution": "Laplace",
+            "scale": 1.0,
+            "support": "Integer",
+        },
     }
-
-    actual_sql = norm_sql(ibis_table.to_sql())
-    assert actual_sql == expected_sql
