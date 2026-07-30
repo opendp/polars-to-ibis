@@ -21,9 +21,6 @@ requires-python = ">=3.10"
 [project.urls]
 Home = "https://github.com/opendp/polars-to-ibis"
 
-[options]
-python_requires = ">=3.10" # TODO: Is this a mistake? What uses it?
-
 [tool.pyright]
 include = ["polars_to_ibis"]
 strict = ["**"]

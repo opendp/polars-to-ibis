@@ -138,6 +138,8 @@ def test_split_lazyframe(fixture):
             },
         }
 
+        # Put the pieces together:
+
         return measurement(private_item)
 
     dp_result = helper_function_to_add_to_opendp(query, table_name, connection)
