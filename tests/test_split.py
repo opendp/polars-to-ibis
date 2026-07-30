@@ -73,41 +73,27 @@ def test_split_lazyframe(fixture):
         ibis_table, plugin_parameters = split_polars_on_ffi(
             query_lf,
             table_name=table_name,
-            # TODO: pass a lib keyword, to make sure we're pulling out the right plugin,
-            # and since we're calling pickle, make sure that we're unpickling opendp
-            # ... though a filename match isn't really a security guarantee.
+            # In the future, add a parameter to specify the plugin to split on?
         )
 
+        # Use ibis_table:
+
+        private_result = connection.to_polars(ibis_table).to_dict(as_series=False)
+        private_item = list(private_result.items())[0][1][0]
+
+        # Test ibis_table:
+        # (Remove test assertion after porting to opendp.)
         actual_sql = norm_sql(ibis_table.to_sql())
         assert actual_sql == expected_sql
+        assert private_result == expected_result
 
-        plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
+        # Use plugin_parameters:
 
         # TODO: Probably replace with https://github.com/google/saferpickle
         # ... but that is work that can be done in opendp, after porting.
         import pickle
 
         kwargs = pickle.loads(bytes(plugin_parameters["kwargs"]))
-        plugin_parameters["unpickled_kwargs"] = kwargs
-        del plugin_parameters["kwargs"]
-
-        assert plugin_parameters == {
-            "flags": {
-                "check_lengths": True,
-                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
-            },
-            "lib": ".../opendp.abi3.so",
-            "symbol": "noise_plugin",
-            "unpickled_kwargs": {
-                "distribution": "Laplace",
-                "scale": 1.0,
-                "support": "Integer",
-            },
-        }
-
-        private_result = connection.to_polars(ibis_table).to_dict(as_series=False)
-        assert private_result == expected_result
-        private_item = list(private_result.items())[0][1][0]
 
         match kwargs["support"]:
             case "Integer":
@@ -132,6 +118,26 @@ def test_split_lazyframe(fixture):
                     f"Expected 'Laplace' or 'Gaussian', not {kwargs['distribution']}"
                 )
         measurement = make(*input_space, scale=kwargs["scale"])
+
+        # Test plugin_parameters:
+        # (Remove when porting to opendp.)
+        plugin_parameters["unpickled_kwargs"] = kwargs
+        del plugin_parameters["kwargs"]
+        plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
+        assert plugin_parameters == {
+            "flags": {
+                "check_lengths": True,
+                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
+            },
+            "lib": ".../opendp.abi3.so",
+            "symbol": "noise_plugin",
+            "unpickled_kwargs": {
+                "distribution": "Laplace",
+                "scale": 1.0,
+                "support": "Integer",
+            },
+        }
+
         return measurement(private_item)
 
     dp_result = helper_function_to_add_to_opendp(query, table_name, connection)
