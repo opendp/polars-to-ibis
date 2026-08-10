@@ -7,6 +7,10 @@ from typing import Any
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
+from ._parse.table_handlers import update_polars_to_ibis
+from ._serialize import serialize
+from ._utils import replace_ffi_with_input
+
 __version__ = version("polars_to_ibis")
 
 _MIN_POLARS: str = "1.32.0"
@@ -57,8 +61,6 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     Ibis translates dataframe syntax to idiomatic SQL,
     so it needs to have a table name to include in the SQL.
     """
-    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
-    from polars_to_ibis._serialize import serialize
 
     _check_version()
 
@@ -140,9 +142,6 @@ def split_polars_on_ffi(
     returning an Ibis unbound table ready to be executed on a SQL database,
     and a dict of parameters for the plugin.
     """
-
-    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
-    from polars_to_ibis._utils import replace_ffi_with_input
 
     polars_plan = json.loads(query.serialize(format="json"))
     input_schema = _get_input_schema(polars_plan)
