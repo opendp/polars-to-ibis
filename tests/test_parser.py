@@ -7,7 +7,7 @@ import pytest
 from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .fixtures import Fixture, cat_expr_output_list, input_data
+from .fixtures import CatExprOutput, cat_expr_output_list, input_data
 from .utils import backends, exporters, get_connection
 
 
@@ -32,7 +32,7 @@ def assert_error_or_none(
         f"{cat_expr_output.category}-{cat_expr_output.expression}"
     ),
 )
-def test_fixture_consistency(cat_expr_output: Fixture):
+def test_fixture_consistency(cat_expr_output: CatExprOutput):
     # Does the polars expression have the expected result?
     globals = {"lf": pl.LazyFrame(input_data[cat_expr_output.category]), "pl": pl}
     polars_output = (
@@ -50,7 +50,11 @@ def test_fixture_consistency(cat_expr_output: Fixture):
 )
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
-def test_translate_table_new(cat_expr_output: Fixture, backend: str, exporter_key: str):
+def test_translate_table_new(
+    cat_expr_output: CatExprOutput,
+    backend: str,
+    exporter_key: str,
+):
     # Set up target database, with data:
     table_name = "default_table"
     input_df = pl.DataFrame(input_data[cat_expr_output.category])
