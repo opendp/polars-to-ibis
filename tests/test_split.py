@@ -17,7 +17,7 @@ table_name = "default_table"
 
 
 @pytest.mark.parametrize(
-    "expr_sql_result",
+    "scenario",
     [
         (
             "context.query().select(dp.len())",
@@ -29,10 +29,10 @@ table_name = "default_table"
         #     f"... FROM {table_name} AS t0",
         # ),
     ],
-    ids=lambda expr_sql_result: "-".join(expr_sql_result[:2]),
+    ids=lambda scenario: "-".join(scenario[:2]),
 )
-def test_split_lazyframe(expr_sql_result):
-    expression, expected_sql, expected_result = expr_sql_result
+def test_split_lazyframe(scenario):
+    expression, expected_sql, expected_result = scenario
 
     # Set up database:
     connection = get_connection(
