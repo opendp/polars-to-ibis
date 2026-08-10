@@ -338,13 +338,13 @@ fixtures = [
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
-        connection_errors={"mysql": "inf can not be used with MySQL"},
+        connection_errors={"mysql": "inf cannot be used with MySQL"},
     ),
     Fixture(
         "nan_null_inf",
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
-        connection_errors={"mysql": "inf can not be used with MySQL"},
+        connection_errors={"mysql": "inf cannot be used with MySQL"},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined"
         },
@@ -353,13 +353,13 @@ fixtures = [
         "nan_null_inf",
         "lf.select(pl.col.null.fill_null(999))",
         {"null": [0, 999]},
-        connection_errors={"mysql": "inf can not be used with MySQL"},
+        connection_errors={"mysql": "inf cannot be used with MySQL"},
     ),
     Fixture(
         "nan_null_inf",
         "lf.filter(pl.col('null') != 0)",
         {"inf": [], "nan": [], "null": []},
-        connection_errors={"mysql": "inf can not be used with MySQL"},
+        connection_errors={"mysql": "inf cannot be used with MySQL"},
     ),
     Fixture(
         "numeric",

@@ -43,12 +43,22 @@ def test_polars_versions_in_readme():
     assert all(v in readme for v in get_tested_polars_versions())
 
 
+def strip_comments(src):
+    """
+    >>> print(strip_comments("first()\\nsecond() # third\\nfourth()"))
+    first()
+    second()
+    fourth()
+    """
+    return re.sub(r"\s*#.*", "", src)
+
+
 def test_extras_in_case_statements():
     for file in ["table_handlers.py", "value_handlers.py"]:
         src = (
             Path(__file__).parent.parent / "src/polars_to_ibis/_parse" / file
         ).read_text()
-        src = re.sub(r"#.*", "", src)  # Strip comments
+        src = strip_comments(src)
         matches = re.findall(r"case [\[{(].*?[\])}]:", src, flags=re.DOTALL)
         for case_match in matches:
             # remove white space:
