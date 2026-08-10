@@ -7,7 +7,7 @@ import pytest
 from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .fixtures import Fixture, fixtures, input_data
+from .fixtures import Fixture, cat_expr_output_list, input_data
 from .utils import backends, exporters, get_connection
 
 
@@ -26,45 +26,55 @@ def assert_error_or_none(
 
 
 @pytest.mark.parametrize(
-    "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
+    "cat_expr_output",
+    cat_expr_output_list,
+    ids=lambda cat_expr_output: (
+        f"{cat_expr_output.category}-{cat_expr_output.expression}"
+    ),
 )
-def test_fixture_consistency(fixture: Fixture):
+def test_fixture_consistency(cat_expr_output: Fixture):
     # Does the polars expression have the expected result?
-    globals = {"lf": pl.LazyFrame(input_data[fixture.category]), "pl": pl}
-    polars_output = eval(fixture.expression, globals).collect().to_dict(as_series=False)
-    assert polars_output == fixture.expected_output, "Typo in fixture?"
+    globals = {"lf": pl.LazyFrame(input_data[cat_expr_output.category]), "pl": pl}
+    polars_output = (
+        eval(cat_expr_output.expression, globals).collect().to_dict(as_series=False)
+    )
+    assert polars_output == cat_expr_output.expected_output, "Typo in fixture?"
 
 
 @pytest.mark.parametrize(
-    "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
+    "cat_expr_output",
+    cat_expr_output_list,
+    ids=lambda cat_expr_output: (
+        f"{cat_expr_output.category}-{cat_expr_output.expression}"
+    ),
 )
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
-def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
+def test_translate_table_new(cat_expr_output: Fixture, backend: str, exporter_key: str):
     # Set up target database, with data:
     table_name = "default_table"
-    input_df = pl.DataFrame(input_data[fixture.category])
+    input_df = pl.DataFrame(input_data[cat_expr_output.category])
     connection = assert_error_or_none(
         "connection_error",
-        fixture.connection_errors.get(backend),
+        cat_expr_output.connection_errors.get(backend),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
     globals = {"lf": scan_database(connection, table_name), "pl": pl}
-    lf = eval(fixture.expression, globals)
+    lf = eval(cat_expr_output.expression, globals)
 
     ibis_table = assert_error_or_none(
         "convert_error",
-        fixture.convert_errors.get(f"polars=={pl.__version__}"),
+        cat_expr_output.convert_errors.get(f"polars=={pl.__version__}"),
         lambda: convert_polars_to_ibis(lf, table_name),
     )
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
     expected_backend_error = (
-        fixture.backend_errors.get(backend)
-        or fixture.backend_errors.get(f"{backend}+{exporter_key}")
-        or fixture.backend_errors.get(
+        cat_expr_output.backend_errors.get(backend)
+        or cat_expr_output.backend_errors.get(f"{backend}+{exporter_key}")
+        or cat_expr_output.backend_errors.get(
             f"{backend}+{exporter_key}+polars=={pl.__version__}"
         )
     )
@@ -75,16 +85,17 @@ def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
     )
 
     # Check if result is what we expect:
-    if fixture.tolerance:
+    if cat_expr_output.tolerance:
         assert_approx_equal(
             actual_output,  # type: ignore
-            fixture.expected_output,
-            fixture.tolerance,
-            f"Via ibis, {backend} does not produce output within {fixture.tolerance}",
+            cat_expr_output.expected_output,
+            cat_expr_output.tolerance,
+            f"Via ibis, {backend} does not produce output "
+            f"within {cat_expr_output.tolerance}",
         )
     else:
         assert (
-            actual_output == fixture.expected_output
+            actual_output == cat_expr_output.expected_output
         ), f"Via ibis, {backend} does not produce expected output"
 
 

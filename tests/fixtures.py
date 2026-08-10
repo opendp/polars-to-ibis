@@ -48,7 +48,7 @@ class Fixture:
     tolerance: float = 0
 
 
-fixtures = [
+cat_expr_output_list = [
     Fixture(
         "numeric",
         "lf.select(pl.len())",
