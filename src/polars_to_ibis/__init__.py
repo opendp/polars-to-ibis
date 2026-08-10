@@ -1,6 +1,5 @@
 """Convert Polars LazyFrames to Ibis unbound tables"""
 
-import json
 from importlib.metadata import version
 from typing import Any
 
@@ -143,7 +142,7 @@ def split_polars_on_ffi(
     and a dict of parameters for the plugin.
     """
 
-    polars_plan = json.loads(query.serialize(format="json"))
+    polars_plan = serialize(query)
     input_schema = _get_input_schema(polars_plan)
 
     plugin_parameters = replace_ffi_with_input(polars_plan)
