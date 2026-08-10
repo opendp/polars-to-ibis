@@ -7,7 +7,7 @@ import pytest
 from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .fixtures import CatExprOutput, cat_expr_output_list, input_data
+from .scenarios import Scenario, input_data, scenarios
 from .utils import backends, exporters, get_connection
 
 
@@ -21,64 +21,60 @@ def assert_error_or_none(
     try:
         result = func()
     except Exception as e:  # pragma: no cover
-        pytest.fail(f"(If this is expected, add {error_type} to fixture.) {e}")
+        pytest.fail(f"(If this is expected, add {error_type} to scenario.) {e}")
     return result
 
 
 @pytest.mark.parametrize(
-    "cat_expr_output",
-    cat_expr_output_list,
-    ids=lambda cat_expr_output: (
-        f"{cat_expr_output.category}-{cat_expr_output.expression}"
-    ),
+    "scenario",
+    scenarios,
+    ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-def test_fixture_consistency(cat_expr_output: CatExprOutput):
+def test_scenario_consistency(scenario: Scenario):
     # Does the polars expression have the expected result?
-    globals = {"lf": pl.LazyFrame(input_data[cat_expr_output.category]), "pl": pl}
+    globals = {"lf": pl.LazyFrame(input_data[scenario.category]), "pl": pl}
     polars_output = (
-        eval(cat_expr_output.expression, globals).collect().to_dict(as_series=False)
+        eval(scenario.expression, globals).collect().to_dict(as_series=False)
     )
-    assert polars_output == cat_expr_output.expected_output, "Typo in fixture?"
+    assert polars_output == scenario.expected_output, "Typo in scenario?"
 
 
 @pytest.mark.parametrize(
-    "cat_expr_output",
-    cat_expr_output_list,
-    ids=lambda cat_expr_output: (
-        f"{cat_expr_output.category}-{cat_expr_output.expression}"
-    ),
+    "scenario",
+    scenarios,
+    ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table_new(
-    cat_expr_output: CatExprOutput,
+    scenario: Scenario,
     backend: str,
     exporter_key: str,
 ):
     # Set up target database, with data:
     table_name = "default_table"
-    input_df = pl.DataFrame(input_data[cat_expr_output.category])
+    input_df = pl.DataFrame(input_data[scenario.category])
     connection = assert_error_or_none(
         "connection_error",
-        cat_expr_output.connection_errors.get(backend),
+        scenario.connection_errors.get(backend),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
     globals = {"lf": scan_database(connection, table_name), "pl": pl}
-    lf = eval(cat_expr_output.expression, globals)
+    lf = eval(scenario.expression, globals)
 
     ibis_table = assert_error_or_none(
         "convert_error",
-        cat_expr_output.convert_errors.get(f"polars=={pl.__version__}"),
+        scenario.convert_errors.get(f"polars=={pl.__version__}"),
         lambda: convert_polars_to_ibis(lf, table_name),
     )
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
     expected_backend_error = (
-        cat_expr_output.backend_errors.get(backend)
-        or cat_expr_output.backend_errors.get(f"{backend}+{exporter_key}")
-        or cat_expr_output.backend_errors.get(
+        scenario.backend_errors.get(backend)
+        or scenario.backend_errors.get(f"{backend}+{exporter_key}")
+        or scenario.backend_errors.get(
             f"{backend}+{exporter_key}+polars=={pl.__version__}"
         )
     )
@@ -89,17 +85,17 @@ def test_translate_table_new(
     )
 
     # Check if result is what we expect:
-    if cat_expr_output.tolerance:
+    if scenario.tolerance:
         assert_approx_equal(
             actual_output,  # type: ignore
-            cat_expr_output.expected_output,
-            cat_expr_output.tolerance,
+            scenario.expected_output,
+            scenario.tolerance,
             f"Via ibis, {backend} does not produce output "
-            f"within {cat_expr_output.tolerance}",
+            f"within {scenario.tolerance}",
         )
     else:
         assert (
-            actual_output == cat_expr_output.expected_output
+            actual_output == scenario.expected_output
         ), f"Via ibis, {backend} does not produce expected output"
 
 

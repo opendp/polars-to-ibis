@@ -30,7 +30,7 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
     return connection
 
 
-# Test fixtures:
+# Test scenarios:
 
 backends = [
     # Polars could be tested, but there's an error getting the schema,

@@ -127,7 +127,7 @@ def parse_select_expr(
 
                 name = find(expr, "Column")
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
-            # TODO: No test coverage. Add fixture and restore?
+            # TODO: No test coverage. Add scenario and restore?
             # case (
             #     "Function",
             #     {
