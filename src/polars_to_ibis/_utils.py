@@ -26,9 +26,12 @@ def replace_ffi_with_input(
     >>> source
     {'Select': {'expr': ['Len']}}
     """
+    # TODO: When we have a test case with multiple FFIs,
+    # generalize this to handle multiple, instead of just the first.
+
     if isinstance(source, list):
-        for i in source:
-            return replace_ffi_with_input(i)
+        for item in source:
+            return replace_ffi_with_input(item)
     elif isinstance(source, dict):
         for k, v in source.items():
             if k == "expr":
@@ -54,13 +57,17 @@ def find(
     """
     if isinstance(source, list):
         for i in source:
-            return find(i, key)
+            found = find(i, key)
+            if found is not None:
+                return found
     elif isinstance(source, dict):
         for k, v in source.items():
             if k == key:
                 return v
             elif isinstance(v, (dict, list)):
-                return find(v, key)
+                found = find(v, key)
+                if found is not None:
+                    return found
 
 
 def replace(
