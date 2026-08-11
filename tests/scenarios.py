@@ -38,7 +38,7 @@ input_data = {
 
 
 @dataclasses.dataclass
-class Fixture:
+class Scenario:
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
@@ -48,24 +48,26 @@ class Fixture:
     tolerance: float = 0
 
 
-fixtures = [
-    Fixture(
+scenarios = [
+    Scenario(
         "numeric",
         "lf.select(pl.len())",
         {"len": [4]},
     ),
-    Fixture("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
-    Fixture(
+    Scenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
+    Scenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
+    Scenario("numeric", "lf.select(pl.col.ints.clip(0,1).sum())", {"ints": [4]}),
+    Scenario(
         "numeric",
         "lf.mean()",
         {"floats": [0.25], "ints": [2.5]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.mean().cast(pl.Int16)",
         {"floats": [0], "ints": [2]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
@@ -74,7 +76,7 @@ fixtures = [
             "mysql": "Compilation rule for 'Median' operation is not defined",
         },
     ),
-    Fixture(
+    Scenario(
         "numeric",
         # This should return the same value as median, but it doesn't!
         "lf.quantile(0.5)",
@@ -86,25 +88,25 @@ fixtures = [
         # BIG difference between the polars native version and the DB versions!
         tolerance=0.5,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.max()",
         {"floats": [0.4], "ints": [4]},
     ),
-    Fixture("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
-    Fixture(
+    Scenario("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
+    Scenario(
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance=10e-6,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
         tolerance=10e-6,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    ints=pl.col('ints').clip(2.0,3.0),"
@@ -112,7 +114,7 @@ fixtures = [
         ")",
         {"floats": [2.0, 2.0, 2.0, 2.0], "ints": [2, 2, 3, 3]},
     ),
-    Fixture(
+    Scenario(
         "sorting",
         "lf.sort(by='strs')",
         {
@@ -120,7 +122,7 @@ fixtures = [
             "strs": ["A", "B", "C", "Z"],
         },
     ),
-    Fixture(
+    Scenario(
         "sorting",
         "lf.sort(by=['ints', 'strs'])",
         {
@@ -128,7 +130,7 @@ fixtures = [
             "strs": ["B", "C", "A", "Z"],
         },
     ),
-    Fixture(
+    Scenario(
         "sorting",
         "lf.sort(by='strs', descending=True)",
         {
@@ -136,7 +138,7 @@ fixtures = [
             "strs": ["Z", "C", "B", "A"],
         },
     ),
-    Fixture(
+    Scenario(
         "sorting",
         "lf.sort(by=['ints', 'strs'], descending=True)",
         {
@@ -144,7 +146,7 @@ fixtures = [
             "strs": ["Z", "A", "C", "B"],
         },
     ),
-    Fixture(
+    Scenario(
         "sorting",
         "lf.sort(by=['ints', 'strs'], descending=[True, False])",
         {
@@ -152,7 +154,7 @@ fixtures = [
             "strs": ["A", "Z", "B", "C"],
         },
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.sort(by='ints').head(1)",
         {
@@ -161,7 +163,7 @@ fixtures = [
         },
     ),
     # TODO: Negative offset not implemented. Reverse?
-    # Fixture(
+    # Scenario(
     #     "numeric",
     #     "lf.sort(by='ints').tail(1)",
     #     {
@@ -169,48 +171,48 @@ fixtures = [
     #         'floats': [0.4],
     #     },
     # ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select('ints', ten=pl.lit('ten!'))",
         {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            # Providing a Polars type may avoid this error. See next fixture.
+            # Providing a Polars type may avoid this error. See next scenario.
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
@@ -222,132 +224,145 @@ fixtures = [
         },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select('ints', ten=False)",
         {"ints": [1, 2, 3], "ten": [False, False, False]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
     # TODO: Names need to be explictly provided.
-    # Fixture(
+    # Scenario(
     #     "numeric",
     #     "lf.select(pl.col('ints') + pl.col('floats'))",
     #     {"ints": [1.1, 2.2, 3.3, 4.4]},
     # ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select(sum=pl.col('ints') + pl.col('floats'))",
         {"sum": [1.1, 2.2, 3.3, 4.4]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select(diff=pl.col('ints') - pl.col('floats'))",
         {"diff": [0.9, 1.8, 2.7, 3.6]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select(prod=pl.col('ints') * pl.col('floats'))",
         {"prod": [0.1, 0.4, 3 * 0.3, 1.6]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select(div=pl.col('ints') / 2)",
         {"div": [0.5, 1, 1.5, 2]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select(square=pl.col('ints') ** 2)",
         {"square": [1, 4, 9, 16]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select(mod=pl.col('ints') % 2)",
         {"mod": [1, 0, 1, 0]},
     ),
-    Fixture(
+    Scenario(
         "select",
         "lf.select(plus_ten=(-pl.col('ints')) + 10)",
         {"plus_ten": [9, 8, 7]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
     ),
-    # Fixture(
+    # Scenario(
     #     "triangle",
     #     "lf.group_by('keys').agg(pl.len()).sort(by='keys')",
     #     {'keys': [1, 2, 3, 4], 'len': [1, 2, 3, 4]},
     # ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
         {"keys": [0, 1, 1], "values": [2, 3, 4]},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('keys') != 1)",
         {"keys": [0, 0], "values": [1, 2]},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
         {"keys": [0, 1, 1], "values": [2, 3, 4]},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('values') > 2).select('values')",
         {"values": [3, 4]},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('values') >= 2).select('values')",
         {"values": [2, 3, 4]},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('values') < 2).select('values')",
         {"values": [1]},
     ),
-    Fixture(
+    Scenario(
         "grouping",
         "lf.filter(pl.col('values') <= 2).select('values')",
         {"values": [1, 2]},
     ),
-    Fixture(
+    Scenario(
         "hundred",
         "lf.filter((pl.col('ints') % 5 == 0) & (pl.col('ints') % 7 == 0))",
         {"ints": [0, 35, 70]},
     ),
-    Fixture(
+    Scenario(
         "hundred",
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
     # TODO: Going through a DB, None is converted to nan, and test fails.
-    # Fixture(
+    # Scenario(
     #     "nan_null_inf",
     #     # nan != nan, so drop it: We could compare serializations, if necessary.
     #     "lf.drop('nan')",
     #     {'inf': [0.0, float('inf')], 'null': [0.0, None]},
     # ),
-    Fixture(
+    Scenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
-        connection_errors={"mysql": "inf can not be used with MySQL"},
+        # This error message is generated upstream, and we can't change "can not".
+        connection_errors={"mysql": (MYSQL_INF := "inf can not be used with MySQL")},
     ),
-    Fixture(
+    Scenario(
         "nan_null_inf",
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
-        connection_errors={"mysql": "inf can not be used with MySQL"},
+        connection_errors={"mysql": MYSQL_INF},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined"
         },
     ),
-    Fixture(
+    Scenario(
+        "nan_null_inf",
+        "lf.select(pl.col.null.fill_null(999))",
+        {"null": [0, 999]},
+        connection_errors={"mysql": MYSQL_INF},
+    ),
+    Scenario(
+        "nan_null_inf",
+        "lf.filter(pl.col('null') != 0)",
+        {"inf": [], "nan": [], "null": []},
+        connection_errors={"mysql": MYSQL_INF},
+    ),
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').mean(),"
@@ -355,7 +370,7 @@ fixtures = [
         ")",
         {"floats": [0.25], "ints": [2.5]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').median(),"
@@ -367,7 +382,7 @@ fixtures = [
             "mysql": "Compilation rule for 'Median' operation is not defined",
         },
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').sum(),"
@@ -375,7 +390,7 @@ fixtures = [
         ")",
         {"floats": [1.0], "ints": [10]},
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').min(),"
@@ -384,7 +399,7 @@ fixtures = [
         {"floats": [0.1], "ints": [1]},
         tolerance=0.0000001,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').max(),"
@@ -393,7 +408,7 @@ fixtures = [
         {"floats": [0.4], "ints": [4]},
         tolerance=0.0000001,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').std(),"
@@ -402,7 +417,7 @@ fixtures = [
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
         tolerance=0.00001,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').var(),"
@@ -411,7 +426,7 @@ fixtures = [
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance=0.00001,
     ),
-    Fixture(
+    Scenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').quantile(0.5),"

@@ -72,14 +72,14 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 - Python versions: Tested against Python 3.10 and 3.13.
 - Polars versions: Tested against Polars 1.32.0, 1.36.1, and 1.41.2.
 - Ibis version: Tested against Ibis 11.0.0.
-- Feature coverage, and database quirks: We only cover a fraction of the Polars API, and even within that range there are often quirks in how a query is handled by a given database. The best summary is the collection of [test fixtures](https://github.com/opendp/polars-to-ibis/blob/main/tests/fixtures.py).
+- Feature coverage, and database quirks: We only cover a fraction of the Polars API, and even within that range there are often quirks in how a query is handled by a given database. The best summary is the collection of [test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/scenarios.py).
 
 
 ## Contributions
 
 There are several ways to contribute. First, if you find `polars_to_ibis` useful, please [let us know](mailto:contact@opendp.org) and we'll spend more time on this project. If `polars_to_ibis` doesn't work for you, we also want to know that! Please [file an issue](https://github.com/opendp/polars-to-ibis/issues/new/choose).
 
-PRs that expand feature coverage are welcome. Please add a new fixtures to exercise new features, and run tests locally before submitting your PR.
+PRs that expand feature coverage are welcome. Please add a new scenarios to exercise new features, and run tests locally before submitting your PR.
 
 If you have an idea that goes beyond just expanding coverage, please file an issue before beginning work, so we can make sure that your idea aligns with our roadmap.
 

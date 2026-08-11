@@ -2,14 +2,13 @@
 This is a private module: The API may change.
 """
 
-from pprint import pformat
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import replace
+from .._utils import abbreviate
 from .utils import assert_no_extras, split_tag_payload
 from .value_handlers import polars_expr_to_ibis_value
 
@@ -31,8 +30,7 @@ def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
     try:
         return func(payload, table=table)
     except NotImplementedError as e:
-        replace(polars_plan, "DataFrameScan", lambda _: "...")
-        raise NotImplementedError(f"{e}:\n{pformat(polars_plan)}")
+        raise NotImplementedError(f"{e}\nin {abbreviate(polars_plan)}")
 
 
 # Registry:
@@ -109,12 +107,72 @@ def parse_select_expr(
             ):
                 assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
+            case (
+                "Function",
+                {
+                    "function": "FillNull",
+                    "input": [{"Column": name, **extras_1}, expr],
+                    **extras_2,
+                },
+            ):
+                assert_no_extras(extras_1, extras_2)
+                select_kwargs[name] = defer[name].fill_null(
+                    polars_expr_to_ibis_value(expr)
+                )
+            case (
+                "Agg",
+                expr,
+            ):
+                from .._utils import find
+
+                name = find(expr, "Column")
+                agg_kwargs[name] = polars_expr_to_ibis_value(expr)
+            # TODO: No test coverage. Add scenario and restore?
+            # case (
+            #     "Function",
+            #     {
+            #         "function": "FillNull",
+            #         "input": [
+            #             {
+            #                 "Cast": {
+            #                     "dtype": {"Literal": dtype_literal, **extras_1},
+            #                     # TODO: We need the column name at the top-level,
+            #                     # but it could be buried in an expression.
+            #                     # How to extract w/o special case expressions?
+            #                     "expr": {"Column": name, **extras_2},
+            #                     "options": "Strict",
+            #                     **extras_3,
+            #                 },
+            #                 **extras_4,
+            #             },
+            #             fill_expr,
+            #         ],
+            #         **extras_5,
+            #     },
+            # ):
+            #     assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
+            #     select_kwargs[name] = (
+            #         defer[name]
+            #         .cast(dtype_literal.lower())
+            #         .fill_null(polars_expr_to_ibis_value(fill_expr))
+            #     )
             case _:  # pragma: no cover
-                raise NotImplementedError(f"Unsupported {tag}")
+                raise NotImplementedError(f"Unsupported select expr {tag}")
     return (select_kwargs, agg_kwargs, drop_args)
 
 
 # Table handlers:
+
+
+@table_handler("IR")
+def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+    match payload:
+        case {"dsl": _, "version": _, **extras_1}:
+            # TODO: Confirm behavior
+            assert_no_extras(extras_1)
+            return table
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported IR")
 
 
 @table_handler("Scan")

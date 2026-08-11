@@ -6,12 +6,16 @@ from typing import Any
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
+from ._parse.table_handlers import update_polars_to_ibis
+from ._serialize import serialize
+from ._utils import replace_ffi_with_input
+
 __version__ = version("polars_to_ibis")
 
 _MIN_POLARS: str = "1.32.0"
 _MAX_POLARS: str = "1.41.2"
 
-__all__ = ["convert_polars_to_ibis", "scan_database"]
+__all__ = ["convert_polars_to_ibis", "scan_database", "split_polars_on_ffi"]
 
 
 class PolarsToIbisWarning(Warning):
@@ -56,8 +60,6 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     Ibis translates dataframe syntax to idiomatic SQL,
     so it needs to have a table name to include in the SQL.
     """
-    from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
-    from polars_to_ibis._serialize import serialize
 
     _check_version()
 
@@ -129,3 +131,25 @@ def _get_type(polars_type_name: str) -> type:
     raise Exception(
         f"No python type defined for {polars_type_name}"
     )  # pragma: no cover
+
+
+def split_polars_on_ffi(
+    query: pl.LazyFrame, table_name: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Split a Polars LazyFrame on an FFI plugin,
+    returning an Ibis unbound table ready to be executed on a SQL database,
+    and a dict of parameters for the plugin.
+    """
+
+    polars_plan = serialize(query)
+    input_schema = _get_input_schema(polars_plan)
+
+    plugin_parameters = replace_ffi_with_input(polars_plan)
+
+    ibis_table = update_polars_to_ibis(
+        polars_plan=polars_plan,
+        table=ibis.table(input_schema, name=table_name),
+    )
+
+    return ibis_table, plugin_parameters

@@ -1,64 +1,14 @@
 import re
-from os import environ
 from typing import Any, Callable
 
-import ibis  # type: ignore
 import polars as pl
 import pytest
 
 from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .fixtures import Fixture, fixtures, input_data
-
-# Utilities:
-
-
-def get_connection(df: pl.DataFrame, table_name: str, backend: str):
-    kwargs = (
-        {
-            "user": environ["USER"],
-            "password": "",
-            "database": environ["USER"],
-        }
-        if backend == "mysql"
-        else {}
-    )
-    connection = getattr(ibis, backend).connect(**kwargs)
-
-    # Ensure a clean slate.
-    # Each backend raises its own error type
-    # if the table doesn't already exist.
-    # NOTE: overwrite=True would be simpler, but not supported by MySQL.
-    try:
-        connection.drop_table(table_name)
-    except BaseException:  # noqa: B036
-        pass
-    connection.create_table(table_name, df)
-
-    return connection
-
-
-# Test fixtures:
-
-backends = [
-    # Polars could be tested, but there's an error getting the schema,
-    # and since it's not a realistic target for us, drop it from coverage.
-    "sqlite",
-    "duckdb",
-    pytest.param("postgres", marks=pytest.mark.extra_install),
-    pytest.param("mysql", marks=pytest.mark.extra_install),
-]
-
-
-exporters = {  # type: ignore
-    "to_polars": lambda conn, table: conn.to_polars(table).to_dict(as_series=False),  # type: ignore
-    "to_pandas": lambda conn, table: conn.to_pandas(table).to_dict(orient="list"),  # type: ignore
-    "to_pyarrow": lambda conn, table: conn.to_pyarrow(table).to_pydict(),  # type: ignore
-}
-
-
-# Tests:
+from .scenarios import Scenario, input_data, scenarios
+from .utils import backends, exporters, get_connection
 
 
 def assert_error_or_none(
@@ -71,50 +21,60 @@ def assert_error_or_none(
     try:
         result = func()
     except Exception as e:  # pragma: no cover
-        pytest.fail(f"Add {error_type}? {e}")
+        pytest.fail(f"(If this is expected, add {error_type} to scenario.) {e}")
     return result
 
 
 @pytest.mark.parametrize(
-    "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
+    "scenario",
+    scenarios,
+    ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-def test_fixture_consistency(fixture: Fixture):
+def test_scenario_consistency(scenario: Scenario):
     # Does the polars expression have the expected result?
-    globals = {"lf": pl.LazyFrame(input_data[fixture.category]), "pl": pl}
-    polars_output = eval(fixture.expression, globals).collect().to_dict(as_series=False)
-    assert polars_output == fixture.expected_output, "Typo in fixture?"
+    globals = {"lf": pl.LazyFrame(input_data[scenario.category]), "pl": pl}
+    polars_output = (
+        eval(scenario.expression, globals).collect().to_dict(as_series=False)
+    )
+    assert polars_output == scenario.expected_output, "Typo in scenario?"
 
 
 @pytest.mark.parametrize(
-    "fixture", fixtures, ids=lambda fixture: f"{fixture.category}-{fixture.expression}"
+    "scenario",
+    scenarios,
+    ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
-def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
+def test_translate_table_new(
+    scenario: Scenario,
+    backend: str,
+    exporter_key: str,
+):
     # Set up target database, with data:
     table_name = "default_table"
-    input_df = pl.DataFrame(input_data[fixture.category])
+    input_df = pl.DataFrame(input_data[scenario.category])
     connection = assert_error_or_none(
         "connection_error",
-        fixture.connection_errors.get(backend),
+        scenario.connection_errors.get(backend),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
     globals = {"lf": scan_database(connection, table_name), "pl": pl}
-    lf = eval(fixture.expression, globals)
+    lf = eval(scenario.expression, globals)
 
     ibis_table = assert_error_or_none(
         "convert_error",
-        fixture.convert_errors.get(f"polars=={pl.__version__}"),
+        scenario.convert_errors.get(f"polars=={pl.__version__}"),
         lambda: convert_polars_to_ibis(lf, table_name),
     )
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
     expected_backend_error = (
-        fixture.backend_errors.get(backend)
-        or fixture.backend_errors.get(f"{backend}+{exporter_key}")
-        or fixture.backend_errors.get(
+        scenario.backend_errors.get(backend)
+        or scenario.backend_errors.get(f"{backend}+{exporter_key}")
+        or scenario.backend_errors.get(
             f"{backend}+{exporter_key}+polars=={pl.__version__}"
         )
     )
@@ -125,16 +85,17 @@ def test_translate_table_new(fixture: Fixture, backend: str, exporter_key: str):
     )
 
     # Check if result is what we expect:
-    if fixture.tolerance:
+    if scenario.tolerance:
         assert_approx_equal(
             actual_output,  # type: ignore
-            fixture.expected_output,
-            fixture.tolerance,
-            f"Via ibis, {backend} does not produce output within {fixture.tolerance}",
+            scenario.expected_output,
+            scenario.tolerance,
+            f"Via ibis, {backend} does not produce output "
+            f"within {scenario.tolerance}",
         )
     else:
         assert (
-            actual_output == fixture.expected_output
+            actual_output == scenario.expected_output
         ), f"Via ibis, {backend} does not produce expected output"
 
 
@@ -191,7 +152,7 @@ def assert_approx_equal(
                 }
             },
             # Check that the input data structure is shown in error message.
-            "Unsupported Agg:\n{'Select'",
+            "No value handler for 'Count'",
         ),
     ],
     ids=lambda plan: str(plan),
