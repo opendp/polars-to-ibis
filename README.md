@@ -118,6 +118,7 @@ $ uv run scripts/ci.sh
   - `uv version --bump minor`, and add the new number at the top of the `CHANGELOG.md`.
   - Commit your changes, make a PR, and merge this branch to main.
 - Update `main` with the latest changes: `git checkout main; git pull`
+- Build: `uv build`
 - With `~/.pypirc` in place, run `uvx uv-publish`.
 
 ### Conventions
