@@ -118,7 +118,8 @@ $ uv run scripts/ci.sh
   - `uv version --bump minor`, and add the new number at the top of the `CHANGELOG.md`.
   - Commit your changes, make a PR, and merge this branch to main.
 - Update `main` with the latest changes: `git checkout main; git pull`
-- With `~/.pypirc` in place, run `uvx uv-publish`.
+- Build: `uv build`
+- Publish: `uv publish` (You will be prompted for PyPI username and password.)
 
 ### Conventions
 
