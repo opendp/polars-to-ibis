@@ -1,4 +1,6 @@
+import dataclasses
 import re
+from typing import Any
 
 import opendp.prelude as dp
 import polars as pl
@@ -16,6 +18,14 @@ def norm_sql(sql: str):
 table_name = "default_table"
 
 
+@dataclasses.dataclass
+class SplitScenario:
+    expression: str
+    expected_sql: str
+    expected_result: dict[str, Any]
+    expected_scale: float
+
+
 CASE_CLAUSE = """
 CASE
     WHEN COALESCE(t0.ints, 5) IS NULL
@@ -28,13 +38,13 @@ END
 @pytest.mark.parametrize(
     "scenario",
     [
-        (
+        SplitScenario(
             "context.query().select(dp.len())",
             f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
             {"len": [4]},
             1.0,
         ),
-        (
+        SplitScenario(
             "context.query().select(pl.col.ints.dp.sum((0,10)))",
             f"""
             SELECT SUM(
@@ -53,11 +63,9 @@ END
         #     f"... FROM {table_name} AS t0",
         # ),
     ],
-    ids=lambda scenario: "-".join(scenario[:2]),
+    ids=lambda scenario: scenario.expression,
 )
-def test_split_lazyframe(scenario):
-    expression, expected_sql, expected_result, expected_scale = scenario
-
+def test_split_lazyframe(scenario: SplitScenario):
     # Set up database:
     connection = get_connection(
         pl.DataFrame(
@@ -88,7 +96,7 @@ def test_split_lazyframe(scenario):
         "dp": dp,
         "pl": pl,
     }
-    query = eval(expression, globals)
+    query = eval(scenario.expression, globals)
 
     # TODO: Confirm that this is the interface we want.
     def helper_function_to_add_to_opendp(query, table_name, connection):
@@ -108,8 +116,8 @@ def test_split_lazyframe(scenario):
         # Test ibis_table:
         # (Remove test assertion after porting to opendp.)
         actual_sql = norm_sql(ibis_table.to_sql())
-        assert actual_sql == norm_sql(expected_sql)
-        assert private_result == expected_result
+        assert actual_sql == norm_sql(scenario.expected_sql)
+        assert private_result == scenario.expected_result
 
         # Use plugin_parameters:
 
@@ -164,7 +172,7 @@ def test_split_lazyframe(scenario):
                 },
             }
 
-        assert plugin_parameters == get_expected_parameters(expected_scale)
+        assert plugin_parameters == get_expected_parameters(scenario.expected_scale)
 
         # Put the pieces together:
 
