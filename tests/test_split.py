@@ -16,6 +16,15 @@ def norm_sql(sql: str):
 table_name = "default_table"
 
 
+CASE_CLAUSE = """
+CASE
+    WHEN COALESCE(t0.ints, 5) IS NULL
+    THEN COALESCE(t0.ints, 5)
+    ELSE LEAST(10, COALESCE(t0.ints, 5))
+END
+"""
+
+
 @pytest.mark.parametrize(
     "scenario",
     [
@@ -23,6 +32,21 @@ table_name = "default_table"
             "context.query().select(dp.len())",
             f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
             {"len": [4]},
+            1.0,
+        ),
+        (
+            "context.query().select(pl.col.ints.dp.sum((0,10)))",
+            f"""
+            SELECT SUM(
+                CASE
+                    WHEN {CASE_CLAUSE} IS NULL
+                    THEN {CASE_CLAUSE}
+                    ELSE GREATEST( 0, {CASE_CLAUSE} )
+                END
+            ) AS ints FROM default_table AS t0"
+            """,
+            {"ints": [10]},
+            10.0,
         ),
         # (
         #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
@@ -32,7 +56,7 @@ table_name = "default_table"
     ids=lambda scenario: "-".join(scenario[:2]),
 )
 def test_split_lazyframe(scenario):
-    expression, expected_sql, expected_result = scenario
+    expression, expected_sql, expected_result, expected_scale = scenario
 
     # Set up database:
     connection = get_connection(
@@ -84,7 +108,7 @@ def test_split_lazyframe(scenario):
         # Test ibis_table:
         # (Remove test assertion after porting to opendp.)
         actual_sql = norm_sql(ibis_table.to_sql())
-        assert actual_sql == expected_sql
+        assert actual_sql == norm_sql(expected_sql)
         assert private_result == expected_result
 
         # Use plugin_parameters:
@@ -124,19 +148,23 @@ def test_split_lazyframe(scenario):
         plugin_parameters["unpickled_kwargs"] = kwargs
         del plugin_parameters["kwargs"]
         plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
-        assert plugin_parameters == {
-            "flags": {
-                "check_lengths": True,
-                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
-            },
-            "lib": ".../opendp.abi3.so",
-            "symbol": "noise_plugin",
-            "unpickled_kwargs": {
-                "distribution": "Laplace",
-                "scale": 1.0,
-                "support": "Integer",
-            },
-        }
+
+        def get_expected_parameters(scale):
+            return {
+                "flags": {
+                    "check_lengths": True,
+                    "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
+                },
+                "lib": ".../opendp.abi3.so",
+                "symbol": "noise_plugin",
+                "unpickled_kwargs": {
+                    "distribution": "Laplace",
+                    "scale": scale,
+                    "support": "Integer",
+                },
+            }
+
+        assert plugin_parameters == get_expected_parameters(expected_scale)
 
         # Put the pieces together:
 

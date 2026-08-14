@@ -192,6 +192,14 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             raise NotImplementedError("Unsupported Function Quantile")
+        case {
+            "input": [input_expr, fill_expr],
+            "function": "FillNull",
+            **extras_1,
+        }:
+            assert_no_extras(extras_1)
+            fill_value = polars_expr_to_ibis_value(fill_expr)
+            return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Function")
 
