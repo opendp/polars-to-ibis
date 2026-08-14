@@ -8,7 +8,7 @@ from typing import Any
 
 
 def replace_ffi_with_input(
-    source: dict[str, Any] | list[Any] | str,
+    source: dict[str, Any] | list[Any] | float,
 ):  # pragma: no cover
     """
     >>> source = {
@@ -43,6 +43,8 @@ def replace_ffi_with_input(
                     return ffi_plugin
             elif isinstance(v, (dict, list)):
                 return replace_ffi_with_input(v)
+    elif isinstance(source, (float, int)):
+        return source
     raise ValueError("Expected dict or list")
 
 
@@ -95,5 +97,6 @@ def replace(
 
 
 def abbreviate(source: dict[str, Any]) -> str:
+    replace(source, "kwargs", lambda _: "...")
     replace(source, "DataFrameScan", lambda _: "...")
     return pformat(source)

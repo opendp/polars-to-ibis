@@ -127,6 +127,14 @@ def parse_select_expr(
 
                 name = find(expr, "Column")
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
+            case (
+                "BinaryExpr",
+                {"left": left_expr, "op": "TrueDivide", "right": right_expr},
+            ):
+                select_kwargs["mean"] = polars_expr_to_ibis_value(
+                    left_expr
+                ) / polars_expr_to_ibis_value(right_expr)
+
             # TODO: No test coverage. Add scenario and restore?
             # case (
             #     "Function",

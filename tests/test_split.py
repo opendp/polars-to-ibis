@@ -15,7 +15,7 @@ def norm_sql(sql: str):
     return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
-table_name = "default_table"
+TABLE_NAME = "default_table"
 
 
 @dataclasses.dataclass
@@ -40,7 +40,7 @@ END
     [
         SplitScenario(
             "context.query().select(dp.len())",
-            f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
+            f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
             {"len": [4]},
             1.0,
         ),
@@ -53,10 +53,18 @@ END
                     THEN {CASE_CLAUSE}
                     ELSE GREATEST( 0, {CASE_CLAUSE} )
                 END
-            ) AS ints FROM default_table AS t0"
+            ) AS ints FROM {TABLE_NAME} AS t0"
             """,
             {"ints": [10]},
             10.0,
+        ),
+        SplitScenario(
+            "context.query().select(pl.col.ints.dp.mean((0,10)))",
+            """
+            ???
+            """,
+            {"ints": [2.5]},
+            0,
         ),
         # (
         #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
@@ -74,14 +82,14 @@ def test_split_lazyframe(scenario: SplitScenario):
                 "floats": [0.1, 0.2, 0.3, 0.4],
             }
         ),
-        table_name,
+        TABLE_NAME,
         "sqlite",
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
     # (If there is non-OpenDP boilerplate, move it into the package.)
     dp.enable_features("contrib", "honest-but-curious")
-    schema_lf = scan_database(connection, table_name)
+    schema_lf = scan_database(connection, TABLE_NAME)
     context = dp.Context.compositor(
         data=schema_lf,
         privacy_unit=dp.unit_of(contributions=1),
@@ -178,5 +186,5 @@ def test_split_lazyframe(scenario: SplitScenario):
 
         return measurement(private_item)
 
-    dp_result = helper_function_to_add_to_opendp(query, table_name, connection)
+    dp_result = helper_function_to_add_to_opendp(query, TABLE_NAME, connection)
     assert isinstance(dp_result, float) or isinstance(dp_result, int)
