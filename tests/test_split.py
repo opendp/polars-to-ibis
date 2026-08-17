@@ -8,7 +8,7 @@ import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
-from .utils import get_connection
+from .utils import backends, get_connection
 
 
 def norm_sql(sql: str):
@@ -76,17 +76,18 @@ scenarios = [
     scenarios,
     ids=lambda scenario: scenario.expression,
 )
-def test_split_lazyframe(scenario: SplitScenario):
+@pytest.mark.parametrize("backend", backends)
+def test_split_lazyframe(scenario: SplitScenario, backend: str):
     # Set up database:
     connection = get_connection(
-        pl.DataFrame(
+        df=pl.DataFrame(
             {
                 "ints": [1, 2, 3, 4],
                 "floats": [0.1, 0.2, 0.3, 0.4],
             }
         ),
-        TABLE_NAME,
-        "sqlite",
+        table_name=TABLE_NAME,
+        backend=backend,
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
