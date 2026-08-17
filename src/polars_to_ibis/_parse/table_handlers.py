@@ -53,6 +53,10 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
     return [list(col.values())[0] for col in col_list]
 
 
+def infer_name(expr):
+    return "literal" if "Literal" in expr else expr.get("Column")
+
+
 def parse_select_expr(
     col_list: list[dict[str, Any]],
 ) -> tuple[dict[str, ir.Value], dict[str, ir.Value], list[str]]:
@@ -137,7 +141,7 @@ def parse_select_expr(
                 },
             ):
                 assert_no_extras(extras_1)
-                target_name = left_expr["Column"]  # TODO: Generalize!
+                target_name = infer_name(left_expr) or infer_name(right_expr)
                 select_kwargs[target_name] = polars_expr_to_ibis_value(
                     left_expr
                 ) / polars_expr_to_ibis_value(right_expr)

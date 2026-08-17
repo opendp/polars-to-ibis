@@ -59,6 +59,16 @@ scenarios = [
     Scenario(
         "numeric", "lf.select(pl.col.floats / 2)", {"floats": [0.05, 0.1, 0.15, 0.2]}
     ),
+    Scenario(
+        "numeric",
+        "lf.select(2 / pl.col.floats)",
+        {"literal": [20.0, 10.0, 20.0 / 3, 5.0]},
+    ),
+    Scenario(
+        "numeric",
+        "lf.select(pl.col.ints / pl.col.floats)",
+        {"ints": [10.0, 10.0, 10.0, 10.0]},
+    ),
     Scenario("numeric", "lf.select(pl.col.ints.clip(0,1).sum())", {"ints": [4]}),
     Scenario(
         "numeric",
