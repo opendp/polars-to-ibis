@@ -8,7 +8,7 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate
+from .._utils import abbreviate, find
 from .utils import assert_no_extras, split_tag_payload
 from .value_handlers import polars_expr_to_ibis_value
 
@@ -54,7 +54,7 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 
 def infer_name(expr):
-    return "literal" if "Literal" in expr else expr.get("Column")
+    return "literal" if "Literal" in expr else find(expr, "Column")
 
 
 def parse_select_expr(
@@ -145,6 +145,17 @@ def parse_select_expr(
                 select_kwargs[target_name] = polars_expr_to_ibis_value(
                     left_expr
                 ) / polars_expr_to_ibis_value(right_expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": "ToUppercase",
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                column_name = infer_name(expr)
+                agg_kwargs[column_name.upper()] = polars_expr_to_ibis_value(expr)
 
             # TODO: No test coverage. Add scenario and restore?
             # case (
