@@ -8,7 +8,7 @@ from typing import Any
 
 
 def replace_ffi_with_input(
-    source: dict[str, Any] | list[Any] | float,
+    source: dict[str, Any] | list[Any] | str,
 ):  # pragma: no cover
     """
     >>> source = {
@@ -28,7 +28,6 @@ def replace_ffi_with_input(
     """
     # TODO: When we have a test case with multiple FFIs,
     # generalize this to handle multiple, instead of just the first.
-
     if isinstance(source, list):
         for item in source:
             return replace_ffi_with_input(item)
@@ -43,8 +42,8 @@ def replace_ffi_with_input(
                     return ffi_plugin
             elif isinstance(v, (dict, list)):
                 return replace_ffi_with_input(v)
-    elif isinstance(source, (float, int)):
-        return source
+    # elif isinstance(source, (float, int)):
+    #     return source
     raise ValueError("Expected dict or list")
 
 

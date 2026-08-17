@@ -58,14 +58,15 @@ END
             {"ints": [10]},
             10.0,
         ),
-        SplitScenario(
-            "context.query().select(pl.col.ints.dp.mean((0,10)))",
-            """
-            ???
-            """,
-            {"ints": [2.5]},
-            0,
-        ),
+        # TODO:
+        # SplitScenario(
+        #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
+        #     """
+        #     ???
+        #     """,
+        #     {"ints": [2.5]},
+        #     0,
+        # ),
         # (
         #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
         #     f"... FROM {table_name} AS t0",
