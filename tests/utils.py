@@ -37,6 +37,7 @@ backends = [
     # and since it's not a realistic target for us, drop it from coverage.
     "sqlite",
     "duckdb",
+    "pyspark",
     pytest.param("postgres", marks=pytest.mark.extra_install),
     pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
