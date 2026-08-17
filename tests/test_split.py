@@ -34,19 +34,16 @@ CASE
 END
 """
 
-
-@pytest.mark.parametrize(
-    "scenario",
-    [
-        SplitScenario(
-            "context.query().select(dp.len())",
-            f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
-            {"len": [4]},
-            1.0,
-        ),
-        SplitScenario(
-            "context.query().select(pl.col.ints.dp.sum((0,10)))",
-            f"""
+scenarios = [
+    SplitScenario(
+        "context.query().select(dp.len())",
+        f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
+        {"len": [4]},
+        1.0,
+    ),
+    SplitScenario(
+        "context.query().select(pl.col.ints.dp.sum((0,10)))",
+        f"""
             SELECT SUM(
                 CASE
                     WHEN {CASE_CLAUSE} IS NULL
@@ -55,23 +52,28 @@ END
                 END
             ) AS ints FROM {TABLE_NAME} AS t0"
             """,
-            {"ints": [10]},
-            10.0,
-        ),
-        # TODO:
-        # SplitScenario(
-        #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
-        #     """
-        #     ???
-        #     """,
-        #     {"ints": [2.5]},
-        #     0,
-        # ),
-        # (
-        #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
-        #     f"... FROM {table_name} AS t0",
-        # ),
-    ],
+        {"ints": [10]},
+        10.0,
+    ),
+    # TODO:
+    # SplitScenario(
+    #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
+    #     """
+    #     ???
+    #     """,
+    #     {"ints": [2.5]},
+    #     0,
+    # ),
+    # (
+    #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
+    #     f"... FROM {table_name} AS t0",
+    # ),
+]
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    scenarios,
     ids=lambda scenario: scenario.expression,
 )
 def test_split_lazyframe(scenario: SplitScenario):
