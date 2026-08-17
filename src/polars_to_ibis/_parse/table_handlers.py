@@ -58,7 +58,7 @@ def parse_select_expr(
 ) -> tuple[dict[str, ir.Value], dict[str, ir.Value], list[str]]:
     """
     Given a polars serialization,
-    return tuple of (kw)args to be used for select() or drop().
+    return tuple of (kw)args to be used for select(), aggregate(), or drop().
 
     >>> parse_select_expr([{'Column': 'keep'}, {'Column': 'two'}])
     ({'keep': 'keep', 'two': 'two'}, {}, [])
