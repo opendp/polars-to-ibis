@@ -160,8 +160,8 @@ def parse_select_expr(
                 "RenameAlias",
                 {
                     "expr": expr,
-                    "function": {"Suffix": suffix},
-                    **extras_1,
+                    "function": {"Suffix": suffix, **extras_1},
+                    **extras_2,
                 },
             ):
                 assert_no_extras(extras_1)
@@ -171,11 +171,11 @@ def parse_select_expr(
                 "RenameAlias",
                 {
                     "expr": expr,
-                    "function": {"Prefix": prefix},
-                    **extras_1,
+                    "function": {"Prefix": prefix, **extras_1},
+                    **extras_2,
                 },
             ):
-                assert_no_extras(extras_1)
+                assert_no_extras(extras_1, extras_2)
                 column_name = infer_name(expr)
                 agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
             # TODO: No test coverage. Add scenario and restore?

@@ -169,22 +169,21 @@ def test_split_lazyframe(scenario: SplitScenario, backend: str):
         del plugin_parameters["kwargs"]
         plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
 
-        def get_expected_parameters(scale):
-            return {
-                "flags": {
-                    "check_lengths": True,
-                    "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
-                },
-                "lib": ".../opendp.abi3.so",
-                "symbol": "noise_plugin",
-                "unpickled_kwargs": {
-                    "distribution": "Laplace",
-                    "scale": scale,
-                    "support": "Integer",
-                },
-            }
+        expected_parameters = {
+            "flags": {
+                "check_lengths": True,
+                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
+            },
+            "lib": ".../opendp.abi3.so",
+            "symbol": "noise_plugin",
+            "unpickled_kwargs": {
+                "distribution": "Laplace",
+                "scale": scenario.expected_scale,
+                "support": "Integer",
+            },
+        }
 
-        assert plugin_parameters == get_expected_parameters(scenario.expected_scale)
+        assert plugin_parameters == expected_parameters
 
         # Put the pieces together:
 

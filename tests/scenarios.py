@@ -61,16 +61,29 @@ scenarios = [
     ),
     Scenario(
         "numeric",
-        "lf.select(pl.col.ints.sum().name.suffix('_post'))",
-        {"ints_post": [10]},
-    ),
-    Scenario(
-        "numeric",
         "lf.select(pl.col.ints.sum().name.prefix('pre_'))",
         {"pre_ints": [10]},
     ),
     Scenario(
-        "numeric", "lf.select(pl.col.floats / 2)", {"floats": [0.05, 0.1, 0.15, 0.2]}
+        "numeric",
+        "lf.select(pl.col.ints.sum().name.suffix('_post'))",
+        {"ints_post": [10]},
+    ),
+    # TODO: Currently failing, because the rename handler assumes it is an aggregation.
+    # Scenario(
+    #     "numeric",
+    #     "lf.select(pl.col.ints.name.prefix('pre_'))",
+    #     {"pre_ints": [1, 2, 3, 4]},
+    # ),
+    # Scenario(
+    #     "numeric",
+    #     "lf.select(pl.col.ints.name.suffix('_post'))",
+    #     {"ints_post": [1, 2, 3, 4]},
+    # ),
+    Scenario(
+        "numeric",
+        "lf.select(pl.col.floats / 2)",
+        {"floats": [0.05, 0.1, 0.15, 0.2]},
     ),
     Scenario(
         "numeric",

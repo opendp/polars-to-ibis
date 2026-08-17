@@ -42,8 +42,6 @@ def replace_ffi_with_input(
                     return ffi_plugin
             elif isinstance(v, (dict, list)):
                 return replace_ffi_with_input(v)
-    # elif isinstance(source, (float, int)):
-    #     return source
     raise ValueError("Expected dict or list")
 
 
