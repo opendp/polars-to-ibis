@@ -137,7 +137,8 @@ def parse_select_expr(
                 },
             ):
                 assert_no_extras(extras_1)
-                select_kwargs["mean"] = polars_expr_to_ibis_value(
+                target_name = left_expr["Column"]  # TODO: Generalize!
+                select_kwargs[target_name] = polars_expr_to_ibis_value(
                     left_expr
                 ) / polars_expr_to_ibis_value(right_expr)
 
