@@ -47,6 +47,11 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 # Value Handlers:
 
 
+@value_handler("Len")
+def handle_len(payload: PolarsPlan):
+    return defer.count()
+
+
 @value_handler("Literal")
 def handle_literal(payload: PolarsPlan):
     match payload:

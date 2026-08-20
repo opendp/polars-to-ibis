@@ -13,6 +13,8 @@ ReturnsValue = Callable[..., NamedValue]
 
 
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
+    if isinstance(polars_plan, str):
+        return (polars_plan, None)
     match list(polars_plan.items()):
         case [[tag, payload]]:
             return tag, payload

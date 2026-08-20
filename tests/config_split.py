@@ -22,8 +22,12 @@ END
 
 split_scenarios = [
     SplitScenario(
-        "context.query().select(dp.len())",
-        f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
+        "context.query().select(dp.len().alias('new_name'))",
+        f"""
+        SELECT COUNT(*)
+        OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+        AS new_name FROM {TABLE_NAME} AS t0
+        """,
         {"len": [4]},
         1.0,
     ),
