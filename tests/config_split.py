@@ -27,6 +27,13 @@ split_scenarios = [
         {"len": [4]},
         1.0,
     ),
+    # TODO: Should have two results, "len" and "duplicate"
+    # SplitScenario(
+    #     "context.query().select(dp.len(), dp.len().alias('duplicate'))",
+    #     f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
+    #     {"len": [4]},
+    #     2.0,
+    # ),
     SplitScenario(
         "context.query().select(pl.col.ints.dp.sum((0,10)))",
         f"""
@@ -41,7 +48,7 @@ split_scenarios = [
         {"ints": [10]},
         10.0,
     ),
-    # TODO:
+    # TODO: Add support for mean()
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
     #     """

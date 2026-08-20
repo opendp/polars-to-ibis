@@ -69,6 +69,11 @@ parser_scenarios = [
         "lf.select(pl.col.ints.sum().name.suffix('_post'))",
         {"ints_post": [10]},
     ),
+    ParserScenario(
+        "numeric",
+        "lf.select(pl.col.ints.sum().alias('new_name'))",
+        {"new_name": [10]},
+    ),
     # TODO: Currently failing, because the rename handler assumes it is an aggregation.
     # Scenario(
     #     "numeric",
@@ -80,6 +85,11 @@ parser_scenarios = [
     #     "lf.select(pl.col.ints.name.suffix('_post'))",
     #     {"ints_post": [1, 2, 3, 4]},
     # ),
+    ParserScenario(
+        "numeric",
+        "lf.select(pl.col.ints.alias('new_name'))",
+        {"new_name": [1, 2, 3, 4]},
+    ),
     ParserScenario(
         "numeric",
         "lf.select(pl.col.floats / 2)",
