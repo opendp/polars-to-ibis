@@ -2,9 +2,12 @@
 This is a private module: The API may change.
 """
 
+from collections import namedtuple
 from collections.abc import Callable
 from pprint import pformat
 from typing import Any
+
+PluginDetails = namedtuple("PluginDetails", ["params_dict", "input_expr"])
 
 
 class PluginReplacer:
@@ -29,19 +32,19 @@ class PluginReplacer:
         match sub_source:
             case {
                 "Function": {
-                    "function": {"FfiPlugin": ffi_params},
+                    "function": {"FfiPlugin": params_dict},
                     "input": [input_expr],
                 }
             }:
-                return (ffi_params, input_expr)
+                return PluginDetails(params_dict=params_dict, input_expr=input_expr)
 
     def _sub_replace(self, sub_source):
         if isinstance(sub_source, list):
             for i in range(len(sub_source)):
-                params_input_tuple = self._find_pattern(sub_source[i])
-                if params_input_tuple:
-                    sub_source[i] = params_input_tuple[1]
-                    self._param_dicts.append(params_input_tuple[0])
+                plugin_details = self._find_pattern(sub_source[i])
+                if plugin_details:
+                    sub_source[i] = plugin_details.input_expr
+                    self._param_dicts.append(plugin_details.params_dict)
                 else:
                     self._sub_replace(sub_source[i])
         if isinstance(sub_source, dict):
