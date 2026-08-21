@@ -9,7 +9,7 @@ class SplitScenario:
     expression: str
     expected_sql: str
     expected_result: dict[str, Any]
-    expected_scale: float
+    expected_parameters: float
 
 
 def get_case_clause(table: str) -> str:
@@ -22,7 +22,7 @@ def get_case_clause(table: str) -> str:
     """
 
 
-def get_select_sum(table: str) -> str:
+def get_select_int_sum(table: str) -> str:
     case_clause = get_case_clause(table)
     return f"""
     SELECT SUM(
@@ -31,8 +31,30 @@ def get_select_sum(table: str) -> str:
             THEN {case_clause}
             ELSE GREATEST( 0, {case_clause} )
         END
-    ) AS ints"
+    ) AS ints
     """
+
+
+def get_select_float_sum(table: str) -> str:
+    return f"""
+SELECT SUM( CASE WHEN CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END IS NULL THEN CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END ELSE GREATEST( 0.0, CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END ) END ) AS floats
+"""
+
+
+def get_expected_parameters(scale, support):
+    return {
+        "flags": {
+            "check_lengths": True,
+            "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
+        },
+        "lib": ".../opendp.abi3.so",
+        "symbol": "noise_plugin",
+        "unpickled_kwargs": {
+            "distribution": "Laplace",
+            "scale": scale,
+            "support": support,
+        },
+    }
 
 
 split_scenarios = [
@@ -40,24 +62,46 @@ split_scenarios = [
         "context.query().select(dp.len())",
         f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
         {"len": [4]},
-        1.0,
+        get_expected_parameters(1.0, "Integer"),
     ),
     SplitScenario(
         "context.query().select(pl.col.ints.dp.sum((0,10)))",
-        f"{get_select_sum('t0')} FROM {TABLE_NAME} AS t0",
+        f"{get_select_int_sum('t0')} FROM {TABLE_NAME} AS t0",
         {"ints": [10]},
-        10.0,
+        get_expected_parameters(10.0, "Integer"),
     ),
     SplitScenario(
         "context.query().filter(pl.col.ints!=1).select(pl.col.ints.dp.sum((0,10)))",
         f"""
-        {get_select_sum('t1')} FROM (
+        {get_select_int_sum('t1')} FROM (
             SELECT * FROM {TABLE_NAME} AS t0 WHERE t0.ints <> 1
         ) AS t1
         """,
         {"ints": [9]},
-        10.0,
+        get_expected_parameters(10.0, "Integer"),
     ),
+    SplitScenario(
+        "context.query().select(pl.col.floats.dp.sum((0,1)))",
+        f"{get_select_float_sum('t0')} FROM {TABLE_NAME} AS t0",
+        {"floats": [1]},
+        get_expected_parameters(1.00044408920985, "Float"),
+    ),
+    # SplitScenario(
+    #     # Two separate DP queries that differ only in their parameters.
+    #     # TODO: passes, but shouldn't! results should show two separate queries.
+    #     "context.query().select(pl.col.floats.dp.sum((0,1)),pl.col.ints.dp.sum((0,10)))",
+    #     f"{get_select_sum('t0')} FROM {TABLE_NAME} AS t0",
+    #     {"ints": [10]},
+    #     10.0,
+    # ),
+    # SplitScenario(
+    #     "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
+    #     """
+    #     TODO
+    #     """,
+    #     {},
+    #     10.0,
+    # ),
     # TODO:
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",

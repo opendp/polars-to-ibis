@@ -7,36 +7,43 @@ from pprint import pformat
 from typing import Any
 
 
-def replace_ffi_with_input(
-    source: dict[str, Any] | list[Any] | str,
-):  # pragma: no cover
+class PluginReplacer:
     """
-    Modifies `source` in place, and returns the FFI parameters.
+    Finds all FFI plugins in an expression,
+    pulls them out, and replaces them with their inputs,
+    and separately returns the parameters for each plugin call.
     """
-    # TODO: When we have a test case with multiple FFIs,
-    # generalize this to handle multiple, instead of just the first.
-    if isinstance(source, list):
-        for i in range(len(source)):
-            match source[i]:
-                case {
-                    "Function": {
-                        "function": {"FfiPlugin": params},
-                        "input": [input_expr],
-                    }
-                }:
-                    source[i] = input_expr
-                    return params
-                case _:
-                    params = replace_ffi_with_input(source[i])
-                    if params is not None:
-                        return params
-    if isinstance(source, dict):
-        for v in source.values():
-            if isinstance(v, (dict, list)):
-                params = replace_ffi_with_input(v)
-                if params is not None:
-                    return params
-    return None
+
+    def __init__(self, source):
+        self._source = source
+        self._param_dicts = []
+
+    def replace(self):
+        self._sub_replace(self._source)
+        if not self._param_dicts:
+            raise Exception(f"Did not find FFI in {self._source}")
+        return self._param_dicts
+
+    def _sub_replace(self, sub_source):
+        if isinstance(sub_source, list):
+            for i in range(len(sub_source)):
+                match sub_source[i]:
+                    # TODO: pull out this test into a smaller function,
+                    # so we can write tests that don't depend on this structure.
+                    case {
+                        "Function": {
+                            "function": {"FfiPlugin": ffi_params},
+                            "input": [input_expr],
+                        }
+                    }:
+                        sub_source[i] = input_expr
+                        self._param_dicts.append(ffi_params)
+                    case _:
+                        self._sub_replace(sub_source[i])
+        if isinstance(sub_source, dict):
+            for v in sub_source.values():
+                if isinstance(v, (dict, list)):
+                    self._sub_replace(v)
 
 
 def find(

@@ -178,6 +178,23 @@ def parse_select_expr(
                 assert_no_extras(extras_1, extras_2)
                 column_name = infer_name(expr)
                 agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
+            case (
+                "Ternary",
+                {
+                    "predicate": predicate_expr,
+                    "truthy": truthy_expr,
+                    "falsy": falsy_expr,
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                column_name = infer_name(predicate_expr)
+                select_kwargs[column_name] = polars_expr_to_ibis_value(
+                    predicate_expr
+                ).ifelse(
+                    polars_expr_to_ibis_value(truthy_expr),
+                    polars_expr_to_ibis_value(falsy_expr),
+                )
             # TODO: No test coverage. Add scenario and restore?
             # case (
             #     "Function",
