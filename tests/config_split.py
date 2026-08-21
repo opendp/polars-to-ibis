@@ -36,8 +36,31 @@ def get_select_int_sum(table: str) -> str:
 
 
 def get_select_float_sum(table: str) -> str:
+    case_when_not = """
+    CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) )
+              OR ( COALESCE(t0.floats, 0.5) IS NULL )
+        THEN COALESCE(t0.floats, 0.5)
+        ELSE 0.5
+    END
+    """
     return f"""
-SELECT SUM( CASE WHEN CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END IS NULL THEN CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END ELSE GREATEST( 0.0, CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END ) END ) AS floats
+SELECT SUM( CASE
+    WHEN CASE
+        WHEN {case_when_not} IS NULL
+            THEN {case_when_not}
+            ELSE LEAST( 1.0, {case_when_not} )
+        END IS NULL
+        THEN CASE
+            WHEN {case_when_not} IS NULL
+                THEN {case_when_not}
+                ELSE LEAST( 1.0, {case_when_not} )
+            END
+    ELSE GREATEST( 0.0, CASE
+        WHEN {case_when_not} IS NULL
+            THEN {case_when_not}
+            ELSE LEAST( 1.0, {case_when_not} )
+        END )
+END ) AS floats
 """
 
 
