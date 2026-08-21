@@ -12,13 +12,28 @@ class SplitScenario:
     expected_scale: float
 
 
-CASE_CLAUSE = """
-CASE
-    WHEN COALESCE(t0.ints, 5) IS NULL
-    THEN COALESCE(t0.ints, 5)
-    ELSE LEAST(10, COALESCE(t0.ints, 5))
-END
-"""
+def get_case_clause(table: str) -> str:
+    return f"""
+    CASE
+        WHEN COALESCE({table}.ints, 5) IS NULL
+        THEN COALESCE({table}.ints, 5)
+        ELSE LEAST(10, COALESCE({table}.ints, 5))
+    END
+    """
+
+
+def get_select_sum(table: str) -> str:
+    case_clause = get_case_clause(table)
+    return f"""
+    SELECT SUM(
+        CASE
+            WHEN {case_clause} IS NULL
+            THEN {case_clause}
+            ELSE GREATEST( 0, {case_clause} )
+        END
+    ) AS ints"
+    """
+
 
 split_scenarios = [
     SplitScenario(
@@ -29,16 +44,18 @@ split_scenarios = [
     ),
     SplitScenario(
         "context.query().select(pl.col.ints.dp.sum((0,10)))",
-        f"""
-            SELECT SUM(
-                CASE
-                    WHEN {CASE_CLAUSE} IS NULL
-                    THEN {CASE_CLAUSE}
-                    ELSE GREATEST( 0, {CASE_CLAUSE} )
-                END
-            ) AS ints FROM {TABLE_NAME} AS t0"
-            """,
+        f"{get_select_sum('t0')} FROM {TABLE_NAME} AS t0",
         {"ints": [10]},
+        10.0,
+    ),
+    SplitScenario(
+        "context.query().filter(pl.col.ints!=1).select(pl.col.ints.dp.sum((0,10)))",
+        f"""
+        {get_select_sum('t1')} FROM (
+            SELECT * FROM {TABLE_NAME} AS t0 WHERE t0.ints <> 1
+        ) AS t1
+        """,
+        {"ints": [9]},
         10.0,
     ),
     # TODO:
