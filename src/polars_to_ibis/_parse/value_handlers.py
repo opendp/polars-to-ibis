@@ -200,8 +200,40 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             assert_no_extras(extras_1)
             fill_value = polars_expr_to_ibis_value(fill_expr)
             return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
+        case {
+            "function": {"Boolean": "IsNotNan", **extras_1},
+            "input": [input_expr],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return ~(polars_expr_to_ibis_value(input_expr).isnan())
+        case {
+            "function": {"Boolean": "IsNull", **extras_1},
+            "input": [input_expr],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return polars_expr_to_ibis_value(input_expr).isnull()
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported Function")
+
+
+@value_handler("Ternary")
+def handle_ternary(payload: PolarsPlan):
+    match payload:
+        case {
+            "predicate": predicate_expr,
+            "truthy": truthy_expr,
+            "falsy": falsy_expr,
+            **extras,
+        }:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(predicate_expr).ifelse(
+                polars_expr_to_ibis_value(truthy_expr),
+                polars_expr_to_ibis_value(falsy_expr),
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported Ternary")
 
 
 @value_handler("BinaryExpr")
