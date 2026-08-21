@@ -24,22 +24,26 @@ class PluginReplacer:
             raise Exception(f"Did not find FFI in {self._source}")
         return self._param_dicts
 
+    def _find_pattern(self, sub_source):
+        # Testing subclass could override this.
+        match sub_source:
+            case {
+                "Function": {
+                    "function": {"FfiPlugin": ffi_params},
+                    "input": [input_expr],
+                }
+            }:
+                return (ffi_params, input_expr)
+
     def _sub_replace(self, sub_source):
         if isinstance(sub_source, list):
             for i in range(len(sub_source)):
-                match sub_source[i]:
-                    # TODO: pull out this test into a smaller function,
-                    # so we can write tests that don't depend on this structure.
-                    case {
-                        "Function": {
-                            "function": {"FfiPlugin": ffi_params},
-                            "input": [input_expr],
-                        }
-                    }:
-                        sub_source[i] = input_expr
-                        self._param_dicts.append(ffi_params)
-                    case _:
-                        self._sub_replace(sub_source[i])
+                params_input_tuple = self._find_pattern(sub_source[i])
+                if params_input_tuple:
+                    sub_source[i] = params_input_tuple[1]
+                    self._param_dicts.append(params_input_tuple[0])
+                else:
+                    self._sub_replace(sub_source[i])
         if isinstance(sub_source, dict):
             for v in sub_source.values():
                 if isinstance(v, (dict, list)):
