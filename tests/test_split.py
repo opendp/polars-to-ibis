@@ -7,7 +7,7 @@ import pytest
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
 from .config_split import TABLE_NAME, SplitScenario, split_scenarios
-from .utils import backends, get_connection
+from .utils import assert_error_or_none, backends, get_connection
 
 
 def norm_sql(sql: str):
@@ -65,7 +65,11 @@ def test_split_lazyframe(scenario: SplitScenario, backend: str):
 
         # Use ibis_table:
 
-        private_result = connection.to_polars(ibis_table).to_dict(as_series=False)
+        private_result = assert_error_or_none(
+            "backend_error",
+            scenario.backend_errors.get(backend),
+            lambda: connection.to_polars(ibis_table).to_dict(as_series=False),
+        )
         private_items = list(private_result.items())[0][1]
 
         # Test ibis_table:

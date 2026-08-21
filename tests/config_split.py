@@ -9,7 +9,8 @@ class SplitScenario:
     expression: str
     expected_sql: str
     expected_result: dict[str, Any]
-    expected_parameters: float
+    expected_parameters: dict[str, Any]
+    backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
 
 
 def get_case_clause(table: str) -> str:
@@ -43,28 +44,23 @@ def get_select_float_sum(table: str) -> str:
         ELSE 0.5
     END
     """
+    case_when_nested = f"""
+    CASE WHEN {case_when_not} IS NULL
+        THEN {case_when_not}
+        ELSE LEAST( 1.0, {case_when_not} )
+    END
+    """
     return f"""
-SELECT SUM( CASE
-    WHEN CASE
-        WHEN {case_when_not} IS NULL
-            THEN {case_when_not}
-            ELSE LEAST( 1.0, {case_when_not} )
-        END IS NULL
-        THEN CASE
-            WHEN {case_when_not} IS NULL
-                THEN {case_when_not}
-                ELSE LEAST( 1.0, {case_when_not} )
-            END
-    ELSE GREATEST( 0.0, CASE
-        WHEN {case_when_not} IS NULL
-            THEN {case_when_not}
-            ELSE LEAST( 1.0, {case_when_not} )
-        END )
-END ) AS floats
-"""
+    SELECT SUM(
+        CASE WHEN {case_when_nested} IS NULL
+            THEN {case_when_nested}
+            ELSE GREATEST( 0.0, {case_when_nested} )
+        END
+    ) AS floats
+    """
 
 
-def get_expected_parameters(scale, support):
+def get_expected_parameters(scale: int | float, support: str):
     return {
         "flags": {
             "check_lengths": True,
@@ -108,6 +104,9 @@ split_scenarios = [
         f"{get_select_float_sum('t0')} FROM {TABLE_NAME} AS t0",
         {"floats": [1]},
         get_expected_parameters(1.00044408920985, "Float"),
+        backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined"
+        },
     ),
     # SplitScenario(
     #     # Two separate DP queries that differ only in their parameters.
