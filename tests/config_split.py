@@ -105,7 +105,8 @@ split_scenarios = [
         {"floats": [1]},
         get_expected_parameters(1.00044408920985, "Float"),
         backend_errors={
-            "sqlite": "Compilation rule for 'IsNan' operation is not defined"
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined",
+            "mysql": "FUNCTION runner.IS_NAN does not exist",
         },
     ),
     # TODO: Expand coverage.
