@@ -146,6 +146,10 @@ def split_polars_on_ffi(
     input_schema = _get_input_schema(polars_plan)
 
     plugin_parameters = replace_ffi_with_input(polars_plan)
+    if plugin_parameters is None:
+        raise ValueError(
+            f"replace_ffi_with_input failed with {polars_plan}"
+        )  # pragma: no cover
 
     ibis_table = update_polars_to_ibis(
         polars_plan=polars_plan,

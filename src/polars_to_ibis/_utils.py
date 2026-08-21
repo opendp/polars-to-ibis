@@ -11,38 +11,32 @@ def replace_ffi_with_input(
     source: dict[str, Any] | list[Any] | str,
 ):  # pragma: no cover
     """
-    >>> source = {
-    ...     'Select': {
-    ...         'expr': [{
-    ...             'Function': {
-    ...                 'function': {'FfiPlugin': 'flags-lib-symbol-kwargs'},
-    ...                 'input': ['Len']
-    ...             }
-    ...         }]
-    ...     }
-    ... }
-    >>> replace_ffi_with_input(source)
-    'flags-lib-symbol-kwargs'
-    >>> source
-    {'Select': {'expr': ['Len']}}
+    Modifies `source` in place, and returns the FFI parameters.
     """
     # TODO: When we have a test case with multiple FFIs,
     # generalize this to handle multiple, instead of just the first.
     if isinstance(source, list):
-        for item in source:
-            return replace_ffi_with_input(item)
-    elif isinstance(source, dict):
-        for k, v in source.items():
-            if k == "expr":
-                function_payload = v[0].get("Function", {})
-                ffi_plugin = function_payload.get("function", {}).get("FfiPlugin")
-                ffi_input = function_payload.get("input")
-                if ffi_plugin is not None:
-                    source[k] = ffi_input
-                    return ffi_plugin
-            elif isinstance(v, (dict, list)):
-                return replace_ffi_with_input(v)
-    raise ValueError("Expected dict or list")
+        for i in range(len(source)):
+            match source[i]:
+                case {
+                    "Function": {
+                        "function": {"FfiPlugin": params},
+                        "input": [input_expr],
+                    }
+                }:
+                    source[i] = input_expr
+                    return params
+                case _:
+                    params = replace_ffi_with_input(source[i])
+                    if params is not None:
+                        return params
+    if isinstance(source, dict):
+        for v in source.values():
+            if isinstance(v, (dict, list)):
+                params = replace_ffi_with_input(v)
+                if params is not None:
+                    return params
+    return None
 
 
 def find(
