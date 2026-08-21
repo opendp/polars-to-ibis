@@ -232,6 +232,8 @@ def handle_ternary(payload: PolarsPlan):
                 polars_expr_to_ibis_value(truthy_expr),
                 polars_expr_to_ibis_value(falsy_expr),
             )
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported Ternary")
 
 
 @value_handler("BinaryExpr")

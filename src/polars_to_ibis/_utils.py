@@ -24,7 +24,7 @@ class PluginReplacer:
     def replace(self):
         self._sub_replace(self._source)
         if not self._param_dicts:
-            raise Exception(f"Did not find FFI in {self._source}")
+            raise Exception(f"Did not find FFI in {self._source}")  # pragma: no cover
         return self._param_dicts
 
     def _find_pattern(self, sub_source):

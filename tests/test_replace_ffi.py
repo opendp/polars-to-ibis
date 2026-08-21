@@ -49,56 +49,6 @@ replace_ffi_scenarios = [
             }
         },
     ),
-    # TODO: Add an end-to-end test with alias(),
-    # to confirm that this is actually the right behavior.
-    # (
-    #     {
-    #         "Alias": [
-    #             {
-    #                 "Function": {
-    #                     "input": ["Len"],
-    #                     "function": {"FfiPlugin": "flags-lib-symbol-kwargs"},
-    #                 }
-    #             },
-    #             "new_name",
-    #         ]
-    #     },
-    #     {"Alias": ["Len", "new_name"]},
-    # ),
-    # (
-    #     {
-    #         "Select": {
-    #             "expr": [
-    #                 {
-    #                     "Alias": [
-    #                         {
-    #                             "Function": {
-    #                                 "input": ["Len"],
-    #                                 "function": {
-    #                                     "FfiPlugin": "flags-lib-symbol-kwargs"
-    #                                 },
-    #                             }
-    #                         },
-    #                         "new_name",
-    #                     ]
-    #                 }
-    #             ],
-    #             "input": "input-IR",
-    #             "options": "options",
-    #         }
-    #     },
-    #     {
-    #         "Select": {
-    #             "expr": [
-    #                 {
-    #                     "Alias": ["Len", "new_name"],
-    #                 },
-    #             ],
-    #             "input": "input-IR",
-    #             "options": "options",
-    #         },
-    #     },
-    # ),
 ]
 
 
