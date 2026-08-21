@@ -108,33 +108,15 @@ split_scenarios = [
             "sqlite": "Compilation rule for 'IsNan' operation is not defined"
         },
     ),
+    # TODO: Expand coverage.
     # SplitScenario(
     #     # Two separate DP queries that differ only in their parameters.
-    #     # TODO: passes, but shouldn't! results should show two separate queries.
     #     "context.query().select(pl.col.floats.dp.sum((0,1)),pl.col.ints.dp.sum((0,10)))",
-    #     f"{get_select_sum('t0')} FROM {TABLE_NAME} AS t0",
-    #     {"ints": [10]},
-    #     10.0,
     # ),
     # SplitScenario(
     #     "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
-    #     """
-    #     TODO
-    #     """,
-    #     {},
-    #     10.0,
     # ),
-    # TODO:
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
-    #     """
-    #     ???
-    #     """,
-    #     {"ints": [2.5]},
-    #     0,
-    # ),
-    # (
-    #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
-    #     f"... FROM {table_name} AS t0",
     # ),
 ]
