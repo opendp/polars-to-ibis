@@ -152,8 +152,8 @@ def handle_agg(payload: PolarsPlan):
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
-            "input": [left_expr, right_expr],
             "function": {"Pow": "Generic", **extras_1},
+            "input": [left_expr, right_expr],
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
@@ -161,21 +161,25 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             right = polars_expr_to_ibis_value(right_expr)
             return left**right  # type: ignore
         case {
-            "input": [input_expr],
             "function": {"Boolean": "Not", **extras_1},
+            "input": [input_expr],
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
             return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
-        case {"input": [input_expr], "function": "Negate", **extras}:
+        case {
+            "function": "Negate",
+            "input": [input_expr],
+            **extras,
+        }:
             assert_no_extras(extras)
             return -polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {
-            "input": [input_expr, lower_expr, upper_expr],
             "function": {
                 "Clip": {"has_min": True, "has_max": True, **extras_1},
                 **extras_2,
             },
+            "input": [input_expr, lower_expr, upper_expr],
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
@@ -183,18 +187,18 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case {  # pragma: no cover (polars<1.41.2)
+            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
             "input": [
                 input_expr,
                 _quantile_expr,  # noqa: F841 (unused)
             ],
-            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             raise NotImplementedError("Unsupported Function Quantile")
         case {
-            "input": [input_expr, fill_expr],
             "function": "FillNull",
+            "input": [input_expr, fill_expr],
             **extras_1,
         }:
             assert_no_extras(extras_1)
