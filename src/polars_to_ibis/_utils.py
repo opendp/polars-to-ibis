@@ -10,6 +10,17 @@ from typing import Any
 PluginDetails = namedtuple("PluginDetails", ["params_dict", "input_expr"])
 
 
+def _find_pattern(sub_source):
+    match sub_source:
+        case {
+            "Function": {
+                "function": {"FfiPlugin": params_dict},
+                "input": [input_expr],
+            }
+        }:
+            return PluginDetails(params_dict=params_dict, input_expr=input_expr)
+
+
 class PluginReplacer:
     """
     Finds all FFI plugins in an expression,
@@ -17,26 +28,16 @@ class PluginReplacer:
     and separately returns the parameters for each plugin call.
     """
 
-    def __init__(self, source):
+    def __init__(self, source, find_pattern=_find_pattern):
         self._source = source
         self._param_dicts = []
+        self._find_pattern = find_pattern
 
     def replace(self):
         self._sub_replace(self._source)
         if not self._param_dicts:
             raise Exception(f"Did not find FFI in {self._source}")  # pragma: no cover
         return self._param_dicts
-
-    def _find_pattern(self, sub_source):
-        # Testing subclass could override this.
-        match sub_source:
-            case {
-                "Function": {
-                    "function": {"FfiPlugin": params_dict},
-                    "input": [input_expr],
-                }
-            }:
-                return PluginDetails(params_dict=params_dict, input_expr=input_expr)
 
     def _sub_replace(self, sub_source):
         if isinstance(sub_source, list):
