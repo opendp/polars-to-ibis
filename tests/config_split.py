@@ -36,7 +36,7 @@ def get_select_int_sum(table: str) -> str:
     """
 
 
-def get_select_float_sum(table: str) -> str:
+def get_select_float_sum() -> str:
     case_when_not = """
     CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) )
               OR ( COALESCE(t0.floats, 0.5) IS NULL )
@@ -101,7 +101,7 @@ split_scenarios = [
     ),
     SplitScenario(
         "context.query().select(pl.col.floats.dp.sum((0,1)))",
-        f"{get_select_float_sum('t0')} FROM {TABLE_NAME} AS t0",
+        f"{get_select_float_sum()} FROM {TABLE_NAME} AS t0",
         {"floats": [1]},
         get_expected_parameters(1.00044408920985, "Float"),
         backend_errors={

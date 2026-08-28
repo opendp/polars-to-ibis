@@ -19,6 +19,8 @@ def _find_pattern(sub_source):
             }
         }:
             return PluginDetails(params_dict=params_dict, input_expr=input_expr)
+        case _:
+            return None
 
 
 class PluginReplacer:
@@ -28,7 +30,11 @@ class PluginReplacer:
     and separately returns the parameters for each plugin call.
     """
 
-    def __init__(self, source, find_pattern=_find_pattern):
+    def __init__(
+        self,
+        source,
+        find_pattern=_find_pattern,  # Non-default might be useful for testing.
+    ):
         self._source = source
         self._param_dicts = []
         self._find_pattern = find_pattern
