@@ -70,7 +70,10 @@ def test_split_lazyframe(scenario: SplitScenario, backend: str):
             scenario.backend_errors.get(backend),
             lambda: connection.to_polars(ibis_table).to_dict(as_series=False),
         )
-        private_items = list(private_result.items())[0][1]
+        # For now, assume result dataframe is only a single row,
+        # so pull out single values with [0],
+        # but I'm not sure that will always be true.
+        private_items = [v[0] for v in private_result.values()]
 
         # Test ibis_table:
         # (Remove test assertion after porting to opendp.)

@@ -125,9 +125,7 @@ split_scenarios = [
                 10,
             ],
         },
-        # TODO: There should be two separate sets of parameters,
-        # for two separate plugin calls.
-        get_expected_parameters([(2.0008881784197, "Float")]),
+        get_expected_parameters([(2.0008881784197, "Float"), (20, "Integer")]),
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined",
             "mysql": "FUNCTION runner.IS_NAN does not exist",
