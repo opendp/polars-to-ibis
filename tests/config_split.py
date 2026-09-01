@@ -60,20 +60,23 @@ def get_select_float_sum(table: str) -> str:
     """
 
 
-def get_expected_parameters(scale: int | float, support: str):
-    return {
-        "flags": {
-            "check_lengths": True,
-            "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
-        },
-        "lib": ".../opendp.abi3.so",
-        "symbol": "noise_plugin",
-        "unpickled_kwargs": {
-            "distribution": "Laplace",
-            "scale": scale,
-            "support": support,
-        },
-    }
+def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
+    return [
+        {
+            "flags": {
+                "check_lengths": True,
+                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
+            },
+            "lib": ".../opendp.abi3.so",
+            "symbol": "noise_plugin",
+            "unpickled_kwargs": {
+                "distribution": "Laplace",
+                "scale": scale,
+                "support": support,
+            },
+        }
+        for (scale, support) in scale_support_pairs
+    ]
 
 
 split_scenarios = [
@@ -81,13 +84,13 @@ split_scenarios = [
         "context.query().select(dp.len())",
         f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
         {"len": [4]},
-        get_expected_parameters(1.0, "Integer"),
+        get_expected_parameters([(1.0, "Integer")]),
     ),
     SplitScenario(
         "context.query().select(pl.col.ints.dp.sum((0,10)))",
         f"{get_select_int_sum('t0')} FROM {TABLE_NAME} AS t0",
         {"ints": [10]},
-        get_expected_parameters(10.0, "Integer"),
+        get_expected_parameters([(10.0, "Integer")]),
     ),
     SplitScenario(
         "context.query().filter(pl.col.ints!=1).select(pl.col.ints.dp.sum((0,10)))",
@@ -97,13 +100,13 @@ split_scenarios = [
         ) AS t1
         """,
         {"ints": [9]},
-        get_expected_parameters(10.0, "Integer"),
+        get_expected_parameters([(10.0, "Integer")]),
     ),
     SplitScenario(
         "context.query().select(pl.col.floats.dp.sum((0,1)))",
         f"{get_select_float_sum('t0')} FROM {TABLE_NAME} AS t0",
         {"floats": [1]},
-        get_expected_parameters(1.00044408920985, "Float"),
+        get_expected_parameters([(1.00044408920985, "Float")]),
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined",
             "mysql": "FUNCTION runner.IS_NAN does not exist",
@@ -122,21 +125,9 @@ split_scenarios = [
                 10,
             ],
         },
-        {
-            # TODO: There should be two separate sets of parameters,
-            # for two separate plugin calls.
-            "flags": {
-                "check_lengths": True,
-                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
-            },
-            "lib": ".../opendp.abi3.so",
-            "symbol": "noise_plugin",
-            "unpickled_kwargs": {
-                "distribution": "Laplace",
-                "scale": 2.0008881784197,
-                "support": "Float",
-            },
-        },
+        # TODO: There should be two separate sets of parameters,
+        # for two separate plugin calls.
+        get_expected_parameters([(2.0008881784197, "Float")]),
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined",
             "mysql": "FUNCTION runner.IS_NAN does not exist",
