@@ -9,6 +9,7 @@ import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
 from .._utils import abbreviate
+from . import tags
 from .utils import assert_no_extras, split_tag_payload
 
 PolarsPlan = dict[str, Any]
@@ -47,7 +48,7 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 # Value Handlers:
 
 
-@value_handler("Literal")
+@value_handler(tags.LITERAL)
 def handle_literal(payload: PolarsPlan):
     match payload:
         case (
@@ -62,15 +63,15 @@ def handle_literal(payload: PolarsPlan):
             assert_no_extras(extras_1, extras_2)
             return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported Literal")
+            raise NotImplementedError(f"Unsupported {tags.LITERAL}")
 
 
-@value_handler("Column")
+@value_handler(tags.COLUMN)
 def handle_column(payload: PolarsPlan):
     return defer[payload]  # pyright: ignore[reportArgumentType]
 
 
-@value_handler("Cast")
+@value_handler(tags.CAST)
 def handle_cast(payload: PolarsPlan) -> ir.Value:
     match payload:  # pragma: no cover (Only for polars==1.36.1)
         case {
@@ -84,15 +85,15 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
                 dtype_literal.lower()
             )
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported Cast")
+            raise NotImplementedError(f"Unsupported {tags.CAST}")
 
 
-@value_handler("Sum")
+@value_handler(tags.SUM)
 def handle_sum(payload: PolarsPlan):
     return polars_expr_to_ibis_value(payload).sum()
 
 
-@value_handler("Agg")
+@value_handler(tags.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
         case {"Mean": {"Column": column, **extras_1}, **extras_2}:
@@ -145,10 +146,10 @@ def handle_agg(payload: PolarsPlan):
             assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
             return defer[column].quantile(quantile)
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported Agg")
+            raise NotImplementedError(f"Unsupported {tags.AGG}")
 
 
-@value_handler("Function")
+@value_handler(tags.FUNCTION)
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
@@ -191,12 +192,12 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
-            raise NotImplementedError("Unsupported Function Quantile")
+            raise NotImplementedError(f"Unsupported {tags.FUNCTION} Quantile")
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported Function")
+            raise NotImplementedError(f"Unsupported {tags.FUNCTION}")
 
 
-@value_handler("BinaryExpr")
+@value_handler(tags.BINARY_EXPR)
 def handle_binary_expr(payload: PolarsPlan):
     match payload:
         case {"left": left, "op": op, "right": right, **extras}:
@@ -237,4 +238,4 @@ def handle_binary_expr(payload: PolarsPlan):
             )
             # return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported BinaryExpr")
+            raise NotImplementedError(f"Unsupported {tags.BINARY_EXPR}")
