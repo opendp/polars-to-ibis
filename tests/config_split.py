@@ -109,11 +109,38 @@ split_scenarios = [
             "mysql": "FUNCTION runner.IS_NAN does not exist",
         },
     ),
+    SplitScenario(
+        # Two separate DP queries that differ only in their parameters.
+        "context.query().select(pl.col.floats.dp.sum((0,1)),pl.col.ints.dp.sum((0,10)))",
+        "SELECT SUM( CASE WHEN CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END IS NULL THEN CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END ELSE GREATEST( 0.0, CASE WHEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END IS NULL THEN CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ELSE LEAST( 1.0, CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) ) OR ( COALESCE(t0.floats, 0.5) IS NULL ) THEN COALESCE(t0.floats, 0.5) ELSE 0.5 END ) END ) END ) AS floats, SUM( CASE WHEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END IS NULL THEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ELSE GREATEST( 0, CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ) END ) AS ints FROM default_table AS t0",
+        {
+            "floats": [
+                1.0,
+            ],
+            "ints": [
+                10,
+            ],
+        },
+        {
+            # TODO: There should be two separate sets of parameters, for two separate plugin calls.
+            "flags": {
+                "check_lengths": True,
+                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
+            },
+            "lib": ".../opendp.abi3.so",
+            "symbol": "noise_plugin",
+            "unpickled_kwargs": {
+                "distribution": "Laplace",
+                "scale": 2.0008881784197,
+                "support": "Float",
+            },
+        },
+        backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined",
+            "mysql": "FUNCTION runner.IS_NAN does not exist",
+        },
+    ),
     # TODO: Expand coverage.
-    # SplitScenario(
-    #     # Two separate DP queries that differ only in their parameters.
-    #     "context.query().select(pl.col.floats.dp.sum((0,1)),pl.col.ints.dp.sum((0,10)))",
-    # ),
     # SplitScenario(
     #     "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
     # ),
