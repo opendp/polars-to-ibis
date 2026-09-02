@@ -75,7 +75,7 @@ def handle_column(payload: PolarsPlan):
 def handle_cast(payload: PolarsPlan) -> ir.Value:
     match payload:  # pragma: no cover (Only for polars==1.36.1)
         case {
-            "dtype": {"Literal": dtype_literal, **extras_1},
+            "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
             "expr": expr,
             "options": "Strict",
             **extras_2,
@@ -96,18 +96,18 @@ def handle_sum(payload: PolarsPlan):
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {"Mean": {"Column": column, **extras_1}, **extras_2}:
+        case {"Mean": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].mean()
-        case {"Median": {"Column": column, **extras_1}, **extras_2}:
+        case {"Median": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].median()
-        case {"Sum": {"Column": column, **extras_1}, **extras_2}:
+        case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].sum()
         case {
             "Min": {
-                "input": {"Column": column, **extras_1},
+                "input": {tags.value.COLUMN: column, **extras_1},
                 "propagate_nans": False,
                 **extras_2,
             },
@@ -117,7 +117,7 @@ def handle_agg(payload: PolarsPlan):
             return defer[column].min()
         case {
             "Max": {
-                "input": {"Column": column, **extras_1},
+                "input": {tags.value.COLUMN: column, **extras_1},
                 "propagate_nans": False,
                 **extras_2,
             },
@@ -125,18 +125,21 @@ def handle_agg(payload: PolarsPlan):
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             return defer[column].max()
-        case {"Var": [{"Column": column, **extras_1}, 1], **extras_2}:
+        case {"Var": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].var()
-        case {"Std": [{"Column": column, **extras_1}, 1], **extras_2}:
+        case {"Std": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].std()
         case {  # pragma: no cover (polars>=1.41.2)
             "Quantile": {
-                "expr": {"Column": column, **extras_1},
+                "expr": {tags.value.COLUMN: column, **extras_1},
                 "method": "Nearest",
                 "quantile": {
-                    "Literal": {"Dyn": {"Float": quantile, **extras_2}, **extras_3},
+                    tags.value.LITERAL: {
+                        "Dyn": {"Float": quantile, **extras_2},
+                        **extras_3,
+                    },
                     **extras_4,
                 },
                 **extras_5,

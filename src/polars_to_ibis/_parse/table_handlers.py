@@ -85,11 +85,11 @@ def parse_select_expr(
     for col in col_list:
         tag, payload = split_tag_payload(col)
         match (tag, payload):
-            case ("Column", _):
+            case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case ("Alias", [expr, new_name]):
                 ibis_value = polars_expr_to_ibis_value(expr)
-                if split_tag_payload(expr)[0] == "Agg":
+                if split_tag_payload(expr)[0] == tags.value.AGG:
                     agg_kwargs[new_name] = ibis_value.cast("float32")
                 else:
                     select_kwargs[new_name] = ibis_value
@@ -109,10 +109,10 @@ def parse_select_expr(
                 assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
             case (
-                "Function",
+                tags.value.FUNCTION,
                 {
                     "function": "FillNull",
-                    "input": [{"Column": name, **extras_1}, expr],
+                    "input": [{tags.value.COLUMN: name, **extras_1}, expr],
                     **extras_2,
                 },
             ):
@@ -121,26 +121,29 @@ def parse_select_expr(
                     polars_expr_to_ibis_value(expr)
                 )
             case (
-                "Agg",
+                tags.value.AGG,
                 expr,
             ):
                 from .._utils import find
 
-                name = find(expr, "Column")
+                name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             # TODO: No test coverage. Add scenario and restore?
             # case (
-            #     "Function",
+            #     tags.value.FUNCTION,
             #     {
             #         "function": "FillNull",
             #         "input": [
             #             {
-            #                 "Cast": {
-            #                     "dtype": {"Literal": dtype_literal, **extras_1},
+            #                 tags.value.CAST: {
+            #                     "dtype": {
+            #                         tags.value.LITERAL: dtype_literal,
+            #                         **extras_1,
+            #                     },
             #                     # TODO: We need the column name at the top-level,
             #                     # but it could be buried in an expression.
             #                     # How to extract w/o special case expressions?
-            #                     "expr": {"Column": name, **extras_2},
+            #                     "expr": {tags.value.COLUMN: name, **extras_2},
             #                     "options": "Strict",
             #                     **extras_3,
             #                 },
@@ -291,8 +294,8 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case {
             "exprs": [
                 {
-                    "Cast": {
-                        "dtype": {"Literal": dtype_literal, **extras_1},
+                    tags.value.CAST: {
+                        "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
                         "expr": {"Selector": "Wildcard", **extras_2},
                         "options": "Strict",
                         **extras_3,
@@ -310,16 +313,16 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             **extras_6,
         }:
             assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
-            all_columns = input["MapFunction"]["input"]["DataFrameScan"]["schema"][
-                "fields"
-            ].keys()
+            all_columns = input[tags.table.MAP_FUNCTION]["input"][
+                tags.table.DATA_FRAME_SCAN
+            ]["schema"]["fields"].keys()
             return update_polars_to_ibis(input, table=table).cast(  # type: ignore
                 {col: dtype_literal.lower() for col in all_columns}
             )
         case {
             "exprs": [
                 {
-                    "Function": {
+                    tags.value.FUNCTION: {
                         "input": [
                             {
                                 "Selector": {
@@ -402,7 +405,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     grouped_table = input_table.group_by(group_by_keys)
 
     match agg:
-        case {"Agg": agg_payload, **extras_1}:
+        case {tags.value.AGG: agg_payload, **extras_1}:
             assert_no_extras(extras_1)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
         case "Len":  # pragma: no cover
@@ -418,13 +421,13 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError("Unsupported GroupBy agg")
 
     match agg_payload_payload:
-        case {"Column": column, **extras}:
+        case {tags.value.COLUMN: column, **extras}:
             assert_no_extras(extras)
         case _:  # pragma: no cover
             raise NotImplementedError("Unsupported GroupBy agg payload")
 
     match agg_payload_tag:
-        case "Sum" | "Mean" | "Median" | "Max" | "Min":
+        case tags.value.SUM | "Mean" | "Median" | "Max" | "Min":
             return grouped_table.aggregate(  # type: ignore
                 **{column: getattr(defer[column], agg_payload_tag.lower())()}
             )
@@ -466,7 +469,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case "Sum" | "Median" | "Max" | "Min":
+        case tags.value.SUM | "Median" | "Max" | "Min":
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())()
@@ -495,7 +498,10 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case {
             "Quantile": {
                 "quantile": {
-                    "Literal": {"Dyn": {"Float": quantile, **extras_1}, **extras_2},
+                    tags.value.LITERAL: {
+                        "Dyn": {"Float": quantile, **extras_1},
+                        **extras_2,
+                    },
                     **extras_3,
                 },
                 "method": "Nearest",

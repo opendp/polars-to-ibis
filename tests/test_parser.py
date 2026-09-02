@@ -5,6 +5,7 @@ import polars as pl
 import pytest
 
 from polars_to_ibis import convert_polars_to_ibis, scan_database
+from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
 from .scenarios import Scenario, input_data, scenarios
@@ -122,20 +123,20 @@ def assert_approx_equal(
             "Expected single-key tagged dict",
         ),
         (
-            {"Scan": {}},
+            {tags.table.SCAN: {}},
             "Unsupported Scan",
         ),
         (
-            {"Scan": {"df": {}, "schema": {}}},
+            {tags.table.SCAN: {"df": {}, "schema": {}}},
             "Unsupported Scan",
         ),
         (
             # When/if Count *is* supported, this test won't work.
             {
-                "Select": {
+                tags.table.SELECT: {
                     "expr": [
                         {
-                            "Agg": {
+                            tags.value.AGG: {
                                 "Count": {
                                     "include_nulls": False,
                                     "input": {"Selector": "Wildcard"},
@@ -143,7 +144,9 @@ def assert_approx_equal(
                             }
                         }
                     ],
-                    "input": {"DataFrameScan": {"df": {}, "schema": {"fields": {}}}},
+                    "input": {
+                        tags.table.DATA_FRAME_SCAN: {"df": {}, "schema": {"fields": {}}}
+                    },
                     "options": {
                         "duplicate_check": True,
                         "run_parallel": True,
