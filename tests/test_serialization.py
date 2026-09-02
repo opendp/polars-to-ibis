@@ -3,16 +3,17 @@ from typing import Any
 import polars as pl  # type: ignore # noqa: F401
 import pytest
 
+from polars_to_ibis._parse import tags
 from polars_to_ibis._serialize import replace, serialize  # type: ignore
 
 io_pairs = [
     (
         "pl.LazyFrame().count()",
         {
-            "Select": {
+            tags.table.SELECT: {
                 "expr": [
                     {
-                        "Agg": {
+                        tags.value.AGG: {
                             "Count": {  # In Polars 1.32, this is a list.
                                 "input": {"Selector": "Wildcard"},
                                 "include_nulls": False,
@@ -20,7 +21,7 @@ io_pairs = [
                         }
                     }
                 ],
-                "input": {"DataFrameScan": "..."},
+                "input": {tags.table.DATA_FRAME_SCAN: "..."},
                 "options": {
                     "run_parallel": True,
                     "duplicate_check": True,
@@ -32,10 +33,10 @@ io_pairs = [
     (
         "pl.LazyFrame().null_count()",
         {
-            "Select": {
+            tags.table.SELECT: {
                 "expr": [
                     {
-                        "Function": {
+                        tags.value.FUNCTION: {
                             "function": "NullCount",
                             # Unlike count(), which does not have a wrapping list.
                             "input": [
@@ -47,7 +48,7 @@ io_pairs = [
                     },
                 ],
                 "input": {
-                    "DataFrameScan": "...",
+                    tags.table.DATA_FRAME_SCAN: "...",
                 },
                 "options": {
                     "duplicate_check": True,
@@ -60,11 +61,11 @@ io_pairs = [
     (
         'pl.LazyFrame().sort(by="ints").head(1)',
         {
-            "Slice": {
+            tags.table.SLICE: {
                 "input": {
-                    "Sort": {
-                        "input": {"DataFrameScan": "..."},
-                        "by_column": [{"Column": "ints"}],
+                    tags.table.SORT: {
+                        "input": {tags.table.DATA_FRAME_SCAN: "..."},
+                        "by_column": [{tags.value.COLUMN: "ints"}],
                         "slice": None,
                         "sort_options": {
                             "descending": [False],
@@ -87,5 +88,5 @@ io_pairs = [
 def test_serialization(lf_str: str, expected: dict[str, Any]):
     lf = eval(lf_str)
     serial = serialize(lf)  # type: ignore
-    replace(serial, "DataFrameScan", lambda _: "...")
+    replace(serial, tags.table.DATA_FRAME_SCAN, lambda _: "...")
     assert serial == expected
