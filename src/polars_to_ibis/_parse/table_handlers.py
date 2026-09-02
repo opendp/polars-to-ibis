@@ -418,13 +418,13 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             # return input_table.group_by('keys').agg(len=defer.count())
             # return grouped_table.aggregate(len=input_table.count()) # type: ignore
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported GroupBy agg")
+            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg")
 
     match agg_payload_payload:
         case {tags.value.COLUMN: column, **extras}:
             assert_no_extras(extras)
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported GroupBy agg payload")
+            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
 
     match agg_payload_tag:
         case tags.value.SUM | "Mean" | "Median" | "Max" | "Min":
@@ -432,9 +432,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 **{column: getattr(defer[column], agg_payload_tag.lower())()}
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(
-                f"Unsupported GroupBy agg stat: {agg_payload_tag}"
-            )
+            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg stat")
 
 
 @table_handler(tags.table.MAP_FUNCTION)
