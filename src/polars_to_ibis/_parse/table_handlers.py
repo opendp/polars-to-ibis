@@ -57,7 +57,7 @@ def infer_name(expr):
     return "literal" if "Literal" in expr else find(expr, "Column")
 
 
-def parse_select_expr(col_list: list[dict[str, Any]], input_table):
+def apply_select_expr(col_list: list[dict[str, Any]], input_table):
     """
     Given col_list (the polars serialization for a select),
     and an ibis input_table
@@ -266,7 +266,7 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported Select: {payload}")
 
-    input_table = parse_select_expr(expr, input_table)
+    input_table = apply_select_expr(expr, input_table)
     return input_table
 
 
