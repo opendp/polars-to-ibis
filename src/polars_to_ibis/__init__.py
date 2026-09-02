@@ -6,6 +6,7 @@ from typing import Any
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
 
+from ._parse import tags
 from ._parse.table_handlers import update_polars_to_ibis
 from ._serialize import serialize
 from ._utils import PluginReplacer
@@ -105,10 +106,12 @@ def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
     """
     if not isinstance(polars_plan, dict):  # type: ignore
         return
-    if "DataFrameScan" in polars_plan:
+    if tags.table.DATA_FRAME_SCAN in polars_plan:
         input_schema = {
             k: _get_type(v)
-            for k, v in polars_plan["DataFrameScan"]["schema"]["fields"].items()
+            for k, v in polars_plan[tags.table.DATA_FRAME_SCAN]["schema"][
+                "fields"
+            ].items()
         }
         return ibis.expr.schema.Schema(input_schema)
     for value in polars_plan.values():  # pragma: no cover

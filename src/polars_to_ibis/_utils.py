@@ -7,6 +7,9 @@ from collections.abc import Callable
 from pprint import pformat
 from typing import Any
 
+from ._parse import tags
+
+
 PluginDetails = namedtuple("PluginDetails", ["params_dict", "input_expr"])
 
 
@@ -29,7 +32,6 @@ class PluginReplacer:
     pulls them out, and replaces them with their inputs,
     and separately returns the parameters for each plugin call.
     """
-
     def __init__(
         self,
         source,
@@ -110,5 +112,5 @@ def replace(
 
 def abbreviate(source: dict[str, Any]) -> str:
     replace(source, "kwargs", lambda _: "...")
-    replace(source, "DataFrameScan", lambda _: "...")
+    replace(source, tags.table.DATA_FRAME_SCAN, lambda _: "...")
     return pformat(source)
