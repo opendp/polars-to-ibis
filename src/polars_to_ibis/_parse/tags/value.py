@@ -1,0 +1,7 @@
+LITERAL = "Literal"
+COLUMN = "Column"
+CAST = "Cast"
+SUM = "Sum"
+AGG = "Agg"
+FUNCTION = "Function"
+BINARY_EXPR = "BinaryExpr"

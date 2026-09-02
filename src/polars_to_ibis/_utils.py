@@ -6,6 +6,8 @@ from collections.abc import Callable
 from pprint import pformat
 from typing import Any
 
+from ._parse import tags
+
 
 def replace_ffi_with_input(
     source: dict[str, Any] | list[Any] | str,
@@ -34,7 +36,7 @@ def replace_ffi_with_input(
     elif isinstance(source, dict):
         for k, v in source.items():
             if k == "expr":
-                function_payload = v[0].get("Function", {})
+                function_payload = v[0].get(tags.value.FUNCTION, {})
                 ffi_plugin = function_payload.get("function", {}).get("FfiPlugin")
                 ffi_input = function_payload.get("input")
                 if ffi_plugin is not None:
@@ -95,5 +97,5 @@ def replace(
 
 def abbreviate(source: dict[str, Any]) -> str:
     replace(source, "kwargs", lambda _: "...")
-    replace(source, "DataFrameScan", lambda _: "...")
+    replace(source, tags.table.DATA_FRAME_SCAN, lambda _: "...")
     return pformat(source)
