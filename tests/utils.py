@@ -10,7 +10,7 @@ import pytest
 def assert_error_or_none(
     error_type: str, expected_error: str | None, func: Callable[[], Any]
 ) -> Any:
-    if expected_error:
+    if expected_error is not None:
         with pytest.raises(Exception, match=re.escape(expected_error)):
             func()
         pytest.xfail(f"expected error: {expected_error}")
