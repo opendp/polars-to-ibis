@@ -1,11 +1,3 @@
-LITERAL = "Literal"
-COLUMN = "Column"
-CAST = "Cast"
-SUM = "Sum"
-AGG = "Agg"
-FUNCTION = "Function"
-BINARY_EXPR = "BinaryExpr"
-
 IR = "IR"
 SCAN = "Scan"
 DATA_FRAME_SCAN = "DataFrameScan"

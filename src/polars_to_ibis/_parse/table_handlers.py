@@ -165,7 +165,7 @@ def parse_select_expr(
 # Table handlers:
 
 
-@table_handler(tags.IR)
+@table_handler(tags.table.IR)
 def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"dsl": _, "version": _, **extras_1}:
@@ -173,11 +173,11 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             assert_no_extras(extras_1)
             return table
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.IR}")
+            raise NotImplementedError(f"Unsupported {tags.table.IR}")
 
 
-@table_handler(tags.SCAN)
-@table_handler(tags.DATA_FRAME_SCAN)
+@table_handler(tags.table.SCAN)
+@table_handler(tags.table.DATA_FRAME_SCAN)
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
@@ -187,11 +187,11 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             return table
         case _:
             raise NotImplementedError(
-                f"Unsupported {tags.SCAN} or {tags.DATA_FRAME_SCAN}"
+                f"Unsupported {tags.table.SCAN} or {tags.table.DATA_FRAME_SCAN}"
             )
 
 
-@table_handler(tags.SELECT)
+@table_handler(tags.table.SELECT)
 def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
 
@@ -208,7 +208,7 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         }:
             assert_no_extras(extras_1, extras_2)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.SELECT}")
+            raise NotImplementedError(f"Unsupported {tags.table.SELECT}")
 
     match expr:
         case ["Len"]:
@@ -224,7 +224,7 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             return input_table
 
 
-@table_handler(tags.FILTER)
+@table_handler(tags.table.FILTER)
 def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
@@ -233,10 +233,10 @@ def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             value = polars_expr_to_ibis_value(predicate)
             return input_table.filter(value)  # type: ignore
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.FILTER}")
+            raise NotImplementedError(f"Unsupported {tags.table.FILTER}")
 
 
-@table_handler(tags.SLICE)
+@table_handler(tags.table.SLICE)
 def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
@@ -246,10 +246,10 @@ def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 raise NotImplementedError(f"Unsupported offset: {offset}")
             return input_table.limit(len, offset=offset)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.SLICE}")
+            raise NotImplementedError(f"Unsupported {tags.table.SLICE}")
 
 
-@table_handler(tags.SORT)
+@table_handler(tags.table.SORT)
 def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
@@ -281,10 +281,10 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 *directed_sort_keys  # type: ignore
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.SORT}")
+            raise NotImplementedError(f"Unsupported {tags.table.SORT}")
 
 
-@table_handler(tags.H_STACK)
+@table_handler(tags.table.H_STACK)
 def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
@@ -365,7 +365,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 extras_9,
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.H_STACK}")
+            raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
     value = polars_expr_to_ibis_value(fill_expr)
     match function:
@@ -373,11 +373,11 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             return input_table.fill_null(value)  # type: ignore
         case _:  # pragma: no cover
             raise NotImplementedError(
-                f"Unsupported {tags.H_STACK} function: {function}"
+                f"Unsupported {tags.table.H_STACK} function: {function}"
             )
 
 
-@table_handler(tags.GROUP_BY)
+@table_handler(tags.table.GROUP_BY)
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
 
@@ -396,7 +396,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 del extras_2["predicates"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.GROUP_BY}")
+            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
 
     group_by_keys = parse_sort_by_column(keys)
     grouped_table = input_table.group_by(group_by_keys)
@@ -434,7 +434,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
 
 
-@table_handler(tags.MAP_FUNCTION)
+@table_handler(tags.table.MAP_FUNCTION)
 def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
@@ -453,7 +453,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.MAP_FUNCTION}")
+            raise NotImplementedError(f"Unsupported {tags.table.MAP_FUNCTION}")
 
     match stats:
         case "Mean":
