@@ -133,7 +133,8 @@ split_scenarios = [
     ),
     SplitScenario(
         "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
-        "SELECT COUNT(*) AS len, SUM( CASE WHEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END IS NULL THEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ELSE GREATEST( 0, CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ) END ) AS ints FROM default_table AS t0",
+        f"SELECT COUNT(*) AS len, {get_select_int_sum('t0').replace('SELECT', '')} "
+        f"FROM default_table AS t0",
         {
             "len": [
                 4,
