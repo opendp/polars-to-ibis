@@ -131,10 +131,20 @@ split_scenarios = [
             "mysql": "FUNCTION runner.IS_NAN does not exist",
         },
     ),
+    SplitScenario(
+        "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
+        "SELECT COUNT(*) AS len, SUM( CASE WHEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END IS NULL THEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ELSE GREATEST( 0, CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ) END ) AS ints FROM default_table AS t0",
+        {
+            "len": [
+                4,
+            ],
+            "ints": [
+                10,
+            ],
+        },
+        get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
+    ),
     # TODO: Expand coverage.
-    # SplitScenario(
-    #     "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
-    # ),
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
     # ),
