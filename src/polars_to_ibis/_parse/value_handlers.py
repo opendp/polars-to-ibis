@@ -8,7 +8,8 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate
+from polars_to_ibis._utils import abbreviate
+
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
 

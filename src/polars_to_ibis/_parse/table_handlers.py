@@ -8,7 +8,8 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate, find
+from polars_to_ibis._utils import abbreviate, find
+
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
 from .value_handlers import polars_expr_to_ibis_value
@@ -128,7 +129,7 @@ def parse_select_expr(
                 tags.value.AGG,
                 expr,
             ):
-                from .._utils import find
+                from polars_to_ibis._utils import find
 
                 name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
