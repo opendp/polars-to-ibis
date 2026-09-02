@@ -115,7 +115,7 @@ split_scenarios = [
     SplitScenario(
         # Two separate DP queries that differ only in their parameters.
         "context.query().select(pl.col.floats.dp.sum((0,1)),pl.col.ints.dp.sum((0,10)))",
-        f"{get_select_float_sum('t0').strip()}, "
+        f"{get_select_float_sum().strip()}, "
         f"{get_select_int_sum('t0').replace('SELECT', '')} FROM default_table AS t0",
         {
             "floats": [
