@@ -5,7 +5,11 @@ import polars as pl
 import pytest
 
 
-def get_connection(df: pl.DataFrame, table_name: str, backend: str):
+def get_connection(
+    df: pl.DataFrame,
+    table_name: str,
+    backend: ibis.BaseBackend,
+):
     kwargs = (
         {
             "user": environ["USER"],
@@ -15,7 +19,7 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
         if backend == "mysql"
         else {}
     )
-    connection = getattr(ibis, backend).connect(**kwargs)
+    connection = backend.connect(**kwargs)
 
     # Ensure a clean slate.
     # Each backend raises its own error type
@@ -32,7 +36,7 @@ def get_connection(df: pl.DataFrame, table_name: str, backend: str):
 
 # Test scenarios:
 
-backends = [
+backend_names = [
     # Polars could be tested, but there's an error getting the schema,
     # and since it's not a realistic target for us, drop it from coverage.
     "sqlite",

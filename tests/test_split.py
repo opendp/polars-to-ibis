@@ -1,5 +1,6 @@
 import re
 
+import ibis
 import opendp.prelude as dp
 import polars as pl
 import pytest
@@ -43,7 +44,7 @@ def test_split_lazyframe(scenario):
             }
         ),
         table_name,
-        "sqlite",
+        ibis.sqlite,
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
@@ -74,6 +75,7 @@ def test_split_lazyframe(scenario):
             query_lf,
             table_name=table_name,
             # In the future, add a parameter to specify the plugin to split on?
+            backend=connection,
         )
 
         # Use ibis_table:

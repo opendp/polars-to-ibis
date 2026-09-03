@@ -1,6 +1,7 @@
 import re
 from typing import Any, Callable
 
+import ibis
 import polars as pl
 import pytest
 
@@ -9,7 +10,7 @@ from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
 from .scenarios import Scenario, input_data, scenarios
-from .utils import backends, exporters, get_connection
+from .utils import backend_names, exporters, get_connection
 
 
 def assert_error_or_none(
@@ -45,19 +46,20 @@ def test_scenario_consistency(scenario: Scenario):
     scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-@pytest.mark.parametrize("backend", backends)
+@pytest.mark.parametrize("backend_name", backend_names)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table_new(
     scenario: Scenario,
-    backend: str,
+    backend_name: str,
     exporter_key: str,
 ):
     # Set up target database, with data:
     table_name = "default_table"
     input_df = pl.DataFrame(input_data[scenario.category])
+    backend = getattr(ibis, backend_name)
     connection = assert_error_or_none(
         "connection_error",
-        scenario.connection_errors.get(backend),
+        scenario.connection_errors.get(backend_name),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
@@ -67,16 +69,16 @@ def test_translate_table_new(
     ibis_table = assert_error_or_none(
         "convert_error",
         scenario.convert_errors.get(f"polars=={pl.__version__}"),
-        lambda: convert_polars_to_ibis(lf, table_name),
+        lambda: convert_polars_to_ibis(lf, table_name, backend=backend),
     )
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
     expected_backend_error = (
-        scenario.backend_errors.get(backend)
-        or scenario.backend_errors.get(f"{backend}+{exporter_key}")
+        scenario.backend_errors.get(backend_name)
+        or scenario.backend_errors.get(f"{backend_name}+{exporter_key}")
         or scenario.backend_errors.get(
-            f"{backend}+{exporter_key}+polars=={pl.__version__}"
+            f"{backend_name}+{exporter_key}+polars=={pl.__version__}"
         )
     )
     actual_output = assert_error_or_none(
@@ -91,13 +93,13 @@ def test_translate_table_new(
             actual_output,  # type: ignore
             scenario.expected_output,
             scenario.tolerance,
-            f"Via ibis, {backend} does not produce output "
+            f"Via ibis, {backend_name} does not produce output "
             f"within {scenario.tolerance}",
         )
     else:
         assert (
             actual_output == scenario.expected_output
-        ), f"Via ibis, {backend} does not produce expected output"
+        ), f"Via ibis, {backend_name} does not produce expected output"
 
 
 def assert_approx_equal(
@@ -162,4 +164,4 @@ def assert_approx_equal(
 )
 def test_unexpected_payloads(polars_plan, expected_error):
     with pytest.raises(Exception, match=re.escape(expected_error)):
-        update_polars_to_ibis(polars_plan, None)
+        update_polars_to_ibis(polars_plan, None, ibis.backends.sqlite)
