@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 
-def strip_comments(src):
+def strip_comments(src: str):
     """
     >>> print(strip_comments("first()\\nsecond() # third\\nfourth()"))
     first()
@@ -14,20 +14,27 @@ def strip_comments(src):
     return re.sub(r"\s*#.*", "", src)
 
 
+def find_case_and_next_line(src: str):
+    matches = re.findall(r"case [\[{(].*?[\])}]:\n[^\n]+\n", src, flags=re.DOTALL)
+    cleaned: list[str] = []
+    for case_match in matches:
+        # remove white space:
+        case_match = re.sub(r"\s+", "", case_match)
+        # remove trailing commas:
+        case_match = re.sub(r",([\])}])", r"\1", case_match)
+        cleaned.append(case_match)
+    return cleaned
+
+
 case_matches: list[str] = []
 
 for file in ["table_handlers.py", "value_handlers.py"]:
     src = (
         Path(__file__).parent.parent / "src/polars_to_ibis/_parse" / file
     ).read_text()
-    src = strip_comments(src)
-    matches = re.findall(r"case [\[{(].*?[\])}]:\n[^\n]+\n", src, flags=re.DOTALL)
-    for case_match in matches:
-        # remove white space:
-        case_match = re.sub(r"\s+", "", case_match)
-        # remove trailing commas:
-        case_match = re.sub(r",([\])}])", r"\1", case_match)
-        case_matches.append(case_match)
+    case_matches += find_case_and_next_line(strip_comments(src))
+
+assert case_matches
 
 
 @pytest.mark.parametrize("case_match", case_matches)
