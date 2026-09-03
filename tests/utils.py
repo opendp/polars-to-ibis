@@ -16,7 +16,7 @@ def get_connection(
             "password": "",
             "database": environ["USER"],
         }
-        if backend == "mysql"
+        if backend == ibis.mysql
         else {}
     )
     connection = backend.connect(**kwargs)
