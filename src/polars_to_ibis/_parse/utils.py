@@ -15,6 +15,10 @@ ReturnsValue = Callable[..., NamedValue]
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
     if polars_plan == "Len":
         return ("Len", None)
+    if isinstance(polars_plan, str):
+        raise ValueError(
+            f"Unexpected string as plan: {polars_plan}"
+        )  # pragma: no cover
     match list(polars_plan.items()):
         case [[tag, payload]]:
             return (tag, payload)
