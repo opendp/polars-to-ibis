@@ -15,7 +15,19 @@ def strip_comments(src: str):
 
 
 def find_case_and_next_line(src: str):
-    matches = re.findall(r"case [\[{(].*?[\])}]:\n[^\n]+\n", src, flags=re.DOTALL)
+    """
+    >>> src = '''
+    ... ignore
+    ... case (something):
+    ...     assert_no_extras(something)
+    ...     ignore
+    ... '''
+    >>> find_case_and_next_line(src)
+    ['case(something):assert_no_extras(something)']
+    """
+    matches = re.findall(
+        r"case [\[{(].*?[\])}]:\s+(?:assert_no_extras\([^)]+\))?", src, flags=re.DOTALL
+    )
     cleaned: list[str] = []
     for case_match in matches:
         # remove white space:
@@ -43,3 +55,14 @@ def test_extras_last_in_dict_in_case_statements(case_match: str):
     for extra_match in extra_matches:
         has_extras = extra_match.startswith("extras")
         assert has_extras, f'Add "**extras" near "{extra_match}" in:\n{case_match}\n\n'
+
+
+@pytest.mark.parametrize("case_match", case_matches)
+def test_extras_in_assert(case_match: str):
+    extra_matches = [m.replace("**", "") for m in re.findall(r"\*\*\w+", case_match)]
+    assertion = re.search(r"assert_no_extras.*", case_match, flags=re.DOTALL)
+    if not extra_matches:
+        return
+    assert assertion is not None
+    for extra_match in extra_matches:
+        assert extra_match in assertion[0]
