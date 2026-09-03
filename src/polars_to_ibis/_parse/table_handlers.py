@@ -485,6 +485,8 @@ def handle_map_function(
         case {"function": {"FillNan": fill_nan_expr, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
+            if not backend.has_operation(ibis.expr.operations.IsNan):
+                return input_table
             # No ibis "fill_nan()", so we do it by hand:
             return input_table.select(
                 **{

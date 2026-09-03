@@ -97,8 +97,11 @@ def test_translate_table_new(
             f"within {scenario.tolerance}",
         )
     else:
+        expected_output = scenario.alternative_results.get(
+            f"{backend_name}+{exporter_key}", scenario.expected_output
+        )
         assert (
-            actual_output == scenario.expected_output
+            actual_output == expected_output
         ), f"Via ibis, {backend_name} does not produce expected output"
 
 

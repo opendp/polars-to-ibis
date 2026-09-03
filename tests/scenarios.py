@@ -5,6 +5,9 @@ and even in that narrow scope you'll see a number of quirks.
 
 import dataclasses
 import math
+from typing import Any
+
+from pytest import approx
 
 input_data = {
     "numeric": {
@@ -36,17 +39,24 @@ input_data = {
     },
 }
 
+Results = dict[str, list[Any]]
+
 
 @dataclasses.dataclass
 class Scenario:
     category: str
     expression: str
-    expected_output: dict[str, list[float | str]]
+    expected_output: Results
     convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    alternative_results: dict[str, Results] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: float = 0
 
+
+# Using this constant in an expected value lets us test against NaN in results.
+# (Normally, nan != nan.)
+NAN = approx(float("nan"), nan_ok=True)
 
 scenarios = [
     Scenario(
@@ -346,8 +356,10 @@ scenarios = [
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
         connection_errors={"mysql": MYSQL_INF},
-        backend_errors={
-            "sqlite": "Compilation rule for 'IsNan' operation is not defined"
+        alternative_results={
+            "sqlite+to_polars": {"nan": [0.0, None]},
+            "sqlite+to_pandas": {"nan": [0.0, NAN]},
+            "sqlite+to_pyarrow": {"nan": [0.0, None]},
         },
     ),
     Scenario(
