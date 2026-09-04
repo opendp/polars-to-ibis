@@ -42,6 +42,8 @@ for path in (Path(__file__).parent.parent / "src/polars_to_ibis/_parse").glob(
 ):
     case_matches += find_case_and_next_line(strip_comments(path.read_text()))
 
+assert case_matches
+
 
 @pytest.mark.parametrize("case_match", case_matches)
 def test_extras_last_in_dict_in_case_statements(case_match: str):
