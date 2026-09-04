@@ -2,49 +2,64 @@
 This is a private module: The API may change.
 """
 
+from collections import namedtuple
 from collections.abc import Callable
 from pprint import pformat
 from typing import Any
 
 from ._parse import tags
 
+PluginDetails = namedtuple("PluginDetails", ["params_dict", "input_expr"])
 
-def replace_ffi_with_input(
-    source: dict[str, Any] | list[Any] | str,
-):  # pragma: no cover
+
+def _find_pattern(sub_source):
+    match sub_source:
+        case {
+            "Function": {
+                "function": {"FfiPlugin": params_dict},
+                "input": [input_expr],
+            }
+        }:
+            return PluginDetails(params_dict=params_dict, input_expr=input_expr)
+        case _:
+            return None
+
+
+class PluginReplacer:
     """
-    >>> source = {
-    ...     'Select': {
-    ...         'expr': [{
-    ...             'Function': {
-    ...                 'function': {'FfiPlugin': 'flags-lib-symbol-kwargs'},
-    ...                 'input': ['Len']
-    ...             }
-    ...         }]
-    ...     }
-    ... }
-    >>> replace_ffi_with_input(source)
-    'flags-lib-symbol-kwargs'
-    >>> source
-    {'Select': {'expr': ['Len']}}
+    Finds all FFI plugins in an expression,
+    pulls them out, and replaces them with their inputs,
+    and separately returns the parameters for each plugin call.
     """
-    # TODO: When we have a test case with multiple FFIs,
-    # generalize this to handle multiple, instead of just the first.
-    if isinstance(source, list):
-        for item in source:
-            return replace_ffi_with_input(item)
-    elif isinstance(source, dict):
-        for k, v in source.items():
-            if k == "expr":
-                function_payload = v[0].get(tags.value.FUNCTION, {})
-                ffi_plugin = function_payload.get("function", {}).get("FfiPlugin")
-                ffi_input = function_payload.get("input")
-                if ffi_plugin is not None:
-                    source[k] = ffi_input
-                    return ffi_plugin
-            elif isinstance(v, (dict, list)):
-                return replace_ffi_with_input(v)
-    raise ValueError("Expected dict or list")
+
+    def __init__(
+        self,
+        source,
+        find_pattern=_find_pattern,  # Non-default might be useful for testing.
+    ):
+        self._source = source
+        self._param_dicts = []
+        self._find_pattern = find_pattern
+
+    def replace(self):
+        self._sub_replace(self._source)
+        if not self._param_dicts:
+            raise Exception(f"Did not find FFI in {self._source}")  # pragma: no cover
+        return self._param_dicts
+
+    def _sub_replace(self, sub_source):
+        if isinstance(sub_source, list):
+            for i in range(len(sub_source)):
+                plugin_details = self._find_pattern(sub_source[i])
+                if plugin_details:
+                    sub_source[i] = plugin_details.input_expr
+                    self._param_dicts.append(plugin_details.params_dict)
+                else:
+                    self._sub_replace(sub_source[i])
+        if isinstance(sub_source, dict):
+            for v in sub_source.values():
+                if isinstance(v, (dict, list)):
+                    self._sub_replace(v)
 
 
 def find(

@@ -180,38 +180,23 @@ def parse_select_expr(
                 assert_no_extras(extras_1, extras_2)
                 column_name = infer_name(expr)
                 agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
-            # TODO: No test coverage. Add scenario and restore?
-            # case (
-            #     tags.value.FUNCTION,
-            #     {
-            #         "function": "FillNull",
-            #         "input": [
-            #             {
-            #                 tags.value.CAST: {
-            #                     "dtype": {
-            #                         tags.value.LITERAL: dtype_literal,
-            #                         **extras_1,
-            #                     },
-            #                     # TODO: We need the column name at the top-level,
-            #                     # but it could be buried in an expression.
-            #                     # How to extract w/o special case expressions?
-            #                     "expr": {tags.value.COLUMN: name, **extras_2},
-            #                     "options": "Strict",
-            #                     **extras_3,
-            #                 },
-            #                 **extras_4,
-            #             },
-            #             fill_expr,
-            #         ],
-            #         **extras_5,
-            #     },
-            # ):
-            #     assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
-            #     select_kwargs[name] = (
-            #         defer[name]
-            #         .cast(dtype_literal.lower())
-            #         .fill_null(polars_expr_to_ibis_value(fill_expr))
-            #     )
+            case (
+                "Ternary",
+                {
+                    "predicate": predicate_expr,
+                    "truthy": truthy_expr,
+                    "falsy": falsy_expr,
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                column_name = infer_name(predicate_expr)
+                select_kwargs[column_name] = polars_expr_to_ibis_value(
+                    predicate_expr
+                ).ifelse(
+                    polars_expr_to_ibis_value(truthy_expr),
+                    polars_expr_to_ibis_value(falsy_expr),
+                )
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported select expr {tag}")
     return (select_kwargs, agg_kwargs, drop_args)

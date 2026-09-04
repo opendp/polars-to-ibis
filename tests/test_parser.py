@@ -1,5 +1,4 @@
 import re
-from typing import Any, Callable
 
 import polars as pl
 import pytest
@@ -9,21 +8,7 @@ from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
 from .config_parser import ParserScenario, input_data, parser_scenarios
-from .utils import backends, exporters, get_connection
-
-
-def assert_error_or_none(
-    error_type: str, expected_error: str | None, func: Callable[[], Any]
-) -> Any:
-    if expected_error:
-        with pytest.raises(Exception, match=re.escape(expected_error)):
-            func()
-        pytest.xfail(f"expected error: {expected_error}")
-    try:
-        result = func()
-    except Exception as e:  # pragma: no cover
-        pytest.fail(f"(If this is expected, add {error_type} to scenario.) {e}")
-    return result
+from .utils import assert_error_or_none, backends, exporters, get_connection
 
 
 @pytest.mark.parametrize(

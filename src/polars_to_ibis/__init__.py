@@ -9,7 +9,7 @@ import polars as pl
 from ._parse import tags
 from ._parse.table_handlers import update_polars_to_ibis
 from ._serialize import serialize
-from ._utils import replace_ffi_with_input
+from ._utils import PluginReplacer
 
 __version__ = version("polars_to_ibis")
 
@@ -138,21 +138,21 @@ def _get_type(polars_type_name: str) -> type:
 
 def split_polars_on_ffi(
     query: pl.LazyFrame, table_name: str
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """
     Split a Polars LazyFrame on an FFI plugin,
     returning an Ibis unbound table ready to be executed on a SQL database,
-    and a dict of parameters for the plugin.
+    and a list of parameter dicts for the plugin.
     """
 
     polars_plan = serialize(query)
     input_schema = _get_input_schema(polars_plan)
 
-    plugin_parameters = replace_ffi_with_input(polars_plan)
+    param_dicts = PluginReplacer(polars_plan).replace()
 
     ibis_table = update_polars_to_ibis(
         polars_plan=polars_plan,
         table=ibis.table(input_schema, name=table_name),
     )
 
-    return ibis_table, plugin_parameters
+    return ibis_table, param_dicts

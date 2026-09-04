@@ -95,7 +95,18 @@ parser_scenarios = [
         "lf.select(pl.col.ints / pl.col.floats)",
         {"ints": [10.0, 10.0, 10.0, 10.0]},
     ),
-    ParserScenario("numeric", "lf.select(pl.col.ints.clip(0,1).sum())", {"ints": [4]}),
+    ParserScenario(
+        # TODO: Add more tests of name inference:
+        # Which expression should it be based on?
+        "numeric",
+        "lf.select(pl.when(pl.col.ints > 3).then(pl.col.ints).otherwise(0))",
+        {"ints": [0, 0, 0, 4]},
+    ),
+    ParserScenario(
+        "numeric",
+        "lf.select(pl.col.ints.clip(0,1).sum())",
+        {"ints": [4]},
+    ),
     ParserScenario(
         "numeric",
         "lf.mean()",
