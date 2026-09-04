@@ -9,8 +9,6 @@ on:
     # Alternative: only build for tags.
     # tags:
     #   - '*'
-  # TODO: Remove pull_request before merge to main.
-  pull_request:
 
 # security: restrict permissions for CI jobs.
 permissions:
