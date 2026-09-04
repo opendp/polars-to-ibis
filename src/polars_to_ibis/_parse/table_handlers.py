@@ -59,30 +59,12 @@ def infer_name(expr):
     return "literal" if "Literal" in expr else find(expr, "Column")
 
 
-def parse_select_expr(
-    col_list: list[dict[str, Any]],
-) -> tuple[dict[str, ir.Value], dict[str, ir.Value], list[str]]:
+def apply_select_expr(col_list: list[dict[str, Any]], input_table):
     """
-    Given a polars serialization,
-    return tuple of (kw)args to be used for select(), aggregate(), or drop().
-
-    >>> parse_select_expr([{'Column': 'keep'}, {'Column': 'two'}])
-    ({'keep': 'keep', 'two': 'two'}, {}, [])
-
-    >>> parse_select_expr([{'Alias': [{'Column': 'old_name'}, 'new_name']}])
-    ({'new_name': _['old_name']}, {}, [])
-
-    >>> parse_select_expr([{'Alias':
-    ...     [{'Agg': {'Mean': {'Column': 'old_name'}}}, 'new_name']
-    ... }])
-    ({}, {'new_name': _['old_name'].mean().cast('float32')}, [])
-
-    >>> parse_select_expr([{'Selector': {'Difference': ['Wildcard', {'ByName': {
-    ...     'names': ['cols', 'to', 'drop'],
-    ...     'strict': True
-    ... }}]}}])
-    ({}, {}, ['cols', 'to', 'drop'])
-
+    Given col_list (the polars serialization for a select),
+    and an ibis input_table
+    apply the approriate ibis selects, aggregates, and drops to the input_table,
+    and return the modified table.
     """
     select_kwargs: dict[str, ir.Value] = {}
     agg_kwargs: dict[str, ir.Value] = {}
@@ -90,6 +72,8 @@ def parse_select_expr(
     for col in col_list:
         tag, payload = split_tag_payload(col)
         match (tag, payload):
+            case ("Len", None):
+                agg_kwargs["len"] = input_table.count()
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case ("Alias", [expr, new_name]):
@@ -199,7 +183,14 @@ def parse_select_expr(
                 )
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported select expr {tag}")
-    return (select_kwargs, agg_kwargs, drop_args)
+
+    if select_kwargs:
+        input_table = input_table.select(**select_kwargs)
+    if agg_kwargs:
+        input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
+    if drop_args:
+        input_table = input_table.drop(*drop_args)
+    return input_table
 
 
 # Table handlers:
@@ -261,18 +252,8 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.SELECT}")
 
-    match expr:
-        case ["Len"]:
-            return input_table.aggregate(len=input_table.count())
-        case _:
-            select_kwargs, agg_kwargs, drop_args = parse_select_expr(payload["expr"])
-            if select_kwargs:
-                input_table = input_table.select(**select_kwargs)
-            if agg_kwargs:
-                input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
-            if drop_args:
-                input_table = input_table.drop(*drop_args)
-            return input_table
+    input_table = apply_select_expr(expr, input_table)
+    return input_table
 
 
 @table_handler(tags.table.FILTER)

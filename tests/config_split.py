@@ -131,10 +131,40 @@ split_scenarios = [
             "mysql": "FUNCTION runner.IS_NAN does not exist",
         },
     ),
+    SplitScenario(
+        # Two separate DP queries that differ only in their parameters.
+        "context.query().select(pl.col.floats.dp.sum((0,1)),pl.col.ints.dp.sum((0,10)))",
+        f"{get_select_float_sum().strip()}, "
+        f"{get_select_int_sum('t0').replace('SELECT', '')} FROM default_table AS t0",
+        {
+            "floats": [
+                1.0,
+            ],
+            "ints": [
+                10,
+            ],
+        },
+        get_expected_parameters([(2.0008881784197, "Float"), (20, "Integer")]),
+        backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined",
+            "mysql": "FUNCTION runner.IS_NAN does not exist",
+        },
+    ),
+    SplitScenario(
+        "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
+        f"SELECT COUNT(*) AS len, {get_select_int_sum('t0').replace('SELECT', '')} "
+        f"FROM default_table AS t0",
+        {
+            "len": [
+                4,
+            ],
+            "ints": [
+                10,
+            ],
+        },
+        get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
+    ),
     # TODO: Expand coverage.
-    # SplitScenario(
-    #     "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
-    # ),
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
     # ),
