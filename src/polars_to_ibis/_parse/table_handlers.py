@@ -8,7 +8,8 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate
+from polars_to_ibis._utils import abbreviate, find
+
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
 from .value_handlers import polars_expr_to_ibis_value
@@ -54,30 +55,16 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
     return [list(col.values())[0] for col in col_list]
 
 
-def parse_select_expr(
-    col_list: list[dict[str, Any]],
-) -> tuple[dict[str, ir.Value], dict[str, ir.Value], list[str]]:
+def infer_name(expr):
+    return "literal" if "Literal" in expr else find(expr, "Column")
+
+
+def apply_select_expr(col_list: list[dict[str, Any]], input_table):
     """
-    Given a polars serialization,
-    return tuple of (kw)args to be used for select() or drop().
-
-    >>> parse_select_expr([{'Column': 'keep'}, {'Column': 'two'}])
-    ({'keep': 'keep', 'two': 'two'}, {}, [])
-
-    >>> parse_select_expr([{'Alias': [{'Column': 'old_name'}, 'new_name']}])
-    ({'new_name': _['old_name']}, {}, [])
-
-    >>> parse_select_expr([{'Alias':
-    ...     [{'Agg': {'Mean': {'Column': 'old_name'}}}, 'new_name']
-    ... }])
-    ({}, {'new_name': _['old_name'].mean().cast('float32')}, [])
-
-    >>> parse_select_expr([{'Selector': {'Difference': ['Wildcard', {'ByName': {
-    ...     'names': ['cols', 'to', 'drop'],
-    ...     'strict': True
-    ... }}]}}])
-    ({}, {}, ['cols', 'to', 'drop'])
-
+    Given col_list (the polars serialization for a select),
+    and an ibis input_table
+    apply the approriate ibis selects, aggregates, and drops to the input_table,
+    and return the modified table.
     """
     select_kwargs: dict[str, ir.Value] = {}
     agg_kwargs: dict[str, ir.Value] = {}
@@ -85,6 +72,8 @@ def parse_select_expr(
     for col in col_list:
         tag, payload = split_tag_payload(col)
         match (tag, payload):
+            case ("Len", None):
+                agg_kwargs["len"] = input_table.count()
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case ("Alias", [expr, new_name]):
@@ -124,45 +113,84 @@ def parse_select_expr(
                 tags.value.AGG,
                 expr,
             ):
-                from .._utils import find
+                from polars_to_ibis._utils import find
 
                 name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
-            # TODO: No test coverage. Add scenario and restore?
-            # case (
-            #     tags.value.FUNCTION,
-            #     {
-            #         "function": "FillNull",
-            #         "input": [
-            #             {
-            #                 tags.value.CAST: {
-            #                     "dtype": {
-            #                         tags.value.LITERAL: dtype_literal,
-            #                         **extras_1,
-            #                     },
-            #                     # TODO: We need the column name at the top-level,
-            #                     # but it could be buried in an expression.
-            #                     # How to extract w/o special case expressions?
-            #                     "expr": {tags.value.COLUMN: name, **extras_2},
-            #                     "options": "Strict",
-            #                     **extras_3,
-            #                 },
-            #                 **extras_4,
-            #             },
-            #             fill_expr,
-            #         ],
-            #         **extras_5,
-            #     },
-            # ):
-            #     assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
-            #     select_kwargs[name] = (
-            #         defer[name]
-            #         .cast(dtype_literal.lower())
-            #         .fill_null(polars_expr_to_ibis_value(fill_expr))
-            #     )
+            case (
+                "BinaryExpr",
+                {
+                    "left": left_expr,
+                    "op": "TrueDivide",
+                    "right": right_expr,
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                target_name = infer_name(left_expr) or infer_name(right_expr)
+                select_kwargs[target_name] = polars_expr_to_ibis_value(
+                    left_expr
+                ) / polars_expr_to_ibis_value(right_expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": "ToUppercase",
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                column_name = infer_name(expr)
+                agg_kwargs[column_name.upper()] = polars_expr_to_ibis_value(expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": {"Suffix": suffix, **extras_1},
+                    **extras_2,
+                },
+            ):
+                assert_no_extras(extras_1, extras_2)
+                column_name = infer_name(expr)
+                agg_kwargs[column_name + suffix] = polars_expr_to_ibis_value(expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": {"Prefix": prefix, **extras_1},
+                    **extras_2,
+                },
+            ):
+                assert_no_extras(extras_1, extras_2)
+                column_name = infer_name(expr)
+                agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
+            case (
+                "Ternary",
+                {
+                    "predicate": predicate_expr,
+                    "truthy": truthy_expr,
+                    "falsy": falsy_expr,
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                column_name = infer_name(predicate_expr)
+                select_kwargs[column_name] = polars_expr_to_ibis_value(
+                    predicate_expr
+                ).ifelse(
+                    polars_expr_to_ibis_value(truthy_expr),
+                    polars_expr_to_ibis_value(falsy_expr),
+                )
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported select expr {tag}")
-    return (select_kwargs, agg_kwargs, drop_args)
+
+    if select_kwargs:
+        input_table = input_table.select(**select_kwargs)
+    if agg_kwargs:
+        input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
+    if drop_args:
+        input_table = input_table.drop(*drop_args)
+    return input_table
 
 
 # Table handlers:
@@ -183,9 +211,20 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 @table_handler(tags.table.DATA_FRAME_SCAN)
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
-        case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
-            if "metadata" in extras_1 and extras_1["metadata"] is None:
-                del extras_1["metadata"]  # pragma: no cover
+        # Serialization changes between polars versions,
+        # so only one of these will be covered in a given test run.
+        case {
+            "df": _,
+            "schema": {"fields": _, "metadata": None, **extras_1},
+            **extras_2,
+        }:  # pragma: no cover
+            assert_no_extras(extras_1, extras_2)
+            return table
+        case {
+            "df": _,
+            "schema": {"fields": _, **extras_1},
+            **extras_2,
+        }:  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
             return table
         case _:
@@ -213,18 +252,8 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.SELECT}")
 
-    match expr:
-        case ["Len"]:
-            return input_table.aggregate(len=input_table.count())
-        case _:
-            select_kwargs, agg_kwargs, drop_args = parse_select_expr(payload["expr"])
-            if select_kwargs:
-                input_table = input_table.select(**select_kwargs)
-            if agg_kwargs:
-                input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
-            if drop_args:
-                input_table = input_table.drop(*drop_args)
-            return input_table
+    input_table = apply_select_expr(expr, input_table)
+    return input_table
 
 
 @table_handler(tags.table.FILTER)
@@ -384,7 +413,19 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
 
-    match payload:
+    # Different serializations from different polars versions.
+    # Not all branches will be covered.
+    match payload:  # pragma: no cover
+        case {
+            "keys": keys,
+            "aggs": [agg],
+            "maintain_order": False,
+            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
+            "apply": None,
+            "predicates": [],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
         case {
             "keys": keys,
             "aggs": [agg],
@@ -392,13 +433,8 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
             **extras_2,
         }:
-            # Ignore options added in later versions:
-            if "apply" in extras_2 and extras_2["apply"] is None:
-                del extras_2["apply"]  # pragma: no cover
-            if "predicates" in extras_2 and extras_2["predicates"] == []:
-                del extras_2["predicates"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
 
     group_by_keys = parse_sort_by_column(keys)
