@@ -91,8 +91,10 @@ def parse_select_expr(
         tag, payload = split_tag_payload(col)
         match (tag, payload):
             case (tags.value.COLUMN, _):
+                assert_no_extras(locals())
                 select_kwargs[payload] = payload
             case ("Alias", [expr, new_name]):
+                assert_no_extras(locals())
                 ibis_value = polars_expr_to_ibis_value(expr)
                 if split_tag_payload(expr)[0] == tags.value.AGG:
                     agg_kwargs[new_name] = ibis_value.cast("float32")
@@ -111,7 +113,7 @@ def parse_select_expr(
                     **extras_3,
                 },
             ):
-                assert_no_extras(extras_1, extras_2, extras_3)
+                assert_no_extras(locals())
                 drop_args += names
             case (
                 tags.value.FUNCTION,
@@ -121,7 +123,7 @@ def parse_select_expr(
                     **extras_2,
                 },
             ):
-                assert_no_extras(extras_1, extras_2)
+                assert_no_extras(locals())
                 select_kwargs[name] = defer[name].fill_null(
                     polars_expr_to_ibis_value(expr)
                 )
@@ -129,6 +131,7 @@ def parse_select_expr(
                 tags.value.AGG,
                 expr,
             ):
+                assert_no_extras(locals())
                 from polars_to_ibis._utils import find
 
                 name = find(expr, tags.value.COLUMN)
@@ -142,7 +145,7 @@ def parse_select_expr(
                     **extras_1,
                 },
             ):
-                assert_no_extras(extras_1)
+                assert_no_extras(locals())
                 target_name = infer_name(left_expr) or infer_name(right_expr)
                 select_kwargs[target_name] = polars_expr_to_ibis_value(
                     left_expr
@@ -155,7 +158,7 @@ def parse_select_expr(
                     **extras_1,
                 },
             ):
-                assert_no_extras(extras_1)
+                assert_no_extras(locals())
                 column_name = infer_name(expr)
                 agg_kwargs[column_name.upper()] = polars_expr_to_ibis_value(expr)
             case (
@@ -166,7 +169,7 @@ def parse_select_expr(
                     **extras_2,
                 },
             ):
-                assert_no_extras(extras_1, extras_2)
+                assert_no_extras(locals())
                 column_name = infer_name(expr)
                 agg_kwargs[column_name + suffix] = polars_expr_to_ibis_value(expr)
             case (
@@ -177,7 +180,7 @@ def parse_select_expr(
                     **extras_2,
                 },
             ):
-                assert_no_extras(extras_1, extras_2)
+                assert_no_extras(locals())
                 column_name = infer_name(expr)
                 agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
             # TODO: No test coverage. Add scenario and restore?
@@ -206,7 +209,7 @@ def parse_select_expr(
             #         **extras_5,
             #     },
             # ):
-            #     assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
+            #     assert_no_extras(locals())
             #     select_kwargs[name] = (
             #         defer[name]
             #         .cast(dtype_literal.lower())
@@ -225,7 +228,7 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
         case {"dsl": _, "version": _, **extras_1}:
             # TODO: Confirm behavior
-            assert_no_extras(extras_1)
+            assert_no_extras(locals())
             return table
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.IR}")
@@ -242,14 +245,14 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "schema": {"fields": _, "metadata": None, **extras_1},
             **extras_2,
         }:  # pragma: no cover
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return table
         case {
             "df": _,
             "schema": {"fields": _, **extras_1},
             **extras_2,
         }:  # pragma: no cover
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return table
         case _:
             raise NotImplementedError(
@@ -272,12 +275,13 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.SELECT}")
 
     match expr:
         case ["Len"]:
+            assert_no_extras(locals())
             return input_table.aggregate(len=input_table.count())
         case _:
             select_kwargs, agg_kwargs, drop_args = parse_select_expr(payload["expr"])
@@ -295,7 +299,7 @@ def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
         case {"predicate": predicate, **extras}:
-            assert_no_extras(extras)
+            assert_no_extras(locals())
             value = polars_expr_to_ibis_value(predicate)
             return input_table.filter(value)  # type: ignore
         case _:  # pragma: no cover
@@ -307,7 +311,7 @@ def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
         case {"len": len, "offset": offset, **extras}:
-            assert_no_extras(extras)
+            assert_no_extras(locals())
             if offset < 0:
                 raise NotImplementedError(f"Unsupported offset: {offset}")
             return input_table.limit(len, offset=offset)
@@ -332,7 +336,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "slice": None,
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             if any(nulls_last):
                 raise NotImplementedError(f"Unsupported nulls_last: {nulls_last}")
             undirected_sort_keys = parse_sort_by_column(by_column)
@@ -375,7 +379,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_6,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
+            assert_no_extras(locals())
             all_columns = input[tags.table.MAP_FUNCTION]["input"][
                 tags.table.DATA_FRAME_SCAN
             ]["schema"]["fields"].keys()
@@ -419,17 +423,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_9,
         }:
-            assert_no_extras(
-                extras_1,
-                extras_2,
-                extras_3,
-                extras_4,
-                extras_5,
-                extras_6,
-                extras_7,
-                extras_8,
-                extras_9,
-            )
+            assert_no_extras(locals())
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
@@ -459,7 +453,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "predicates": [],
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
         case {
             "keys": keys,
             "aggs": [agg],
@@ -467,7 +461,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
 
@@ -476,7 +470,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
     match agg:
         case {tags.value.AGG: agg_payload, **extras_1}:
-            assert_no_extras(extras_1)
+            assert_no_extras(locals())
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
         case "Len":  # pragma: no cover
             raise NotImplementedError("Unsupported Len")
@@ -492,7 +486,7 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
     match agg_payload_payload:
         case {tags.value.COLUMN: column, **extras}:
-            assert_no_extras(extras)
+            assert_no_extras(locals())
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
 
@@ -510,9 +504,9 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
     match payload:
         case {"function": {"Stats": stats, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
         case {"function": {"FillNan": fill_nan_expr, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
             # No ibis "fill_nan()", so we do it by hand:
             return input_table.select(
@@ -546,7 +540,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
 
         case {"Var": {"ddof": 1, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).var().cast("float32")
@@ -555,7 +549,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
 
         case {"Std": {"ddof": 1, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).std().cast("float32")
@@ -577,7 +571,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             },
             **extras_5,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
+            assert_no_extras(locals())
             return table.aggregate(
                 **{
                     col: getattr(input_table, col).quantile(quantile)
