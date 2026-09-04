@@ -8,7 +8,8 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate
+from polars_to_ibis._utils import abbreviate
+
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
 
@@ -156,8 +157,8 @@ def handle_agg(payload: PolarsPlan):
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
-            "input": [left_expr, right_expr],
             "function": {"Pow": "Generic", **extras_1},
+            "input": [left_expr, right_expr],
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
@@ -165,21 +166,25 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             right = polars_expr_to_ibis_value(right_expr)
             return left**right  # type: ignore
         case {
-            "input": [input_expr],
             "function": {"Boolean": "Not", **extras_1},
+            "input": [input_expr],
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
             return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
-        case {"input": [input_expr], "function": "Negate", **extras}:
+        case {
+            "function": "Negate",
+            "input": [input_expr],
+            **extras,
+        }:
             assert_no_extras(extras)
             return -polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {
-            "input": [input_expr, lower_expr, upper_expr],
             "function": {
                 "Clip": {"has_min": True, "has_max": True, **extras_1},
                 **extras_2,
             },
+            "input": [input_expr, lower_expr, upper_expr],
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
@@ -187,17 +192,57 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case {  # pragma: no cover (polars<1.41.2)
+            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
             "input": [
                 input_expr,
                 _quantile_expr,  # noqa: F841 (unused)
             ],
-            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION} Quantile")
+        case {
+            "function": "FillNull",
+            "input": [input_expr, fill_expr],
+            **extras_1,
+        }:
+            assert_no_extras(extras_1)
+            fill_value = polars_expr_to_ibis_value(fill_expr)
+            return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
+        case {
+            "function": {"Boolean": "IsNotNan", **extras_1},
+            "input": [input_expr],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return ~(polars_expr_to_ibis_value(input_expr).isnan())
+        case {
+            "function": {"Boolean": "IsNull", **extras_1},
+            "input": [input_expr],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return polars_expr_to_ibis_value(input_expr).isnull()
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
+
+
+@value_handler("Ternary")
+def handle_ternary(payload: PolarsPlan):
+    match payload:
+        case {
+            "predicate": predicate_expr,
+            "truthy": truthy_expr,
+            "falsy": falsy_expr,
+            **extras,
+        }:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(predicate_expr).ifelse(
+                polars_expr_to_ibis_value(truthy_expr),
+                polars_expr_to_ibis_value(falsy_expr),
+            )
+        case _:  # pragma: no cover
+            raise NotImplementedError("Unsupported Ternary")
 
 
 @value_handler(tags.value.BINARY_EXPR)

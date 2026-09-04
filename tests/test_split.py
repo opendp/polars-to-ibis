@@ -7,50 +7,38 @@ import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
-from .utils import get_connection
+from .config_split import TABLE_NAME, SplitScenario, split_scenarios
+from .utils import assert_error_or_none, backend_names, get_connection
 
 
 def norm_sql(sql: str):
     return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
-table_name = "default_table"
-
-
 @pytest.mark.parametrize(
     "scenario",
-    [
-        (
-            "context.query().select(dp.len())",
-            f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
-            {"len": [4]},
-        ),
-        # (
-        #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
-        #     f"... FROM {table_name} AS t0",
-        # ),
-    ],
-    ids=lambda scenario: "-".join(scenario[:2]),
+    split_scenarios,
+    ids=lambda scenario: scenario.expression,
 )
-def test_split_lazyframe(scenario):
-    expression, expected_sql, expected_result = scenario
-
+@pytest.mark.parametrize("backend_name", backend_names)
+def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
     # Set up database:
+    backend = getattr(ibis, backend_name)
     connection = get_connection(
-        pl.DataFrame(
+        df=pl.DataFrame(
             {
                 "ints": [1, 2, 3, 4],
                 "floats": [0.1, 0.2, 0.3, 0.4],
             }
         ),
-        table_name,
-        ibis.sqlite,
+        table_name=TABLE_NAME,
+        backend=backend,
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
     # (If there is non-OpenDP boilerplate, move it into the package.)
     dp.enable_features("contrib", "honest-but-curious")
-    schema_lf = scan_database(connection, table_name)
+    schema_lf = scan_database(connection, TABLE_NAME)
     context = dp.Context.compositor(
         data=schema_lf,
         privacy_unit=dp.unit_of(contributions=1),
@@ -65,13 +53,13 @@ def test_split_lazyframe(scenario):
         "dp": dp,
         "pl": pl,
     }
-    query = eval(expression, globals)
+    query = eval(scenario.expression, globals)
 
     # TODO: Confirm that this is the interface we want.
     def helper_function_to_add_to_opendp(query, table_name, connection):
         query_lf = query.release().lazy()
 
-        ibis_table, plugin_parameters = split_polars_on_ffi(
+        ibis_table, param_dicts = split_polars_on_ffi(
             query_lf,
             table_name=table_name,
             # In the future, add a parameter to specify the plugin to split on?
@@ -79,15 +67,21 @@ def test_split_lazyframe(scenario):
         )
 
         # Use ibis_table:
-
-        private_result = connection.to_polars(ibis_table).to_dict(as_series=False)
-        private_item = list(private_result.items())[0][1][0]
+        private_result = assert_error_or_none(
+            "backend_error",
+            scenario.backend_errors.get(backend_name),
+            lambda: connection.to_polars(ibis_table).to_dict(as_series=False),
+        )
+        # For now, assume result dataframe is only a single row,
+        # so pull out single values with [0],
+        # but I'm not sure that will always be true.
+        private_items = [v[0] for v in private_result.values()]
 
         # Test ibis_table:
         # (Remove test assertion after porting to opendp.)
         actual_sql = norm_sql(ibis_table.to_sql())
-        assert actual_sql == expected_sql
-        assert private_result == expected_result
+        assert actual_sql == norm_sql(scenario.expected_sql)
+        assert private_result == scenario.expected_result
 
         # Use plugin_parameters:
 
@@ -95,54 +89,53 @@ def test_split_lazyframe(scenario):
         # ... but that is work that can be done in opendp, after porting.
         import pickle
 
-        kwargs = pickle.loads(bytes(plugin_parameters["kwargs"]))
+        dp_results = []
+        actual_parameters = []
+        for private_item, param_dict in zip(private_items, param_dicts):
 
-        match kwargs["support"]:
-            case "Integer":
-                support = int
-            case "Float":  # pragma: no cover
-                support = float
-            case _:  # pragma: no cover
-                raise ValueError(
-                    f"Expected 'Integer' or 'Float', not {kwargs['support']}"
-                )
-        input_space = dp.atom_domain(T=support, nan=False), dp.absolute_distance(
-            T=support
-        )
+            kwargs = pickle.loads(bytes(param_dict["kwargs"]))
 
-        match kwargs["distribution"]:
-            case "Laplace":
-                make = dp.m.make_laplace
-            case "Gaussian":  # pragma: no cover
-                make = dp.m.make_gaussian
-            case _:  # pragma: no cover
-                raise ValueError(
-                    f"Expected 'Laplace' or 'Gaussian', not {kwargs['distribution']}"
-                )
-        measurement = make(*input_space, scale=kwargs["scale"])
+            match kwargs["support"]:
+                case "Integer":
+                    support = int
+                case "Float":  # pragma: no cover
+                    support = float
+                case _:  # pragma: no cover
+                    raise ValueError(
+                        f"Expected 'Integer' or 'Float', not {kwargs['support']}"
+                    )
+            input_space = dp.atom_domain(T=support, nan=False), dp.absolute_distance(
+                T=support
+            )
 
-        # Test plugin_parameters:
-        # (Remove when porting to opendp.)
-        plugin_parameters["unpickled_kwargs"] = kwargs
-        del plugin_parameters["kwargs"]
-        plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
-        assert plugin_parameters == {
-            "flags": {
-                "check_lengths": True,
-                "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
-            },
-            "lib": ".../opendp.abi3.so",
-            "symbol": "noise_plugin",
-            "unpickled_kwargs": {
-                "distribution": "Laplace",
-                "scale": 1.0,
-                "support": "Integer",
-            },
-        }
+            match kwargs["distribution"]:
+                case "Laplace":
+                    make = dp.m.make_laplace
+                case "Gaussian":  # pragma: no cover
+                    make = dp.m.make_gaussian
+                case _:  # pragma: no cover
+                    raise ValueError(
+                        "Expected 'Laplace' or 'Gaussian', "
+                        f"not {kwargs['distribution']}"
+                    )
+            measurement = make(*input_space, scale=kwargs["scale"])
 
-        # Put the pieces together:
+            # Put the pieces together:
+            dp_results.append(measurement(private_item))
 
-        return measurement(private_item)
+            # Extract parameters for testing:
+            # (Remove when porting to opendp.)
+            param_dict["unpickled_kwargs"] = kwargs
+            del param_dict["kwargs"]
+            param_dict["lib"] = re.sub(r".*/", ".../", param_dict["lib"])
+            actual_parameters.append(param_dict)
 
-    dp_result = helper_function_to_add_to_opendp(query, table_name, connection)
-    assert isinstance(dp_result, float) or isinstance(dp_result, int)
+        return dp_results, actual_parameters
+
+    dp_results, actual_parameters = helper_function_to_add_to_opendp(
+        query, TABLE_NAME, connection
+    )
+
+    assert actual_parameters == scenario.expected_parameters
+    assert isinstance(dp_results, list)
+    assert all(isinstance(result, (float, int)) for result in dp_results)

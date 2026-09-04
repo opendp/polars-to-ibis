@@ -9,7 +9,7 @@ import polars as pl
 from ._parse import tags
 from ._parse.table_handlers import update_polars_to_ibis
 from ._serialize import serialize
-from ._utils import replace_ffi_with_input
+from ._utils import PluginReplacer
 
 __version__ = version("polars_to_ibis")
 
@@ -45,7 +45,7 @@ def _check_version():
         )
 
 
-def scan_database(connection: Any, table_name: str):
+def scan_database(connection: Any, table_name: str) -> pl.LazyFrame:
     """
     Get the schema from a database table and convert it to Polars.
     """
@@ -145,11 +145,11 @@ def split_polars_on_ffi(
     query: pl.LazyFrame,
     table_name: str,
     backend: ibis.BaseBackend,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """
     Split a Polars LazyFrame on an FFI plugin,
     returning an Ibis unbound table ready to be executed on a backend,
-    and a dict of parameters for the plugin.
+    and a list of parameter dicts for the plugin.
 
     The backend parameter is used to determine the supported operations.
     """
@@ -157,7 +157,7 @@ def split_polars_on_ffi(
     polars_plan = serialize(query)
     input_schema = _get_input_schema(polars_plan)
 
-    plugin_parameters = replace_ffi_with_input(polars_plan)
+    param_dicts = PluginReplacer(polars_plan).replace()
 
     ibis_table = update_polars_to_ibis(
         polars_plan=polars_plan,
@@ -165,4 +165,4 @@ def split_polars_on_ffi(
         backend=backend,
     )
 
-    return ibis_table, plugin_parameters
+    return ibis_table, param_dicts

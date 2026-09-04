@@ -1,5 +1,4 @@
 import re
-from typing import Any, Callable
 
 import ibis
 import polars as pl
@@ -9,30 +8,16 @@ from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .scenarios import Scenario, input_data, scenarios
-from .utils import backend_names, exporters, get_connection
-
-
-def assert_error_or_none(
-    error_type: str, expected_error: str | None, func: Callable[[], Any]
-) -> Any:
-    if expected_error:
-        with pytest.raises(Exception, match=re.escape(expected_error)):
-            func()
-        pytest.xfail(f"expected error: {expected_error}")
-    try:
-        result = func()
-    except Exception as e:  # pragma: no cover
-        pytest.fail(f"(If this is expected, add {error_type} to scenario.) {e}")
-    return result
+from .config_parser import ParserScenario, input_data, parser_scenarios
+from .utils import assert_error_or_none, backend_names, exporters, get_connection
 
 
 @pytest.mark.parametrize(
     "scenario",
-    scenarios,
+    parser_scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-def test_scenario_consistency(scenario: Scenario):
+def test_scenario_consistency(scenario: ParserScenario):
     # Does the polars expression have the expected result?
     globals = {"lf": pl.LazyFrame(input_data[scenario.category]), "pl": pl}
     polars_output = (
@@ -43,13 +28,13 @@ def test_scenario_consistency(scenario: Scenario):
 
 @pytest.mark.parametrize(
     "scenario",
-    scenarios,
+    parser_scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
 @pytest.mark.parametrize("backend_name", backend_names)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table_new(
-    scenario: Scenario,
+    scenario: ParserScenario,
     backend_name: str,
     exporter_key: str,
 ):
