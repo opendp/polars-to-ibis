@@ -9,6 +9,8 @@ on:
     # Alternative: only build for tags.
     # tags:
     #   - '*'
+  # TODO: Remove pull_request before merge to main.
+  pull_request:
 
 # security: restrict permissions for CI jobs.
 permissions:
@@ -29,11 +31,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install the project
-        # TODO: Add "--locked": Was failing with:
-        # > The lockfile at `uv.lock` needs to be updated, but `--locked` was provided.
-        # > To update the lockfile, run `uv lock`.
-        # Running "uv lock" produces no changes.
-        run: uv sync --all-extras --dev
+        run: uv sync --dev
 
       - name: Build docs
         run: uv run pdoc -o docs/ src/polars_to_ibis
