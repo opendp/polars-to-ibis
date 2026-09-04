@@ -19,14 +19,14 @@ def find_case_and_next_line(src: str):
     >>> src = '''
     ... ignore
     ... case (something):
-    ...     assert_no_extras(something)
+    ...     assert_no_extras(locals())
     ...     ignore
     ... '''
     >>> find_case_and_next_line(src)
-    ['case(something):assert_no_extras(something)']
+    ['case(something):assert_no_extras']
     """
     matches = re.findall(
-        r"case [\[{(].*?[\])}]:\s+(?:assert_no_extras\([^)]+\))?", src, flags=re.DOTALL
+        r"case [\[{(].*?[\])}]:\s+(?:assert_no_extras)?", src, flags=re.DOTALL
     )
     cleaned: list[str] = []
     for case_match in matches:
@@ -50,7 +50,7 @@ assert case_matches
 
 
 @pytest.mark.parametrize("case_match", case_matches)
-def test_extras_last_in_dict_in_case_statements(case_match: str):
+def test_extras_in_match_patterns(case_match: str):
     extra_matches = re.findall(r"(?:\w*)\}", case_match)
     for extra_match in extra_matches:
         has_extras = extra_match.startswith("extras")
@@ -58,11 +58,5 @@ def test_extras_last_in_dict_in_case_statements(case_match: str):
 
 
 @pytest.mark.parametrize("case_match", case_matches)
-def test_extras_in_assert(case_match: str):
-    extra_matches = [m.replace("**", "") for m in re.findall(r"\*\*\w+", case_match)]
-    assertion = re.search(r"assert_no_extras.*", case_match, flags=re.DOTALL)
-    if not extra_matches:
-        return
-    assert assertion is not None
-    for extra_match in extra_matches:
-        assert extra_match in assertion[0]
+def test_assert_starts_block(case_match: str):
+    assert "assert_no_extras" in case_match

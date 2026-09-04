@@ -58,10 +58,10 @@ def handle_literal(payload: PolarsPlan):
             | {"Scalar": {"Boolean": value, **extras_1}, **extras_2}
             | {"Scalar": {"Float32": value, **extras_1}, **extras_2}
         ):
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return value
         case {"Scalar": {"String": value, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.LITERAL}")
@@ -81,7 +81,7 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
             "options": "Strict",
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return ibis.literal(polars_expr_to_ibis_value(expr)).cast(  # type: ignore
                 dtype_literal.lower()
             )
@@ -98,13 +98,13 @@ def handle_sum(payload: PolarsPlan):
 def handle_agg(payload: PolarsPlan):
     match payload:
         case {"Mean": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return defer[column].mean()
         case {"Median": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return defer[column].median()
         case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return defer[column].sum()
         case {
             "Min": {
@@ -114,7 +114,7 @@ def handle_agg(payload: PolarsPlan):
             },
             **extras_3,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3)
+            assert_no_extras(locals())
             return defer[column].min()
         case {
             "Max": {
@@ -124,13 +124,13 @@ def handle_agg(payload: PolarsPlan):
             },
             **extras_3,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3)
+            assert_no_extras(locals())
             return defer[column].max()
         case {"Var": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return defer[column].var()
         case {"Std": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return defer[column].std()
         case {  # pragma: no cover (polars>=1.41.2)
             "Quantile": {
@@ -147,7 +147,7 @@ def handle_agg(payload: PolarsPlan):
             },
             **extras_6,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
+            assert_no_extras(locals())
             return defer[column].quantile(quantile)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.AGG}")
@@ -161,7 +161,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             "function": {"Pow": "Generic", **extras_1},
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             left = polars_expr_to_ibis_value(left_expr)
             right = polars_expr_to_ibis_value(right_expr)
             return left**right  # type: ignore
@@ -170,10 +170,10 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             "function": {"Boolean": "Not", **extras_1},
             **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(locals())
             return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {"input": [input_expr], "function": "Negate", **extras}:
-            assert_no_extras(extras)
+            assert_no_extras(locals())
             return -polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {
             "input": [input_expr, lower_expr, upper_expr],
@@ -183,7 +183,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             },
             **extras_3,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3)
+            assert_no_extras(locals())
             lower = polars_expr_to_ibis_value(lower_expr)
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
@@ -195,14 +195,14 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
             **extras_3,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3)
+            assert_no_extras(locals())
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION} Quantile")
         case {
             "input": [input_expr, fill_expr],
             "function": "FillNull",
             **extras_1,
         }:
-            assert_no_extras(extras_1)
+            assert_no_extras(locals())
             fill_value = polars_expr_to_ibis_value(fill_expr)
             return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
         case _:  # pragma: no cover
@@ -213,7 +213,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
 def handle_binary_expr(payload: PolarsPlan):
     match payload:
         case {"left": left, "op": op, "right": right, **extras}:
-            assert_no_extras(extras)
+            assert_no_extras(locals())
             from operator import (
                 __and__,
                 __or__,
