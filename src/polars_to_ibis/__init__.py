@@ -77,7 +77,7 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 - Ibis version: Tested against Ibis 11.0.0.
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
-  The best summary is the collection of [test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/scenarios.py).
+  The best summary is the collection of [test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
 
 ---
 """  # noqa: B950
