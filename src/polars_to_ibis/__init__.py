@@ -1,4 +1,7 @@
-"""Convert Polars LazyFrames to Ibis unbound tables"""
+"""
+Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/lazyframe/index.html)
+to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expression#unbound-tables)
+"""
 
 from importlib.metadata import version
 from typing import Any
