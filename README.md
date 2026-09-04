@@ -22,7 +22,8 @@ Create the table for our example:
 ```python
 >>> import ibis
 >>> import polars as pl
->>> connection = ibis.sqlite.connect()
+>>> backend = ibis.sqlite
+>>> connection = backend.connect()
 >>> table_name = 'readme_example'
 >>> connection.create_table(
 ...      table_name,
@@ -50,6 +51,7 @@ Next, make a query starting with that LazyFrame:
 >>> ibis_unbound_table = convert_polars_to_ibis(
 ...     polars_query,
 ...     table_name=table_name,
+...     backend=backend,
 ... )
 >>> print(ibis_unbound_table.to_sql())
 SELECT

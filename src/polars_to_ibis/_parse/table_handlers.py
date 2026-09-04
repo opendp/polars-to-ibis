@@ -23,14 +23,18 @@ ReturnsValue = Callable[..., NamedValue]
 # Main:
 
 
-def update_polars_to_ibis(polars_plan: PolarsPlan, table: ir.Table) -> ir.Table:
+def update_polars_to_ibis(
+    polars_plan: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
     tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
     except KeyError as e:  # pragma: no cover
         raise NotImplementedError(f"No table handler for {tag!r}") from e
     try:
-        return func(payload, table=table)
+        return func(payload, table=table, backend=backend)
     except NotImplementedError as e:
         raise NotImplementedError(f"{e}\nin {abbreviate(polars_plan)}")
 
@@ -197,7 +201,11 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
 
 
 @table_handler(tags.table.IR)
-def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+def handle_ir(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
     match payload:
         case {"dsl": _, "version": _, **extras_1}:
             # TODO: Confirm behavior
@@ -209,7 +217,11 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 @table_handler(tags.table.SCAN)
 @table_handler(tags.table.DATA_FRAME_SCAN)
-def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
+def handle_scan(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
     match payload:
         # Serialization changes between polars versions,
         # so only one of these will be covered in a given test run.
@@ -234,8 +246,12 @@ def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.SELECT)
-def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_select(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
 
     match payload:
         case {
@@ -257,8 +273,12 @@ def handle_select(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.FILTER)
-def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_filter(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {"predicate": predicate, **extras}:
             assert_no_extras(extras)
@@ -269,8 +289,12 @@ def handle_filter(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.SLICE)
-def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_slice(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {"len": len, "offset": offset, **extras}:
             assert_no_extras(extras)
@@ -282,8 +306,12 @@ def handle_slice(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.SORT)
-def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_sort(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {
             "by_column": by_column,
@@ -309,6 +337,7 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             return update_polars_to_ibis(
                 payload["input"],
                 input_table,
+                backend=backend,
             ).order_by(
                 *directed_sort_keys  # type: ignore
             )
@@ -317,8 +346,12 @@ def handle_sort(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.H_STACK)
-def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_hstack(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {
             "exprs": [
@@ -345,7 +378,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             all_columns = input[tags.table.MAP_FUNCTION]["input"][
                 tags.table.DATA_FRAME_SCAN
             ]["schema"]["fields"].keys()
-            return update_polars_to_ibis(input, table=table).cast(  # type: ignore
+            return update_polars_to_ibis(input, table=table, backend=backend).cast(  # type: ignore
                 {col: dtype_literal.lower() for col in all_columns}
             )
         case {
@@ -410,8 +443,12 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.GROUP_BY)
-def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_group_by(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
 
     # Different serializations from different polars versions.
     # Not all branches will be covered.
@@ -472,14 +509,20 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 
 
 @table_handler(tags.table.MAP_FUNCTION)
-def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table)
+def handle_map_function(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {"function": {"Stats": stats, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
         case {"function": {"FillNan": fill_nan_expr, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
+            if not backend.has_operation(ibis.expr.operations.IsNan):
+                return input_table
             # No ibis "fill_nan()", so we do it by hand:
             return input_table.select(
                 **{
