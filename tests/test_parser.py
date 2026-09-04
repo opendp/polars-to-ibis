@@ -8,7 +8,7 @@ from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .scenarios import Scenario, input_data, scenarios
+from .config_parser import ParserScenario, input_data, parser_scenarios
 from .utils import backends, exporters, get_connection
 
 
@@ -28,10 +28,10 @@ def assert_error_or_none(
 
 @pytest.mark.parametrize(
     "scenario",
-    scenarios,
+    parser_scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-def test_scenario_consistency(scenario: Scenario):
+def test_scenario_consistency(scenario: ParserScenario):
     # Does the polars expression have the expected result?
     globals = {"lf": pl.LazyFrame(input_data[scenario.category]), "pl": pl}
     polars_output = (
@@ -42,13 +42,13 @@ def test_scenario_consistency(scenario: Scenario):
 
 @pytest.mark.parametrize(
     "scenario",
-    scenarios,
+    parser_scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table_new(
-    scenario: Scenario,
+    scenario: ParserScenario,
     backend: str,
     exporter_key: str,
 ):

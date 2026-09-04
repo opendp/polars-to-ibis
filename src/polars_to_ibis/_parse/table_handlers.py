@@ -8,7 +8,8 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate
+from polars_to_ibis._utils import abbreviate, find
+
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
 from .value_handlers import polars_expr_to_ibis_value
@@ -54,12 +55,16 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
     return [list(col.values())[0] for col in col_list]
 
 
+def infer_name(expr):
+    return "literal" if "Literal" in expr else find(expr, "Column")
+
+
 def parse_select_expr(
     col_list: list[dict[str, Any]],
 ) -> tuple[dict[str, ir.Value], dict[str, ir.Value], list[str]]:
     """
     Given a polars serialization,
-    return tuple of (kw)args to be used for select() or drop().
+    return tuple of (kw)args to be used for select(), aggregate(), or drop().
 
     >>> parse_select_expr([{'Column': 'keep'}, {'Column': 'two'}])
     ({'keep': 'keep', 'two': 'two'}, {}, [])
@@ -124,10 +129,57 @@ def parse_select_expr(
                 tags.value.AGG,
                 expr,
             ):
-                from .._utils import find
+                from polars_to_ibis._utils import find
 
                 name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
+            case (
+                "BinaryExpr",
+                {
+                    "left": left_expr,
+                    "op": "TrueDivide",
+                    "right": right_expr,
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                target_name = infer_name(left_expr) or infer_name(right_expr)
+                select_kwargs[target_name] = polars_expr_to_ibis_value(
+                    left_expr
+                ) / polars_expr_to_ibis_value(right_expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": "ToUppercase",
+                    **extras_1,
+                },
+            ):
+                assert_no_extras(extras_1)
+                column_name = infer_name(expr)
+                agg_kwargs[column_name.upper()] = polars_expr_to_ibis_value(expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": {"Suffix": suffix, **extras_1},
+                    **extras_2,
+                },
+            ):
+                assert_no_extras(extras_1, extras_2)
+                column_name = infer_name(expr)
+                agg_kwargs[column_name + suffix] = polars_expr_to_ibis_value(expr)
+            case (
+                "RenameAlias",
+                {
+                    "expr": expr,
+                    "function": {"Prefix": prefix, **extras_1},
+                    **extras_2,
+                },
+            ):
+                assert_no_extras(extras_1, extras_2)
+                column_name = infer_name(expr)
+                agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
             # TODO: No test coverage. Add scenario and restore?
             # case (
             #     tags.value.FUNCTION,
@@ -183,9 +235,20 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 @table_handler(tags.table.DATA_FRAME_SCAN)
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
-        case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
-            if "metadata" in extras_1 and extras_1["metadata"] is None:
-                del extras_1["metadata"]  # pragma: no cover
+        # Serialization changes between polars versions,
+        # so only one of these will be covered in a given test run.
+        case {
+            "df": _,
+            "schema": {"fields": _, "metadata": None, **extras_1},
+            **extras_2,
+        }:  # pragma: no cover
+            assert_no_extras(extras_1, extras_2)
+            return table
+        case {
+            "df": _,
+            "schema": {"fields": _, **extras_1},
+            **extras_2,
+        }:  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
             return table
         case _:
@@ -384,7 +447,19 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
 
-    match payload:
+    # Different serializations from different polars versions.
+    # Not all branches will be covered.
+    match payload:  # pragma: no cover
+        case {
+            "keys": keys,
+            "aggs": [agg],
+            "maintain_order": False,
+            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
+            "apply": None,
+            "predicates": [],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
         case {
             "keys": keys,
             "aggs": [agg],
@@ -392,13 +467,8 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
             **extras_2,
         }:
-            # Ignore options added in later versions:
-            if "apply" in extras_2 and extras_2["apply"] is None:
-                del extras_2["apply"]  # pragma: no cover
-            if "predicates" in extras_2 and extras_2["predicates"] == []:
-                del extras_2["predicates"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
 
     group_by_keys = parse_sort_by_column(keys)

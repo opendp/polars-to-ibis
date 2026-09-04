@@ -6,50 +6,37 @@ import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
-from .utils import get_connection
+from .config_split import TABLE_NAME, SplitScenario, split_scenarios
+from .utils import backends, get_connection
 
 
 def norm_sql(sql: str):
     return re.sub(r"\s+", " ", sql).replace('"', "").strip()
 
 
-table_name = "default_table"
-
-
 @pytest.mark.parametrize(
     "scenario",
-    [
-        (
-            "context.query().select(dp.len())",
-            f"SELECT COUNT(*) AS len FROM {table_name} AS t0",
-            {"len": [4]},
-        ),
-        # (
-        #     "context.query().select(pl.col.ints.dp.sum((0,10)))",
-        #     f"... FROM {table_name} AS t0",
-        # ),
-    ],
-    ids=lambda scenario: "-".join(scenario[:2]),
+    split_scenarios,
+    ids=lambda scenario: scenario.expression,
 )
-def test_split_lazyframe(scenario):
-    expression, expected_sql, expected_result = scenario
-
+@pytest.mark.parametrize("backend", backends)
+def test_split_lazyframe(scenario: SplitScenario, backend: str):
     # Set up database:
     connection = get_connection(
-        pl.DataFrame(
+        df=pl.DataFrame(
             {
                 "ints": [1, 2, 3, 4],
                 "floats": [0.1, 0.2, 0.3, 0.4],
             }
         ),
-        table_name,
-        "sqlite",
+        table_name=TABLE_NAME,
+        backend=backend,
     )
 
     # Pretend we're software that uses OpenDP as a dependency.
     # (If there is non-OpenDP boilerplate, move it into the package.)
     dp.enable_features("contrib", "honest-but-curious")
-    schema_lf = scan_database(connection, table_name)
+    schema_lf = scan_database(connection, TABLE_NAME)
     context = dp.Context.compositor(
         data=schema_lf,
         privacy_unit=dp.unit_of(contributions=1),
@@ -64,7 +51,7 @@ def test_split_lazyframe(scenario):
         "dp": dp,
         "pl": pl,
     }
-    query = eval(expression, globals)
+    query = eval(scenario.expression, globals)
 
     # TODO: Confirm that this is the interface we want.
     def helper_function_to_add_to_opendp(query, table_name, connection):
@@ -84,8 +71,8 @@ def test_split_lazyframe(scenario):
         # Test ibis_table:
         # (Remove test assertion after porting to opendp.)
         actual_sql = norm_sql(ibis_table.to_sql())
-        assert actual_sql == expected_sql
-        assert private_result == expected_result
+        assert actual_sql == norm_sql(scenario.expected_sql)
+        assert private_result == scenario.expected_result
 
         # Use plugin_parameters:
 
@@ -124,7 +111,8 @@ def test_split_lazyframe(scenario):
         plugin_parameters["unpickled_kwargs"] = kwargs
         del plugin_parameters["kwargs"]
         plugin_parameters["lib"] = re.sub(r".*/", ".../", plugin_parameters["lib"])
-        assert plugin_parameters == {
+
+        expected_parameters = {
             "flags": {
                 "check_lengths": True,
                 "flags": "ROW_SEPARABLE | LENGTH_PRESERVING",
@@ -133,14 +121,16 @@ def test_split_lazyframe(scenario):
             "symbol": "noise_plugin",
             "unpickled_kwargs": {
                 "distribution": "Laplace",
-                "scale": 1.0,
+                "scale": scenario.expected_scale,
                 "support": "Integer",
             },
         }
+
+        assert plugin_parameters == expected_parameters
 
         # Put the pieces together:
 
         return measurement(private_item)
 
-    dp_result = helper_function_to_add_to_opendp(query, table_name, connection)
+    dp_result = helper_function_to_add_to_opendp(query, TABLE_NAME, connection)
     assert isinstance(dp_result, float) or isinstance(dp_result, int)

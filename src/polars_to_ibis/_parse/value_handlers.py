@@ -8,7 +8,8 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from .._utils import abbreviate
+from polars_to_ibis._utils import abbreviate
+
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
 
@@ -196,6 +197,14 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION} Quantile")
+        case {
+            "input": [input_expr, fill_expr],
+            "function": "FillNull",
+            **extras_1,
+        }:
+            assert_no_extras(extras_1)
+            fill_value = polars_expr_to_ibis_value(fill_expr)
+            return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 

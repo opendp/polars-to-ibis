@@ -30,7 +30,6 @@ def replace_ffi_with_input(
     """
     # TODO: When we have a test case with multiple FFIs,
     # generalize this to handle multiple, instead of just the first.
-
     if isinstance(source, list):
         for item in source:
             return replace_ffi_with_input(item)
@@ -97,5 +96,6 @@ def replace(
 
 
 def abbreviate(source: dict[str, Any]) -> str:
+    replace(source, "kwargs", lambda _: "...")
     replace(source, tags.table.DATA_FRAME_SCAN, lambda _: "...")
     return pformat(source)
