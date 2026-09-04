@@ -45,7 +45,7 @@ def _check_version():
         )
 
 
-def scan_database(connection: Any, table_name: str):
+def scan_database(connection: Any, table_name: str) -> pl.LazyFrame:
     """
     Get the schema from a database table and convert it to Polars.
     """

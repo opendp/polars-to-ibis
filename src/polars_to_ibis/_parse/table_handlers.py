@@ -166,7 +166,7 @@ def parse_select_expr(
                     **extras_2,
                 },
             ):
-                assert_no_extras(extras_1)
+                assert_no_extras(extras_1, extras_2)
                 column_name = infer_name(expr)
                 agg_kwargs[column_name + suffix] = polars_expr_to_ibis_value(expr)
             case (
@@ -197,38 +197,6 @@ def parse_select_expr(
                     polars_expr_to_ibis_value(truthy_expr),
                     polars_expr_to_ibis_value(falsy_expr),
                 )
-            # TODO: No test coverage. Add scenario and restore?
-            # case (
-            #     tags.value.FUNCTION,
-            #     {
-            #         "function": "FillNull",
-            #         "input": [
-            #             {
-            #                 tags.value.CAST: {
-            #                     "dtype": {
-            #                         tags.value.LITERAL: dtype_literal,
-            #                         **extras_1,
-            #                     },
-            #                     # TODO: We need the column name at the top-level,
-            #                     # but it could be buried in an expression.
-            #                     # How to extract w/o special case expressions?
-            #                     "expr": {tags.value.COLUMN: name, **extras_2},
-            #                     "options": "Strict",
-            #                     **extras_3,
-            #                 },
-            #                 **extras_4,
-            #             },
-            #             fill_expr,
-            #         ],
-            #         **extras_5,
-            #     },
-            # ):
-            #     assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
-            #     select_kwargs[name] = (
-            #         defer[name]
-            #         .cast(dtype_literal.lower())
-            #         .fill_null(polars_expr_to_ibis_value(fill_expr))
-            #     )
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported select expr {tag}")
     return (select_kwargs, agg_kwargs, drop_args)
@@ -252,9 +220,20 @@ def handle_ir(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 @table_handler(tags.table.DATA_FRAME_SCAN)
 def handle_scan(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     match payload:
-        case {"df": _, "schema": {"fields": _, **extras_1}, **extras_2}:
-            if "metadata" in extras_1 and extras_1["metadata"] is None:
-                del extras_1["metadata"]  # pragma: no cover
+        # Serialization changes between polars versions,
+        # so only one of these will be covered in a given test run.
+        case {
+            "df": _,
+            "schema": {"fields": _, "metadata": None, **extras_1},
+            **extras_2,
+        }:  # pragma: no cover
+            assert_no_extras(extras_1, extras_2)
+            return table
+        case {
+            "df": _,
+            "schema": {"fields": _, **extras_1},
+            **extras_2,
+        }:  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
             return table
         case _:
@@ -453,7 +432,19 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
 def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table)
 
-    match payload:
+    # Different serializations from different polars versions.
+    # Not all branches will be covered.
+    match payload:  # pragma: no cover
+        case {
+            "keys": keys,
+            "aggs": [agg],
+            "maintain_order": False,
+            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
+            "apply": None,
+            "predicates": [],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
         case {
             "keys": keys,
             "aggs": [agg],
@@ -461,13 +452,8 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
             **extras_2,
         }:
-            # Ignore options added in later versions:
-            if "apply" in extras_2 and extras_2["apply"] is None:
-                del extras_2["apply"]  # pragma: no cover
-            if "predicates" in extras_2 and extras_2["predicates"] == []:
-                del extras_2["predicates"]  # pragma: no cover
             assert_no_extras(extras_1, extras_2)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
 
     group_by_keys = parse_sort_by_column(keys)
