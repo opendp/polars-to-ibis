@@ -9,7 +9,6 @@ from typing import Any
 
 from ._parse import tags
 
-
 PluginDetails = namedtuple("PluginDetails", ["params_dict", "input_expr"])
 
 
@@ -32,6 +31,7 @@ class PluginReplacer:
     pulls them out, and replaces them with their inputs,
     and separately returns the parameters for each plugin call.
     """
+
     def __init__(
         self,
         source,
