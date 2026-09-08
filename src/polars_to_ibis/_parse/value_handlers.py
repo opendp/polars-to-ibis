@@ -124,15 +124,27 @@ def handle_min(payload: PolarsPlan):
             raise NotImplementedError(f"Unsupported {tags.value.MIN}")
 
 
+@value_handler(tags.value.VAR)
+def handle_var(payload: PolarsPlan):
+    match payload:
+        case [expr, 1]:
+            return polars_expr_to_ibis_value(expr).var()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.VAR}")
+
+
+@value_handler(tags.value.STD)
+def handle_std(payload: PolarsPlan):
+    match payload:
+        case [expr, 1]:
+            return polars_expr_to_ibis_value(expr).std()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.STD}")
+
+
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {tags.value.VAR: [expr, 1], **extras}:
-            assert_no_extras(extras)
-            return polars_expr_to_ibis_value(expr).var()
-        case {tags.value.STD: [expr, 1], **extras}:
-            assert_no_extras(extras)
-            return polars_expr_to_ibis_value(expr).std()
         case {  # pragma: no cover (polars>=1.41.2)
             tags.value.QUANTILE: {
                 "expr": expr,
