@@ -142,28 +142,30 @@ def handle_std(payload: PolarsPlan):
             raise NotImplementedError(f"Unsupported {tags.value.STD}")
 
 
+@value_handler(tags.value.QUANTILE)
+def handle_quantile(payload: PolarsPlan):
+    match payload:
+        case {
+            "expr": expr,
+            "method": "Nearest",
+            "quantile": {
+                tags.value.LITERAL: {
+                    "Dyn": {"Float": quantile, **extras_1},
+                    **extras_2,
+                },
+                **extras_3,
+            },
+            **extras_4,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4)
+            return polars_expr_to_ibis_value(expr).quantile(quantile)
+        case _:
+            raise NotImplementedError(f"Unsupported {tags.value.QUANTILE}")
+
+
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
-    match payload:
-        case {  # pragma: no cover (polars>=1.41.2)
-            tags.value.QUANTILE: {
-                "expr": expr,
-                "method": "Nearest",
-                "quantile": {
-                    tags.value.LITERAL: {
-                        "Dyn": {"Float": quantile, **extras_1},
-                        **extras_2,
-                    },
-                    **extras_3,
-                },
-                **extras_4,
-            },
-            **extras_5,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
-            return polars_expr_to_ibis_value(expr).quantile(quantile)
-        case _:  # pragma: no cover
-            return polars_expr_to_ibis_value(payload)
+    return polars_expr_to_ibis_value(payload)
 
 
 @value_handler(tags.value.FUNCTION)
