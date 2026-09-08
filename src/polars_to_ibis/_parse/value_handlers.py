@@ -97,58 +97,50 @@ def handle_sum(payload: PolarsPlan):
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {tags.value.MEAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].mean()
-        case {tags.value.MEDIAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].median()
-        case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].sum()
+        case {tags.value.MEAN: expr, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).mean()
+        case {tags.value.MEDIAN: expr, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).median()
+        case {tags.value.SUM: expr, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).sum()
         case {
-            tags.value.MIN: {
-                "input": {tags.value.COLUMN: column, **extras_1},
-                "propagate_nans": False,
-                **extras_2,
-            },
-            **extras_3,
+            tags.value.MIN: {"input": expr, "propagate_nans": False, **extras_1},
+            **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3)
-            return defer[column].min()
+            assert_no_extras(extras_1, extras_2)
+            return polars_expr_to_ibis_value(expr).min()
         case {
-            tags.value.MAX: {
-                "input": {tags.value.COLUMN: column, **extras_1},
-                "propagate_nans": False,
-                **extras_2,
-            },
-            **extras_3,
+            tags.value.MAX: {"input": expr, "propagate_nans": False, **extras_1},
+            **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3)
-            return defer[column].max()
-        case {tags.value.VAR: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
-            return defer[column].var()
-        case {tags.value.STD: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].std()
+            return polars_expr_to_ibis_value(expr).max()
+        case {tags.value.VAR: [expr, 1], **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).var()
+        case {tags.value.STD: [expr, 1], **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).std()
         case {  # pragma: no cover (polars>=1.41.2)
             tags.value.QUANTILE: {
-                "expr": {tags.value.COLUMN: column, **extras_1},
+                "expr": expr,
                 "method": "Nearest",
                 "quantile": {
                     tags.value.LITERAL: {
-                        "Dyn": {"Float": quantile, **extras_2},
-                        **extras_3,
+                        "Dyn": {"Float": quantile, **extras_1},
+                        **extras_2,
                     },
-                    **extras_4,
+                    **extras_3,
                 },
-                **extras_5,
+                **extras_4,
             },
-            **extras_6,
+            **extras_5,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
-            return defer[column].quantile(quantile)
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
+            return polars_expr_to_ibis_value(expr).quantile(quantile)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.AGG}")
 
