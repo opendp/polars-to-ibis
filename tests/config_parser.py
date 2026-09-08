@@ -422,7 +422,7 @@ parser_scenarios = [
     ),
     ParserScenario(
         "numeric",
-        "lf.select(" "    (pl.col('floats') + pl.col('ints')).max()" ")",
+        "lf.select((pl.col('floats') + pl.col('ints')).max())",
         {"floats": [4.4]},
     ),
     ParserScenario(

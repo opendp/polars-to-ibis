@@ -159,7 +159,7 @@ def handle_quantile(payload: PolarsPlan):
         }:
             assert_no_extras(extras_1, extras_2, extras_3, extras_4)
             return polars_expr_to_ibis_value(expr).quantile(quantile)
-        case _:
+        case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.QUANTILE}")
 
 
