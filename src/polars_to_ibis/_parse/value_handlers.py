@@ -126,14 +126,14 @@ def handle_agg(payload: PolarsPlan):
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             return defer[column].max()
-        case {"Var": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
+        case {tags.value.VAR: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].var()
-        case {"Std": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
+        case {tags.value.STD: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].std()
         case {  # pragma: no cover (polars>=1.41.2)
-            "Quantile": {
+            tags.value.QUANTILE: {
                 "expr": {tags.value.COLUMN: column, **extras_1},
                 "method": "Nearest",
                 "quantile": {
@@ -192,7 +192,10 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case {  # pragma: no cover (polars<1.41.2)
-            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
+            "function": {
+                tags.value.QUANTILE: {"method": "Nearest", **extras_1},
+                **extras_2,
+            },
             "input": [
                 input_expr,
                 _quantile_expr,  # noqa: F841 (unused)

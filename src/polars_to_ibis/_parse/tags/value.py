@@ -11,3 +11,10 @@ MEAN = "Mean"
 MEDIAN = "Median"
 MAX = "Max"
 MIN = "Min"
+
+SELECTOR = "Selector"
+RENAME_ALIAS = "RenameAlias"
+
+VAR = "Var"
+STD = "Std"
+QUANTILE = "Quantile"
