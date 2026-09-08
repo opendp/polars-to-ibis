@@ -165,7 +165,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 column_name = infer_name(expr)
                 agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
             case (
-                "Ternary",
+                tags.value.TERNARY,
                 {
                     "predicate": predicate_expr,
                     "truthy": truthy_expr,
