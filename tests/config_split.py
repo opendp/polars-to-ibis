@@ -164,8 +164,10 @@ split_scenarios = [
         },
         get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
     ),
-    # TODO: Expand coverage.
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
+    #     "SQL",
+    #     {},
+    #     get_expected_parameters([])
     # ),
 ]
