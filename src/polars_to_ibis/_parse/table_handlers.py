@@ -83,7 +83,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 else:
                     select_kwargs[new_name] = ibis_value
             case (
-                "Selector",
+                tags.value.SELECTOR,
                 {
                     "Difference": [
                         "Wildcard",
@@ -118,7 +118,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (
-                "BinaryExpr",
+                tags.value.BINARY_EXPR,
                 {
                     "left": left_expr,
                     "op": "TrueDivide",
@@ -132,7 +132,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                     left_expr
                 ) / polars_expr_to_ibis_value(right_expr)
             case (
-                "RenameAlias",
+                tags.value.RENAME_ALIAS,
                 {
                     "expr": expr,
                     "function": "ToUppercase",
@@ -143,7 +143,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 column_name = infer_name(expr)
                 agg_kwargs[column_name.upper()] = polars_expr_to_ibis_value(expr)
             case (
-                "RenameAlias",
+                tags.value.RENAME_ALIAS,
                 {
                     "expr": expr,
                     "function": {"Suffix": suffix, **extras_1},
@@ -154,7 +154,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 column_name = infer_name(expr)
                 agg_kwargs[column_name + suffix] = polars_expr_to_ibis_value(expr)
             case (
-                "RenameAlias",
+                tags.value.RENAME_ALIAS,
                 {
                     "expr": expr,
                     "function": {"Prefix": prefix, **extras_1},
@@ -165,7 +165,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 column_name = infer_name(expr)
                 agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
             case (
-                "Ternary",
+                tags.value.TERNARY,
                 {
                     "predicate": predicate_expr,
                     "truthy": truthy_expr,
@@ -325,7 +325,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 {
                     tags.value.CAST: {
                         "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
-                        "expr": {"Selector": "Wildcard", **extras_2},
+                        "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
                         "options": "Strict",
                         **extras_3,
                     },
@@ -354,7 +354,7 @@ def handle_hstack(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                     tags.value.FUNCTION: {
                         "input": [
                             {
-                                "Selector": {
+                                tags.value.SELECTOR: {
                                     "Union": [
                                         {
                                             "ByDType": {
@@ -463,7 +463,13 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
 
     match agg_payload_tag:
-        case tags.value.SUM | "Mean" | "Median" | "Max" | "Min":
+        case (
+            tags.value.SUM
+            | tags.value.MEAN
+            | tags.value.MEDIAN
+            | tags.value.MAX
+            | tags.value.MIN
+        ):
             return grouped_table.aggregate(  # type: ignore
                 **{column: getattr(defer[column], agg_payload_tag.lower())()}
             )
@@ -493,7 +499,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError(f"Unsupported {tags.table.MAP_FUNCTION}")
 
     match stats:
-        case "Mean":
+        case tags.value.MEAN:
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())().cast(
@@ -503,7 +509,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case tags.value.SUM | "Median" | "Max" | "Min":
+        case tags.value.SUM | tags.value.MEDIAN | tags.value.MAX | tags.value.MIN:
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())()
@@ -511,7 +517,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case {"Var": {"ddof": 1, **extras_1}, **extras_2}:
+        case {tags.value.VAR: {"ddof": 1, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return table.aggregate(
                 **{
@@ -520,7 +526,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case {"Std": {"ddof": 1, **extras_1}, **extras_2}:
+        case {tags.value.STD: {"ddof": 1, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return table.aggregate(
                 **{
@@ -530,7 +536,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             )
 
         case {
-            "Quantile": {
+            tags.value.QUANTILE: {
                 "quantile": {
                     tags.value.LITERAL: {
                         "Dyn": {"Float": quantile, **extras_1},

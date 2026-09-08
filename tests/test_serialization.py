@@ -15,7 +15,7 @@ io_pairs = [
                     {
                         tags.value.AGG: {
                             "Count": {  # In Polars 1.32, this is a list.
-                                "input": {"Selector": "Wildcard"},
+                                "input": {tags.value.SELECTOR: "Wildcard"},
                                 "include_nulls": False,
                             }
                         }
@@ -41,7 +41,7 @@ io_pairs = [
                             # Unlike count(), which does not have a wrapping list.
                             "input": [
                                 {
-                                    "Selector": "Wildcard",
+                                    tags.value.SELECTOR: "Wildcard",
                                 },
                             ],
                         },
