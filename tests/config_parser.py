@@ -69,17 +69,6 @@ parser_scenarios = [
         "lf.select(pl.col.ints.sum().name.suffix('_post'))",
         {"ints_post": [10]},
     ),
-    # TODO: Currently failing, because the rename handler assumes it is an aggregation.
-    # Scenario(
-    #     "numeric",
-    #     "lf.select(pl.col.ints.name.prefix('pre_'))",
-    #     {"pre_ints": [1, 2, 3, 4]},
-    # ),
-    # Scenario(
-    #     "numeric",
-    #     "lf.select(pl.col.ints.name.suffix('_post'))",
-    #     {"ints_post": [1, 2, 3, 4]},
-    # ),
     ParserScenario(
         "numeric",
         "lf.select(pl.col.floats / 2)",
@@ -212,15 +201,6 @@ parser_scenarios = [
             "floats": [0.1],
         },
     ),
-    # TODO: Negative offset not implemented. Reverse?
-    # Scenario(
-    #     "numeric",
-    #     "lf.sort(by='ints').tail(1)",
-    #     {
-    #         "ints": [4],
-    #         'floats': [0.4],
-    #     },
-    # ),
     ParserScenario(
         "select",
         "lf.select('ints')",
@@ -280,12 +260,6 @@ parser_scenarios = [
         {"ints": [1, 2, 3], "ten": [False, False, False]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    # TODO: Names need to be explictly provided.
-    # Scenario(
-    #     "numeric",
-    #     "lf.select(pl.col('ints') + pl.col('floats'))",
-    #     {"ints": [1.1, 2.2, 3.3, 4.4]},
-    # ),
     ParserScenario(
         "numeric",
         "lf.select(sum=pl.col('ints') + pl.col('floats'))",
@@ -327,11 +301,6 @@ parser_scenarios = [
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
     ),
-    # Scenario(
-    #     "triangle",
-    #     "lf.group_by('keys').agg(pl.len()).sort(by='keys')",
-    #     {'keys': [1, 2, 3, 4], 'len': [1, 2, 3, 4]},
-    # ),
     ParserScenario(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
@@ -377,13 +346,6 @@ parser_scenarios = [
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
-    # TODO: Going through a DB, None is converted to nan, and test fails.
-    # Scenario(
-    #     "nan_null_inf",
-    #     # nan != nan, so drop it: We could compare serializations, if necessary.
-    #     "lf.drop('nan')",
-    #     {'inf': [0.0, float('inf')], 'null': [0.0, None]},
-    # ),
     ParserScenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
