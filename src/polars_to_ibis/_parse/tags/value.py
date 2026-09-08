@@ -5,3 +5,16 @@ SUM = "Sum"
 AGG = "Agg"
 FUNCTION = "Function"
 BINARY_EXPR = "BinaryExpr"
+TERNARY = "Ternary"
+
+MEAN = "Mean"
+MEDIAN = "Median"
+MAX = "Max"
+MIN = "Min"
+
+SELECTOR = "Selector"
+RENAME_ALIAS = "RenameAlias"
+
+VAR = "Var"
+STD = "Std"
+QUANTILE = "Quantile"

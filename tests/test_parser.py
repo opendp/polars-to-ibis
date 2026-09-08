@@ -124,7 +124,7 @@ def assert_approx_equal(
                             tags.value.AGG: {
                                 "Count": {
                                     "include_nulls": False,
-                                    "input": {"Selector": "Wildcard"},
+                                    "input": {tags.value.SELECTOR: "Wildcard"},
                                 }
                             }
                         }
