@@ -48,7 +48,7 @@ def test_polars_versions_in_docs():
     [
         ".python-version",
         "pyproject.toml",
-        "README.md",
+        "src/polars_to_ibis/__init__.py",
         "uv.lock",
         ".github/workflows/test.yml",
         "tests/test_misc.py",
