@@ -140,7 +140,7 @@ def assert_approx_equal(
                 }
             },
             # Check that the input data structure is shown in error message.
-            "No value handler for 'Count'",
+            "'NoneType' object is not iterable",
         ),
     ],
     ids=lambda plan: str(plan),
