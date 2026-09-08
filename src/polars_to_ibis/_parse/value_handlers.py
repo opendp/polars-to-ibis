@@ -94,6 +94,16 @@ def handle_sum(payload: PolarsPlan):
     return polars_expr_to_ibis_value(payload).sum()
 
 
+@value_handler(tags.value.MAX)
+def handle_max(payload: PolarsPlan):
+    match payload:
+        case {"input": expr, "propagate_nans": False, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).max()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.MAX}")
+
+
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
