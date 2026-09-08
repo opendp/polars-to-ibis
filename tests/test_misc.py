@@ -38,24 +38,23 @@ def test_polars_versions_in_ci_matrix():
     assert MAX_POLARS in tested_polars_versions
 
 
-def test_polars_versions_in_readme():
-    readme = (Path(__file__).parent.parent / "README.md").read_text()
-    assert all(v in readme for v in get_tested_polars_versions())
+def test_polars_versions_in_docs():
+    docs = (Path(__file__).parent.parent / "src/polars_to_ibis/__init__.py").read_text()
+    assert all(v in docs for v in get_tested_polars_versions())
 
 
-# @pytest.mark.parametrize(
-#     "rel_path",
-#     [
-#         "polars_to_ibis/__init__.py",
-#         "README.md",
-#         ".github/workflows/test.yml",
-#         "pyproject.toml",
-#     ],
-# )
-# def test_python_min_version(rel_path):
-#     root = Path(__file__).parent.parent
-#     text = (root / rel_path).read_text()
-#     assert "3.10" in text
-#     if "README" in rel_path:
-#         # Make sure we haven't upgraded one reference by mistake.
-#         assert not re.search(r"3.1[^0]", text)
+@pytest.mark.parametrize(
+    "rel_path",
+    [
+        ".python-version",
+        "pyproject.toml",
+        "src/polars_to_ibis/__init__.py",
+        "uv.lock",
+        ".github/workflows/test.yml",
+        "tests/test_misc.py",
+    ],
+)
+def test_python_min_version(rel_path):
+    root = Path(__file__).parent.parent
+    text = (root / rel_path).read_text()
+    assert "3.10" in text

@@ -97,17 +97,17 @@ def handle_sum(payload: PolarsPlan):
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {"Mean": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
+        case {tags.value.MEAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].mean()
-        case {"Median": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
+        case {tags.value.MEDIAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].median()
         case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].sum()
         case {
-            "Min": {
+            tags.value.MIN: {
                 "input": {tags.value.COLUMN: column, **extras_1},
                 "propagate_nans": False,
                 **extras_2,
@@ -117,7 +117,7 @@ def handle_agg(payload: PolarsPlan):
             assert_no_extras(extras_1, extras_2, extras_3)
             return defer[column].min()
         case {
-            "Max": {
+            tags.value.MAX: {
                 "input": {tags.value.COLUMN: column, **extras_1},
                 "propagate_nans": False,
                 **extras_2,
@@ -126,14 +126,14 @@ def handle_agg(payload: PolarsPlan):
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
             return defer[column].max()
-        case {"Var": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
+        case {tags.value.VAR: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].var()
-        case {"Std": [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
+        case {tags.value.STD: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].std()
         case {  # pragma: no cover (polars>=1.41.2)
-            "Quantile": {
+            tags.value.QUANTILE: {
                 "expr": {tags.value.COLUMN: column, **extras_1},
                 "method": "Nearest",
                 "quantile": {
@@ -192,7 +192,10 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             upper = polars_expr_to_ibis_value(upper_expr)
             return polars_expr_to_ibis_value(input_expr).clip(lower, upper)  # type: ignore
         case {  # pragma: no cover (polars<1.41.2)
-            "function": {"Quantile": {"method": "Nearest", **extras_1}, **extras_2},
+            "function": {
+                tags.value.QUANTILE: {"method": "Nearest", **extras_1},
+                **extras_2,
+            },
             "input": [
                 input_expr,
                 _quantile_expr,  # noqa: F841 (unused)
@@ -227,7 +230,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 
 
-@value_handler("Ternary")
+@value_handler(tags.value.TERNARY)
 def handle_ternary(payload: PolarsPlan):
     match payload:
         case {
@@ -242,7 +245,7 @@ def handle_ternary(payload: PolarsPlan):
                 polars_expr_to_ibis_value(falsy_expr),
             )
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported Ternary")
+            raise NotImplementedError(f"Unsupported {tags.value.TERNARY}")
 
 
 @value_handler(tags.value.BINARY_EXPR)
