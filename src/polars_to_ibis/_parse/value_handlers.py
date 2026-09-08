@@ -227,7 +227,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 
 
-@value_handler("Ternary")
+@value_handler(tags.value.TERNARY)
 def handle_ternary(payload: PolarsPlan):
     match payload:
         case {
@@ -242,7 +242,7 @@ def handle_ternary(payload: PolarsPlan):
                 polars_expr_to_ibis_value(falsy_expr),
             )
         case _:  # pragma: no cover
-            raise NotImplementedError("Unsupported Ternary")
+            raise NotImplementedError(f"Unsupported {tags.value.TERNARY}")
 
 
 @value_handler(tags.value.BINARY_EXPR)
