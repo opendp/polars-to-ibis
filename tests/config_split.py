@@ -164,10 +164,10 @@ split_scenarios = [
         },
         get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
     ),
-    # SplitScenario(
-    #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
-    #     "SQL",
-    #     {},
-    #     get_expected_parameters([])
-    # ),
+    SplitScenario(
+        "context.query().select(pl.col.ints.dp.mean((0,10)))",
+        "SELECT SUM( CASE WHEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END IS NULL THEN CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ELSE GREATEST( 0, CASE WHEN COALESCE(t0.ints, 5) IS NULL THEN COALESCE(t0.ints, 5) ELSE LEAST(10, COALESCE(t0.ints, 5)) END ) END ) OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) / COUNT(t0.ints) OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS ints FROM default_table AS t0",
+        {},
+        get_expected_parameters([]),
+    ),
 ]

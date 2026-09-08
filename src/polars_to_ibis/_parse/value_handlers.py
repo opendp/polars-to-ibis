@@ -106,6 +106,20 @@ def handle_agg(payload: PolarsPlan):
         case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].sum()
+        # TODO: Simplify and generalize:
+        case {tags.value.SUM: expr, **extras_5}:
+            assert_no_extras(extras_5)
+            return polars_expr_to_ibis_value(expr).sum()
+        case {
+            "Count": {
+                "include_nulls": True,
+                "input": {"Column": column, **extras_1},
+                **extras_2,
+            },
+            **extras_3,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3)
+            return defer[column].count()
         case {
             tags.value.MIN: {
                 "input": {tags.value.COLUMN: column, **extras_1},
