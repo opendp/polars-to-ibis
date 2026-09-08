@@ -94,6 +94,16 @@ def handle_sum(payload: PolarsPlan):
     return polars_expr_to_ibis_value(payload).sum()
 
 
+@value_handler(tags.value.MEAN)
+def handle_mean(payload: PolarsPlan):
+    return polars_expr_to_ibis_value(payload).mean()
+
+
+@value_handler(tags.value.MEDIAN)
+def handle_median(payload: PolarsPlan):
+    return polars_expr_to_ibis_value(payload).median()
+
+
 @value_handler(tags.value.MAX)
 def handle_max(payload: PolarsPlan):
     match payload:
@@ -104,30 +114,19 @@ def handle_max(payload: PolarsPlan):
             raise NotImplementedError(f"Unsupported {tags.value.MAX}")
 
 
+@value_handler(tags.value.MIN)
+def handle_min(payload: PolarsPlan):
+    match payload:
+        case {"input": expr, "propagate_nans": False, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).min()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.MIN}")
+
+
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {tags.value.MEAN: expr, **extras}:
-            assert_no_extras(extras)
-            return polars_expr_to_ibis_value(expr).mean()
-        case {tags.value.MEDIAN: expr, **extras}:
-            assert_no_extras(extras)
-            return polars_expr_to_ibis_value(expr).median()
-        case {tags.value.SUM: expr, **extras}:
-            assert_no_extras(extras)
-            return polars_expr_to_ibis_value(expr).sum()
-        case {
-            tags.value.MIN: {"input": expr, "propagate_nans": False, **extras_1},
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return polars_expr_to_ibis_value(expr).min()
-        case {
-            tags.value.MAX: {"input": expr, "propagate_nans": False, **extras_1},
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return polars_expr_to_ibis_value(expr).max()
         case {tags.value.VAR: [expr, 1], **extras}:
             assert_no_extras(extras)
             return polars_expr_to_ibis_value(expr).var()
@@ -152,7 +151,7 @@ def handle_agg(payload: PolarsPlan):
             assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
             return polars_expr_to_ibis_value(expr).quantile(quantile)
         case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.value.AGG}")
+            return polars_expr_to_ibis_value(payload)
 
 
 @value_handler(tags.value.FUNCTION)
