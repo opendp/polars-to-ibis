@@ -38,9 +38,9 @@ def test_polars_versions_in_ci_matrix():
     assert MAX_POLARS in tested_polars_versions
 
 
-def test_polars_versions_in_readme():
-    readme = (Path(__file__).parent.parent / "README.md").read_text()
-    assert all(v in readme for v in get_tested_polars_versions())
+def test_polars_versions_in_docs():
+    docs = (Path(__file__).parent.parent / "src/polars_to_ibis/__init__.py").read_text()
+    assert all(v in docs for v in get_tested_polars_versions())
 
 
 # @pytest.mark.parametrize(

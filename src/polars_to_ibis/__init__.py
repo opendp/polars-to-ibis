@@ -1,4 +1,86 @@
-"""Convert Polars LazyFrames to Ibis unbound tables"""
+"""
+[![pypi](https://img.shields.io/pypi/v/polars_to_ibis)](https://pypi.org/project/polars_to_ibis/)
+[![github](https://img.shields.io/badge/github-polars_to_ibis-blue?logo=github)](https://github.com/opendp/polars-to-ibis)
+
+Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/lazyframe/index.html)
+to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expression#unbound-tables).
+
+Polars and Ibis have similar APIs, but while Polars supports computation in-memory and on
+[Polars Cloud](https://cloud.pola.rs/), Ibis by itself does not handle computation:
+Instead it translates the dataframe expression into idiomatic SQL for a particular database.
+
+## Example
+
+First, we'll write to the database so we have something to query.
+To connect to a particular database, you will need to install the appropriate extra.
+Taking SQLite as an example:
+
+```shell
+$ pip install 'polars-to-ibis'
+$ pip install 'ibis-framework[sqlite]'
+```
+
+Create the table for our example:
+
+```python
+>>> import ibis
+>>> import polars as pl
+>>> connection = ibis.sqlite.connect()
+>>> table_name = 'readme_example'
+>>> connection.create_table(
+...      table_name,
+...      pl.DataFrame({"ints": [1, 2, 3, 4]}),
+...      overwrite=True,
+... )
+DatabaseTable: readme_example
+  ints int64
+
+```
+
+Now we can demonstrate the typical use of polars-to-ibis.
+To read a database table's schema and create a LazyFrame, use `scan_database`:
+
+```python
+>>> from polars_to_ibis import scan_database, convert_polars_to_ibis
+>>> polars_lazy = scan_database(connection, table_name)
+
+```
+
+Next, make a query starting with that LazyFrame:
+
+```python
+>>> polars_query = polars_lazy.sum()
+>>> ibis_unbound_table = convert_polars_to_ibis(
+...     polars_query,
+...     table_name=table_name,
+... )
+>>> print(ibis_unbound_table.to_sql())
+SELECT
+  SUM("t0"."ints") AS "ints"
+FROM "readme_example" AS "t0"
+
+```
+
+Finally, we can execute in SQLite the query which we constructed in Polars and translated to Ibis:
+
+```python
+>>> connection.to_polars(ibis_unbound_table).to_dict(as_series=False)
+{'ints': [10]}
+
+```
+
+
+## Limitations
+
+- Python versions: Tested against Python 3.10 and 3.13.
+- Polars versions: Tested against Polars 1.32.0, 1.36.1, and 1.41.2.
+- Ibis version: Tested against Ibis 11.0.0.
+- Feature coverage, and database quirks: We only cover a fraction of the Polars API,
+  and even within that range there are often quirks in how a query is handled by a given database.
+  The best summary is the collection of [test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
+
+---
+"""  # noqa: B950
 
 from importlib.metadata import version
 from typing import Any
