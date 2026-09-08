@@ -463,7 +463,13 @@ def handle_group_by(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
 
     match agg_payload_tag:
-        case tags.value.SUM | "Mean" | "Median" | "Max" | "Min":
+        case (
+            tags.value.SUM
+            | tags.value.MEAN
+            | tags.value.MEDIAN
+            | tags.value.MAX
+            | tags.value.MIN
+        ):
             return grouped_table.aggregate(  # type: ignore
                 **{column: getattr(defer[column], agg_payload_tag.lower())()}
             )
@@ -493,7 +499,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
             raise NotImplementedError(f"Unsupported {tags.table.MAP_FUNCTION}")
 
     match stats:
-        case "Mean":
+        case tags.value.MEAN:
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())().cast(
@@ -503,7 +509,7 @@ def handle_map_function(payload: PolarsPlan, table: ir.Table) -> ir.Table:
                 }
             )
 
-        case tags.value.SUM | "Median" | "Max" | "Min":
+        case tags.value.SUM | tags.value.MEDIAN | tags.value.MAX | tags.value.MIN:
             return table.aggregate(
                 **{
                     col: getattr(getattr(input_table, col), stats.lower())()

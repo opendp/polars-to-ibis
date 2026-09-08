@@ -97,17 +97,17 @@ def handle_sum(payload: PolarsPlan):
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
     match payload:
-        case {"Mean": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
+        case {tags.value.MEAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].mean()
-        case {"Median": {tags.value.COLUMN: column, **extras_1}, **extras_2}:
+        case {tags.value.MEDIAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].median()
         case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return defer[column].sum()
         case {
-            "Min": {
+            tags.value.MIN: {
                 "input": {tags.value.COLUMN: column, **extras_1},
                 "propagate_nans": False,
                 **extras_2,
@@ -117,7 +117,7 @@ def handle_agg(payload: PolarsPlan):
             assert_no_extras(extras_1, extras_2, extras_3)
             return defer[column].min()
         case {
-            "Max": {
+            tags.value.MAX: {
                 "input": {tags.value.COLUMN: column, **extras_1},
                 "propagate_nans": False,
                 **extras_2,
