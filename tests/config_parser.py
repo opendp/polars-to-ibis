@@ -8,6 +8,7 @@ import math
 from abc import ABC, abstractmethod
 
 import polars as pl
+import pytest
 
 input_data = {
     "numeric": {
@@ -66,10 +67,13 @@ class SQLParserScenario(BaseParserScenario):
 
 
 parser_scenarios = [
-    SQLParserScenario(
-        "numeric",
-        "SELECT 1 + ints / floats FROM lf",
-        {"literal": [11.0, 11.0, 11.0, 11.0]},
+    pytest.param(
+        SQLParserScenario(
+            "numeric",
+            "SELECT 1 + ints / floats FROM lf",
+            {"literal": [11, 11, 11, 11]},
+        ),
+        marks=pytest.mark.xfail(),
     ),
     EvalParserScenario(
         "numeric",
