@@ -46,6 +46,9 @@ jobs:
         # Running "uv lock" produces no changes.
         run: uv sync --all-extras --dev
 
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files
+
       - name: Install polars ${{ matrix.polars-version }}
         run: uv pip install polars==${{ matrix.polars-version }}
 
