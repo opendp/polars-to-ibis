@@ -5,6 +5,9 @@ and even in that narrow scope you'll see a number of quirks.
 
 import dataclasses
 import math
+from abc import ABC, abstractmethod
+
+import polars as pl
 
 input_data = {
     "numeric": {
@@ -38,7 +41,7 @@ input_data = {
 
 
 @dataclasses.dataclass
-class BaseParserScenario:
+class BaseParserScenario(ABC):
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
@@ -47,13 +50,19 @@ class BaseParserScenario:
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: float = 0
 
+    @abstractmethod
+    def exec(self, named_frames): ...
+
 
 class EvalParserScenario(BaseParserScenario):
-    pass
+    def exec(self, named_frames):
+        named_frames["pl"] = pl
+        return eval(self.expression, named_frames)
 
 
 class SQLParserScenario(BaseParserScenario):
-    pass
+    def exec(self, named_frames):
+        return pl.SQLContext(**named_frames).execute(self.expression)
 
 
 parser_scenarios = [

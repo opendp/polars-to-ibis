@@ -18,10 +18,8 @@ from .utils import assert_error_or_none, backends, exporters, get_connection
 )
 def test_scenario_consistency(scenario: BaseParserScenario):
     # Does the polars expression have the expected result?
-    globals = {"lf": pl.LazyFrame(input_data[scenario.category]), "pl": pl}
-    polars_output = (
-        eval(scenario.expression, globals).collect().to_dict(as_series=False)
-    )
+    named_frames = {"lf": pl.LazyFrame(input_data[scenario.category])}
+    polars_output = scenario.exec(named_frames).collect().to_dict(as_series=False)
     assert polars_output == scenario.expected_output, "Typo in scenario?"
 
 
@@ -46,8 +44,8 @@ def test_translate_table_new(
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
-    globals = {"lf": scan_database(connection, table_name), "pl": pl}
-    lf = eval(scenario.expression, globals)
+    named_frames = {"lf": scan_database(connection, table_name)}
+    lf = scenario.exec(named_frames)
 
     ibis_table = assert_error_or_none(
         "convert_error",
