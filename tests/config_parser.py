@@ -75,6 +75,27 @@ parser_scenarios = [
         ),
         marks=pytest.mark.xfail(),
     ),
+    pytest.param(
+        SQLParserScenario(
+            "numeric",
+            "SELECT 42 AS fortytwo FROM lf",
+            {"fortytwo": [42, 42, 42, 42]},
+        ),
+        marks=pytest.mark.xfail(),
+    ),
+    pytest.param(
+        SQLParserScenario(
+            "numeric",
+            "SELECT CASE WHEN ints <= 1 THEN -1 END FROM lf",
+            {"ints": [-1, 2, 3, 4]},
+        ),
+        marks=pytest.mark.xfail(),
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
+        {"ints": [-1, 100, 100, 100]},
+    ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
