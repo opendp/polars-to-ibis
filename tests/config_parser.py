@@ -66,6 +66,11 @@ class SQLParserScenario(BaseParserScenario):
 
 
 parser_scenarios = [
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ints) FROM lf",
+        {"ints": [10]},
+    ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
