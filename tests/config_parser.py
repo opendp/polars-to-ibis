@@ -133,6 +133,18 @@ parser_scenarios = [
         {"floats": [0.0, 0.0, 1.0, 1.0]},
         convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT PI() FROM lf LIMIT 1",
+        {"literal": [math.pi]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT DEGREES(ints) FROM lf LIMIT 1",
+        {"ints": [180 / math.pi]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
