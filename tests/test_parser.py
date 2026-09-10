@@ -25,8 +25,10 @@ def test_parser_scenarios(
 ):
     # Just in polars, no database involved, does the scenario have the expected output?
     frames_from_scenario = {"lf": pl.LazyFrame(input_data[scenario.category])}
-    polars_output = (
-        scenario.exec(frames_from_scenario).collect().to_dict(as_series=False)
+    polars_output = assert_error_or_none(
+        "polars_errors",
+        scenario.polars_errors.get("*"),
+        lambda: scenario.exec(frames_from_scenario).collect().to_dict(as_series=False),
     )
     assert polars_output == scenario.expected_output, "Typo in scenario?"
 
@@ -34,7 +36,7 @@ def test_parser_scenarios(
     table_name = "default_table"
     input_df = pl.DataFrame(input_data[scenario.category])
     connection = assert_error_or_none(
-        "connection_error",
+        "connection_errors",
         scenario.connection_errors.get(backend),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )

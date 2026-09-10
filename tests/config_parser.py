@@ -45,6 +45,7 @@ class BaseParserScenario(ABC):
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
+    polars_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
@@ -120,6 +121,12 @@ parser_scenarios = [
     #     """,
     #     {"literal": [-1, 0, 0, 1]},
     # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT IIF(ints > 2, 'Big', 'Small') AS size FROM lf",
+        {},
+        polars_errors={"*": "unsupported function 'iif'"},
+    ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
