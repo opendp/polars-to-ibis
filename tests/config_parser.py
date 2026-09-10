@@ -127,6 +127,12 @@ parser_scenarios = [
         {},
         polars_errors={"*": "unsupported function 'iif'"},
     ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT ROUND(floats * 2) FROM lf",
+        {"floats": [0.0, 0.0, 1.0, 1.0]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
