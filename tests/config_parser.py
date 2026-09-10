@@ -145,6 +145,39 @@ parser_scenarios = [
         {"ints": [180 / math.pi]},
         convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT DEGREES(ints) FROM lf LIMIT 1",
+        {"ints": [180 / math.pi]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CHOOSE(ints, 2, 0, 2, 6) FROM lf",
+        {},
+        polars_errors={"*": "unsupported function 'choose'"},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT - ints AS negative FROM lf",
+        {"negative": [-1, -2, -3, -4]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT '' AS empty FROM  lf",
+        {"empty": ["", "", "", ""]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT POWER(ints, 2) AS squares FROM  lf",
+        {"squares": [1, 4, 9, 16]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT POWER(2, ints) AS power_2 FROM  lf",
+        {"power_2": [2, 4, 8, 16]},
+    ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
