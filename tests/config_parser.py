@@ -45,6 +45,7 @@ class BaseParserScenario(ABC):
     category: str
     expression: str
     expected_output: dict[str, list[float | str]]
+    polars_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
@@ -68,8 +69,132 @@ class SQLParserScenario(BaseParserScenario):
 parser_scenarios = [
     SQLParserScenario(
         "numeric",
-        "SELECT SUM(ints) FROM lf",
-        {"ints": [10]},
+        "SELECT 1 + ints / floats FROM lf",
+        {"literal": [11, 11, 11, 11]},
+        convert_errors={"*": "Unsupported select expr BinaryExpr"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT 42 AS fortytwo FROM lf",
+        {"fortytwo": [42, 42, 42, 42]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN ints <= 3 THEN -1 END FROM lf",
+        {"literal": [-1, -1, -1, None]},
+        convert_errors={"*": "Unsupported Literal"},  # TODO
+    ),
+    # TODO: This is the output from polars: Doesn't match output from ibis.
+    # SQLParserScenario(
+    #     "numeric",
+    #     "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
+    #     {"literal": [-1, 100, 100, 100]},
+    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
+        {"literal": [-1, None, None, None]},
+        convert_errors={"*": "Unsupported Literal"},  # TODO
+    ),
+    # TODO: This is the output from polars: Doesn't match output from ibis.
+    # SQLParserScenario(
+    #     "numeric",
+    #     "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
+    #     {"literal": [-1, -1, -1, -1]},
+    # ),
+    # TODO: This is the output from polars: Doesn't match output from ibis.
+    # SQLParserScenario(
+    #     "numeric",
+    #     "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
+    #     {"literal": [-1]},
+    # ),
+    # TODO: This is the output from polars: Doesn't match output from ibis.
+    # SQLParserScenario(
+    #     "numeric",
+    #     """
+    #     SELECT CASE
+    #     WHEN ints <= 1 THEN -1
+    #     WHEN ints > 1 AND ints <= 3 then 0
+    #     ELSE 1
+    #     END FROM lf
+    #     """,
+    #     {"literal": [-1, 0, 0, 1]},
+    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT IIF(ints > 2, 'Big', 'Small') AS size FROM lf",
+        {},
+        polars_errors={"*": "unsupported function 'iif'"},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT ROUND(floats * 2) FROM lf",
+        {"floats": [0.0, 0.0, 1.0, 1.0]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT PI() FROM lf LIMIT 1",
+        {"literal": [math.pi]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT DEGREES(ints) FROM lf LIMIT 1",
+        {"ints": [180 / math.pi]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT DEGREES(ints) FROM lf LIMIT 1",
+        {"ints": [180 / math.pi]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CHOOSE(ints, 2, 0, 2, 6) FROM lf",
+        {},
+        polars_errors={"*": "unsupported function 'choose'"},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT - ints AS negative FROM lf",
+        {"negative": [-1, -2, -3, -4]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT '' AS empty, '\"' AS dquote FROM lf LIMIT 1",
+        {"empty": [""], "dquote": ['"']},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT POWER(ints, 2) AS squares FROM lf",
+        {"squares": [1, 4, 9, 16]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT POWER(2, ints) AS power_2 FROM lf",
+        {"power_2": [2, 4, 8, 16]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT '日本' AS japan FROM lf limit 1",
+        {"japan": ["日本"]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT LN(ints) FROM lf limit 1",
+        {"ints": [math.log(1)]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT LOG2(ints) FROM lf limit 1",
+        {"ints": [math.log(1)]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     EvalParserScenario(
         "numeric",

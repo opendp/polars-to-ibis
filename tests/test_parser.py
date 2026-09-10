@@ -16,40 +16,40 @@ from .utils import assert_error_or_none, backends, exporters, get_connection
     parser_scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-def test_scenario_consistency(scenario: BaseParserScenario):
-    # Does the polars expression have the expected result?
-    named_frames = {"lf": pl.LazyFrame(input_data[scenario.category])}
-    polars_output = scenario.exec(named_frames).collect().to_dict(as_series=False)
-    assert polars_output == scenario.expected_output, "Typo in scenario?"
-
-
-@pytest.mark.parametrize(
-    "scenario",
-    parser_scenarios,
-    ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
-)
 @pytest.mark.parametrize("backend", backends)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
-def test_translate_table_new(
+def test_parser_scenarios(
     scenario: BaseParserScenario,
     backend: str,
     exporter_key: str,
 ):
+    # Just in polars, no database involved, does the scenario have the expected output?
+    frames_from_scenario = {"lf": pl.LazyFrame(input_data[scenario.category])}
+    polars_output = assert_error_or_none(
+        "polars_errors",
+        scenario.polars_errors.get("*"),
+        lambda: scenario.exec(frames_from_scenario).collect().to_dict(as_series=False),
+    )
+    assert polars_output == scenario.expected_output, "Typo in scenario?"
+
     # Set up target database, with data:
     table_name = "default_table"
     input_df = pl.DataFrame(input_data[scenario.category])
     connection = assert_error_or_none(
-        "connection_error",
+        "connection_errors",
         scenario.connection_errors.get(backend),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
-    named_frames = {"lf": scan_database(connection, table_name)}
-    lf = scenario.exec(named_frames)
+    frames_from_db = {"lf": scan_database(connection, table_name)}
+    lf = scenario.exec(frames_from_db)
 
     ibis_table = assert_error_or_none(
-        "convert_error",
-        scenario.convert_errors.get(f"polars=={pl.__version__}"),
+        "convert_errors",
+        scenario.convert_errors.get(
+            f"polars=={pl.__version__}",
+            scenario.convert_errors.get("*"),
+        ),
         lambda: convert_polars_to_ibis(lf, table_name),
     )
 
