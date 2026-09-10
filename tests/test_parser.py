@@ -48,8 +48,11 @@ def test_translate_table_new(
     lf = scenario.exec(named_frames)
 
     ibis_table = assert_error_or_none(
-        "convert_error",
-        scenario.convert_errors.get(f"polars=={pl.__version__}"),
+        "convert_errors",
+        scenario.convert_errors.get(
+            f"polars=={pl.__version__}",
+            scenario.convert_errors.get("*"),
+        ),
         lambda: convert_polars_to_ibis(lf, table_name),
     )
 

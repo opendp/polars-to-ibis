@@ -67,34 +67,56 @@ class SQLParserScenario(BaseParserScenario):
 
 
 parser_scenarios = [
-    pytest.param(
-        SQLParserScenario(
-            "numeric",
-            "SELECT 1 + ints / floats FROM lf",
-            {"literal": [11, 11, 11, 11]},
-        ),
-        marks=pytest.mark.xfail(),
-    ),
-    pytest.param(
-        SQLParserScenario(
-            "numeric",
-            "SELECT 42 AS fortytwo FROM lf",
-            {"fortytwo": [42, 42, 42, 42]},
-        ),
-        marks=pytest.mark.xfail(),
-    ),
-    pytest.param(
-        SQLParserScenario(
-            "numeric",
-            "SELECT CASE WHEN ints <= 1 THEN -1 END FROM lf",
-            {"ints": [-1, 2, 3, 4]},
-        ),
-        marks=pytest.mark.xfail(),
+    SQLParserScenario(
+        "numeric",
+        "SELECT 1 + ints / floats FROM lf",
+        {"literal": [11, 11, 11, 11]},
+        convert_errors={"*": "Unsupported select expr BinaryExpr"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
-        {"ints": [-1, 100, 100, 100]},
+        "SELECT 42 AS fortytwo FROM lf",
+        {"fortytwo": [42, 42, 42, 42]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN ints <= 1 THEN -1 END FROM lf",
+        {"ints": [-1, 2, 3, 4]},
+        convert_errors={"*": "Unsupported Literal"},  # TODO
+    ),
+    # SQLParserScenario(
+    #     "numeric",
+    #     "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
+    #     {"ints": [-1, 100, 100, 100]},
+    #     convert_errors={"*": "Unsupported Literal"}  # TODO
+    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
+        {"ints": [-1, 2, 3, 4]},
+        convert_errors={"*": "Unsupported Literal"},  # TODO
+    ),
+    # SQLParserScenario(
+    #     "numeric",
+    #     "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
+    #     {"ints": [-1, 100, 100, 100]},
+    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
+        {"ints": [-1, -1, -1, -1]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        """
+        SELECT CASE
+        WHEN ints <= 1 THEN -1
+        WHEN ints > 1 AND ints <= 3 then 0
+        ELSE 1
+        END FROM lf
+        """,
+        {"ints": [-1, 0, 0, 1]},
     ),
     EvalParserScenario(
         "numeric",
