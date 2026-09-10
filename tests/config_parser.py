@@ -164,19 +164,37 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT '' AS empty FROM  lf",
-        {"empty": ["", "", "", ""]},
+        "SELECT '' AS empty, '\"' AS dquote FROM lf LIMIT 1",
+        {"empty": [""], "dquote": ['"']},
         convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT POWER(ints, 2) AS squares FROM  lf",
+        "SELECT POWER(ints, 2) AS squares FROM lf",
         {"squares": [1, 4, 9, 16]},
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT POWER(2, ints) AS power_2 FROM  lf",
+        "SELECT POWER(2, ints) AS power_2 FROM lf",
         {"power_2": [2, 4, 8, 16]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT '日本' AS japan FROM lf limit 1",
+        {"japan": ["日本"]},
+        convert_errors={"*": "Unsupported HStack"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT LN(ints) FROM lf limit 1",
+        {"ints": [math.log(1)]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT LOG2(ints) FROM lf limit 1",
+        {"ints": [math.log(1)]},
+        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     EvalParserScenario(
         "numeric",
