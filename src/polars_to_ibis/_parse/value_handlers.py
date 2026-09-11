@@ -94,63 +94,78 @@ def handle_sum(payload: PolarsPlan):
     return polars_expr_to_ibis_value(payload).sum()
 
 
+@value_handler(tags.value.MEAN)
+def handle_mean(payload: PolarsPlan):
+    return polars_expr_to_ibis_value(payload).mean()
+
+
+@value_handler(tags.value.MEDIAN)
+def handle_median(payload: PolarsPlan):
+    return polars_expr_to_ibis_value(payload).median()
+
+
+@value_handler(tags.value.MAX)
+def handle_max(payload: PolarsPlan):
+    match payload:
+        case {"input": expr, "propagate_nans": False, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).max()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.MAX}")
+
+
+@value_handler(tags.value.MIN)
+def handle_min(payload: PolarsPlan):
+    match payload:
+        case {"input": expr, "propagate_nans": False, **extras}:
+            assert_no_extras(extras)
+            return polars_expr_to_ibis_value(expr).min()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.MIN}")
+
+
+@value_handler(tags.value.VAR)
+def handle_var(payload: PolarsPlan):
+    match payload:
+        case [expr, 1]:
+            return polars_expr_to_ibis_value(expr).var()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.VAR}")
+
+
+@value_handler(tags.value.STD)
+def handle_std(payload: PolarsPlan):
+    match payload:
+        case [expr, 1]:
+            return polars_expr_to_ibis_value(expr).std()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.STD}")
+
+
+@value_handler(tags.value.QUANTILE)
+def handle_quantile(payload: PolarsPlan):
+    match payload:
+        case {
+            "expr": expr,
+            "method": "Nearest",
+            "quantile": {
+                tags.value.LITERAL: {
+                    "Dyn": {"Float": quantile, **extras_1},
+                    **extras_2,
+                },
+                **extras_3,
+            },
+            **extras_4,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4)
+            return polars_expr_to_ibis_value(expr).quantile(quantile)
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.QUANTILE}")
+
+
 @value_handler(tags.value.AGG)
 def handle_agg(payload: PolarsPlan):
-    match payload:
-        case {tags.value.MEAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].mean()
-        case {tags.value.MEDIAN: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].median()
-        case {tags.value.SUM: {tags.value.COLUMN: column, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].sum()
-        case {
-            tags.value.MIN: {
-                "input": {tags.value.COLUMN: column, **extras_1},
-                "propagate_nans": False,
-                **extras_2,
-            },
-            **extras_3,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3)
-            return defer[column].min()
-        case {
-            tags.value.MAX: {
-                "input": {tags.value.COLUMN: column, **extras_1},
-                "propagate_nans": False,
-                **extras_2,
-            },
-            **extras_3,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3)
-            return defer[column].max()
-        case {tags.value.VAR: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].var()
-        case {tags.value.STD: [{tags.value.COLUMN: column, **extras_1}, 1], **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return defer[column].std()
-        case {  # pragma: no cover (polars>=1.41.2)
-            tags.value.QUANTILE: {
-                "expr": {tags.value.COLUMN: column, **extras_1},
-                "method": "Nearest",
-                "quantile": {
-                    tags.value.LITERAL: {
-                        "Dyn": {"Float": quantile, **extras_2},
-                        **extras_3,
-                    },
-                    **extras_4,
-                },
-                **extras_5,
-            },
-            **extras_6,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
-            return defer[column].quantile(quantile)
-        case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.value.AGG}")
+    return polars_expr_to_ibis_value(payload)
 
 
 @value_handler(tags.value.FUNCTION)
