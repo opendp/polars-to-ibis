@@ -113,12 +113,17 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 select_kwargs[name] = defer[name].fill_null(
                     polars_expr_to_ibis_value(expr)
                 )
+            case (tags.value.AGG, {"Count": expr, **extras}):
+                assert_no_extras(extras)
+                # TODO: Make this more robust,
+                # or let aggs in general return multiple columns?
+                names = find(expr, "names")
+                for name in names:
+                    agg_kwargs[name] = defer[name].count()
             case (
                 tags.value.AGG,
                 expr,
             ):
-                from polars_to_ibis._utils import find
-
                 name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (

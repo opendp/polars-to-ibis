@@ -11,6 +11,7 @@ MEAN = "Mean"
 MEDIAN = "Median"
 MAX = "Max"
 MIN = "Min"
+COUNT = "Count"
 
 SELECTOR = "Selector"
 RENAME_ALIAS = "RenameAlias"
