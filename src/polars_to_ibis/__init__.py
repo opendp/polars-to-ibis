@@ -25,7 +25,8 @@ Create the table for our example:
 ```python
 >>> import ibis
 >>> import polars as pl
->>> connection = ibis.sqlite.connect()
+>>> backend = ibis.sqlite
+>>> connection = backend.connect()
 >>> table_name = 'readme_example'
 >>> connection.create_table(
 ...      table_name,
@@ -53,6 +54,7 @@ Next, make a query starting with that LazyFrame:
 >>> ibis_unbound_table = convert_polars_to_ibis(
 ...     polars_query,
 ...     table_name=table_name,
+...     backend=backend,
 ... )
 >>> print(ibis_unbound_table.to_sql())
 SELECT
@@ -78,7 +80,6 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
   The best summary is the collection of [test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
-
 ---
 """  # noqa: B950
 
@@ -135,7 +136,11 @@ def scan_database(connection: Any, table_name: str) -> pl.LazyFrame:
     return pl.LazyFrame(schema=ibis_schema.to_polars())
 
 
-def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
+def convert_polars_to_ibis(
+    lf: pl.LazyFrame,
+    table_name: str,
+    backend: ibis.BaseBackend,
+) -> ibis.Table:
     """
     Convert a Polars LazyFrame to an Ibis unbound table.
 
@@ -153,6 +158,7 @@ def convert_polars_to_ibis(lf: pl.LazyFrame, table_name: str) -> ibis.Table:
     return update_polars_to_ibis(
         polars_plan=polars_plan,
         table=ibis_table,
+        backend=backend,
     )
 
 
@@ -219,12 +225,16 @@ def _get_type(polars_type_name: str) -> type:
 
 
 def split_polars_on_ffi(
-    query: pl.LazyFrame, table_name: str
+    query: pl.LazyFrame,
+    table_name: str,
+    backend: ibis.BaseBackend,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """
     Split a Polars LazyFrame on an FFI plugin,
-    returning an Ibis unbound table ready to be executed on a SQL database,
+    returning an Ibis unbound table ready to be executed on a backend,
     and a list of parameter dicts for the plugin.
+
+    The backend parameter is used to determine the supported operations.
     """
 
     polars_plan = serialize(query)
@@ -235,6 +245,7 @@ def split_polars_on_ffi(
     ibis_table = update_polars_to_ibis(
         polars_plan=polars_plan,
         table=ibis.table(input_schema, name=table_name),
+        backend=backend,
     )
 
     return ibis_table, param_dicts
