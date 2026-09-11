@@ -5,8 +5,10 @@ and even in that narrow scope you'll see a number of quirks.
 
 import dataclasses
 import math
+from abc import ABC, abstractmethod
 from typing import Any
 
+import polars as pl
 from pytest import approx
 
 input_data = {
@@ -43,7 +45,7 @@ Results = dict[str, list[Any]]
 
 
 @dataclasses.dataclass
-class ParserScenario:
+class BaseParserScenario(ABC):
     category: str
     expression: str
     expected_output: Results
@@ -53,70 +55,89 @@ class ParserScenario:
     alternative_results: dict[str, Results] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: float = 0
 
+    @abstractmethod
+    def exec(self, named_frames): ...
+
+
+class EvalParserScenario(BaseParserScenario):
+    def exec(self, named_frames):
+        named_frames["pl"] = pl
+        return eval(self.expression, named_frames)
+
+
+class SQLParserScenario(BaseParserScenario):
+    def exec(self, named_frames):
+        return pl.SQLContext(**named_frames).execute(self.expression)
+
 
 # Using this constant in an expected value lets us test against NaN in results.
 # (Normally, nan != nan.)
 NAN = approx(float("nan"), nan_ok=True)
 
 parser_scenarios = [
-    ParserScenario(
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ints) FROM lf",
+        {"ints": [10]},
+    ),
+    EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
         {"len": [4]},
     ),
-    ParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
-    ParserScenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
-    ParserScenario(
+    EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
+    EvalParserScenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
+    EvalParserScenario(
         "numeric", "lf.select(pl.col.ints.sum().name.to_uppercase())", {"INTS": [10]}
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(pl.col.ints.sum().name.prefix('pre_'))",
         {"pre_ints": [10]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(pl.col.ints.sum().name.suffix('_post'))",
         {"ints_post": [10]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(pl.col.floats / 2)",
         {"floats": [0.05, 0.1, 0.15, 0.2]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(2 / pl.col.floats)",
         {"literal": [20.0, 10.0, 20.0 / 3, 5.0]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(pl.col.ints / pl.col.floats)",
         {"ints": [10.0, 10.0, 10.0, 10.0]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         # TODO: Add more tests of name inference:
         # Which expression should it be based on?
         "numeric",
         "lf.select(pl.when(pl.col.ints > 3).then(pl.col.ints).otherwise(0))",
         {"ints": [0, 0, 0, 4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(pl.col.ints.clip(0,1).sum())",
         {"ints": [4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.mean()",
         {"floats": [0.25], "ints": [2.5]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.mean().cast(pl.Int16)",
         {"floats": [0], "ints": [2]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
@@ -125,7 +146,7 @@ parser_scenarios = [
             "mysql": "Compilation rule for 'Median' operation is not defined",
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         # This should return the same value as median, but it doesn't!
         "lf.quantile(0.5)",
@@ -137,25 +158,25 @@ parser_scenarios = [
         # BIG difference between the polars native version and the DB versions!
         tolerance=0.5,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.max()",
         {"floats": [0.4], "ints": [4]},
     ),
-    ParserScenario("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
-    ParserScenario(
+    EvalParserScenario("numeric", "lf.min()", {"floats": [0.1], "ints": [1]}),
+    EvalParserScenario(
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance=10e-6,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
         tolerance=10e-6,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    ints=pl.col('ints').clip(2.0,3.0),"
@@ -163,7 +184,7 @@ parser_scenarios = [
         ")",
         {"floats": [2.0, 2.0, 2.0, 2.0], "ints": [2, 2, 3, 3]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "sorting",
         "lf.sort(by='strs')",
         {
@@ -171,7 +192,7 @@ parser_scenarios = [
             "strs": ["A", "B", "C", "Z"],
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "sorting",
         "lf.sort(by=['ints', 'strs'])",
         {
@@ -179,7 +200,7 @@ parser_scenarios = [
             "strs": ["B", "C", "A", "Z"],
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "sorting",
         "lf.sort(by='strs', descending=True)",
         {
@@ -187,7 +208,7 @@ parser_scenarios = [
             "strs": ["Z", "C", "B", "A"],
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "sorting",
         "lf.sort(by=['ints', 'strs'], descending=True)",
         {
@@ -195,7 +216,7 @@ parser_scenarios = [
             "strs": ["Z", "A", "C", "B"],
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "sorting",
         "lf.sort(by=['ints', 'strs'], descending=[True, False])",
         {
@@ -203,7 +224,7 @@ parser_scenarios = [
             "strs": ["A", "Z", "B", "C"],
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.sort(by='ints').head(1)",
         {
@@ -211,37 +232,37 @@ parser_scenarios = [
             "floats": [0.1],
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit('ten!'))",
         {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
@@ -252,7 +273,7 @@ parser_scenarios = [
         },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
@@ -264,106 +285,106 @@ parser_scenarios = [
         },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select('ints', ten=False)",
         {"ints": [1, 2, 3], "ten": [False, False, False]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(sum=pl.col('ints') + pl.col('floats'))",
         {"sum": [1.1, 2.2, 3.3, 4.4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(diff=pl.col('ints') - pl.col('floats'))",
         {"diff": [0.9, 1.8, 2.7, 3.6]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(prod=pl.col('ints') * pl.col('floats'))",
         {"prod": [0.1, 0.4, 3 * 0.3, 1.6]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(div=pl.col('ints') / 2)",
         {"div": [0.5, 1, 1.5, 2]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(square=pl.col('ints') ** 2)",
         {"square": [1, 4, 9, 16]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select(mod=pl.col('ints') % 2)",
         {"mod": [1, 0, 1, 0]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "select",
         "lf.select(plus_ten=(-pl.col('ints')) + 10)",
         {"plus_ten": [9, 8, 7]},
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
         {"keys": [0, 1, 1], "values": [2, 3, 4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('keys') != 1)",
         {"keys": [0, 0], "values": [1, 2]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('values') != 1)",
         {"keys": [0, 1, 1], "values": [2, 3, 4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('values') > 2).select('values')",
         {"values": [3, 4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('values') >= 2).select('values')",
         {"values": [2, 3, 4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('values') < 2).select('values')",
         {"values": [1]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "grouping",
         "lf.filter(pl.col('values') <= 2).select('values')",
         {"values": [1, 2]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "hundred",
         "lf.filter((pl.col('ints') % 5 == 0) & (pl.col('ints') % 7 == 0))",
         {"ints": [0, 35, 70]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "hundred",
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
         # This error message is generated upstream, and we can't change "can not".
         connection_errors={"mysql": (MYSQL_INF := "inf can not be used with MySQL")},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "nan_null_inf",
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
@@ -374,19 +395,19 @@ parser_scenarios = [
             "sqlite+to_pyarrow": {"nan": [0.0, None]},
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "nan_null_inf",
         "lf.select(pl.col.null.fill_null(999))",
         {"null": [0, 999]},
         connection_errors={"mysql": MYSQL_INF},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "nan_null_inf",
         "lf.filter(pl.col('null') != 0)",
         {"inf": [], "nan": [], "null": []},
         connection_errors={"mysql": MYSQL_INF},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').mean(),"
@@ -394,7 +415,7 @@ parser_scenarios = [
         ")",
         {"floats": [0.25], "ints": [2.5]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').median(),"
@@ -406,7 +427,7 @@ parser_scenarios = [
             "mysql": "Compilation rule for 'Median' operation is not defined",
         },
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').sum(),"
@@ -414,7 +435,7 @@ parser_scenarios = [
         ")",
         {"floats": [1.0], "ints": [10]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').min(),"
@@ -423,7 +444,7 @@ parser_scenarios = [
         {"floats": [0.1], "ints": [1]},
         tolerance=0.0000001,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').max(),"
@@ -432,7 +453,7 @@ parser_scenarios = [
         {"floats": [0.4], "ints": [4]},
         tolerance=0.0000001,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').std(),"
@@ -441,7 +462,7 @@ parser_scenarios = [
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
         tolerance=0.00001,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').var(),"
@@ -450,7 +471,7 @@ parser_scenarios = [
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         tolerance=0.00001,
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').quantile(0.5),"
