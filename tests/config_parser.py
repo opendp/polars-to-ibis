@@ -458,7 +458,7 @@ parser_scenarios = [
         "lf.select((pl.col('floats') + pl.col('ints')).max())",
         {"floats": [4.4]},
     ),
-    ParserScenario(
+    EvalParserScenario(
         "numeric",
         "lf.select("
         "    floats=pl.col('floats').std(),"
