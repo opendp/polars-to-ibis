@@ -8,7 +8,7 @@ from polars_to_ibis import convert_polars_to_ibis, scan_database
 from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
-from .config_parser import ParserScenario, input_data, parser_scenarios
+from .config_parser import BaseParserScenario, input_data, parser_scenarios
 from .utils import assert_error_or_none, backend_names, exporters, get_connection
 
 
@@ -17,12 +17,10 @@ from .utils import assert_error_or_none, backend_names, exporters, get_connectio
     parser_scenarios,
     ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
 )
-def test_scenario_consistency(scenario: ParserScenario):
+def test_scenario_consistency(scenario: BaseParserScenario):
     # Does the polars expression have the expected result?
-    globals = {"lf": pl.LazyFrame(input_data[scenario.category]), "pl": pl}
-    polars_output = (
-        eval(scenario.expression, globals).collect().to_dict(as_series=False)
-    )
+    named_frames = {"lf": pl.LazyFrame(input_data[scenario.category])}
+    polars_output = scenario.exec(named_frames).collect().to_dict(as_series=False)
     assert polars_output == scenario.expected_output, "Typo in scenario?"
 
 
@@ -34,7 +32,7 @@ def test_scenario_consistency(scenario: ParserScenario):
 @pytest.mark.parametrize("backend_name", backend_names)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
 def test_translate_table_new(
-    scenario: ParserScenario,
+    scenario: BaseParserScenario,
     backend_name: str,
     exporter_key: str,
 ):
@@ -48,8 +46,8 @@ def test_translate_table_new(
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
-    globals = {"lf": scan_database(connection, table_name), "pl": pl}
-    lf = eval(scenario.expression, globals)
+    named_frames = {"lf": scan_database(connection, table_name)}
+    lf = scenario.exec(named_frames)
 
     ibis_table = assert_error_or_none(
         "convert_error",
