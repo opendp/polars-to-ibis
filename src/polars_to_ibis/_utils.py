@@ -44,22 +44,26 @@ class PluginReplacer:
     def replace(self):
         self._sub_replace(self._source)
         if not self._param_dicts:
-            raise Exception(f"Did not find FFI in {self._source}")  # pragma: no cover
+            raise Exception(
+                f"Did not find FFI in:\n{abbreviate(self._source)}"
+            )  # pragma: no cover
         return self._param_dicts
 
     def _sub_replace(self, sub_source):
         if isinstance(sub_source, list):
-            for i in range(len(sub_source)):
-                plugin_details = self._find_pattern(sub_source[i])
-                if plugin_details:
-                    sub_source[i] = plugin_details.input_expr
-                    self._param_dicts.append(plugin_details.params_dict)
-                else:
-                    self._sub_replace(sub_source[i])
-        if isinstance(sub_source, dict):
-            for v in sub_source.values():
-                if isinstance(v, (dict, list)):
-                    self._sub_replace(v)
+            iter_over = range(len(sub_source))
+        elif isinstance(sub_source, dict):
+            iter_over = sub_source.keys()
+        else:
+            return
+
+        for i_k in iter_over:
+            plugin_details = self._find_pattern(sub_source[i_k])
+            if plugin_details:
+                sub_source[i_k] = plugin_details.input_expr
+                self._param_dicts.append(plugin_details.params_dict)
+            else:
+                self._sub_replace(sub_source[i_k])
 
 
 def find(
