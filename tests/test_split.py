@@ -1,5 +1,6 @@
 import re
 
+import ibis
 import opendp.prelude as dp
 import polars as pl
 import pytest
@@ -7,7 +8,7 @@ import pytest
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
 from .config_split import TABLE_NAME, SplitScenario, split_scenarios
-from .utils import assert_error_or_none, backends, get_connection
+from .utils import assert_error_or_none, backend_names, get_connection
 
 
 def norm_sql(sql: str):
@@ -19,9 +20,10 @@ def norm_sql(sql: str):
     split_scenarios,
     ids=lambda scenario: scenario.expression,
 )
-@pytest.mark.parametrize("backend", backends)
-def test_split_lazyframe(scenario: SplitScenario, backend: str):
+@pytest.mark.parametrize("backend_name", backend_names)
+def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
     # Set up database:
+    backend = getattr(ibis, backend_name)
     connection = get_connection(
         df=pl.DataFrame(
             {
@@ -61,13 +63,13 @@ def test_split_lazyframe(scenario: SplitScenario, backend: str):
             query_lf,
             table_name=table_name,
             # In the future, add a parameter to specify the plugin to split on?
+            backend=connection,
         )
 
         # Use ibis_table:
-
         private_result = assert_error_or_none(
             "backend_error",
-            scenario.backend_errors.get(backend),
+            scenario.backend_errors.get(backend_name),
             lambda: connection.to_polars(ibis_table).to_dict(as_series=False),
         )
         # For now, assume result dataframe is only a single row,
