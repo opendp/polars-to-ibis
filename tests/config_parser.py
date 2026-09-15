@@ -358,6 +358,11 @@ parser_scenarios = [
     ),
     ParserScenario(
         "nan_null_inf",
+        "lf.select(pl.count('nan', 'null', 'inf'))",
+        {"inf": [2], "nan": [2], "null": [1]},
+    ),
+    ParserScenario(
+        "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
         # This error message is generated upstream, and we can't change "can not".
