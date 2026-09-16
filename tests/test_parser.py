@@ -39,7 +39,7 @@ def test_parser_scenarios(
     backend = getattr(ibis, backend_name)
     connection = assert_error_or_none(
         "connection_errors",
-        scenario.connection_errors.get(backend),
+        scenario.connection_errors.get(backend_name),
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
