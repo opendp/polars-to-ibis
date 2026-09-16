@@ -389,6 +389,7 @@ def handle_hstack(
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
+    updated_table = update_polars_to_ibis(input, table=table, backend=backend)
     match exprs:
         case [
             {
@@ -405,17 +406,15 @@ def handle_hstack(
             all_columns = input[tags.table.MAP_FUNCTION]["input"][
                 tags.table.DATA_FRAME_SCAN
             ]["schema"]["fields"].keys()
-            return update_polars_to_ibis(input, table=table, backend=backend).cast(  # type: ignore
+            return updated_table.cast(  # type: ignore
                 {col: dtype_literal.lower() for col in all_columns}
             )
         case [{tags.value.ALIAS: [expr, name], **extras_1}]:
             assert_no_extras(extras_1)
-            return update_polars_to_ibis(input, table=table, backend=backend).mutate(
-                **{name: polars_expr_to_ibis_value(expr)}
-            )
+            return updated_table.mutate(**{name: polars_expr_to_ibis_value(expr)})
         case [{"Literal": expr, **extras_1}]:
             assert_no_extras(extras_1)
-            return update_polars_to_ibis(input, table=table, backend=backend).mutate(
+            return updated_table.mutate(
                 literal=polars_expr_to_ibis_value({"Literal": expr})
             )
         case [
@@ -458,10 +457,7 @@ def handle_hstack(
             value = polars_expr_to_ibis_value(fill_expr)
             match function:
                 case "FillNull":
-                    input_table = update_polars_to_ibis(
-                        payload["input"], table=table, backend=backend
-                    )
-                    return input_table.fill_null(value)  # type: ignore
+                    return updated_table.fill_null(value)  # type: ignore
                 case _:  # pragma: no cover
                     raise NotImplementedError(
                         f"Unsupported {tags.table.H_STACK} function: {function}"
