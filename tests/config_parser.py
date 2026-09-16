@@ -92,7 +92,7 @@ parser_scenarios = [
         "numeric",
         "SELECT CASE WHEN ints <= 3 THEN -1 END FROM lf",
         {"literal": [-1, -1, -1, None]},
-        convert_errors={"*": "Unsupported Literal"},  # TODO
+        alternative_results={"to_pandas": {"literal": [-1, -1, -1, NAN]}},
     ),
     # TODO: This is the output from polars: Doesn't match output from ibis.
     # SQLParserScenario(
@@ -104,7 +104,7 @@ parser_scenarios = [
         "numeric",
         "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
         {"literal": [-1, None, None, None]},
-        convert_errors={"*": "Unsupported Literal"},  # TODO
+        alternative_results={"to_pandas": {"literal": [-1, NAN, NAN, NAN]}},
     ),
     # TODO: This is the output from polars: Doesn't match output from ibis.
     # SQLParserScenario(

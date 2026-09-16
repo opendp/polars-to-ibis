@@ -80,8 +80,12 @@ def test_parser_scenarios(
             f"within {scenario.tolerance}",
         )
     else:
-        expected_output = scenario.alternative_results.get(
-            f"{backend_name}+{exporter_key}", scenario.expected_output
+        expected_output = (
+            scenario.alternative_results.get("*")
+            or scenario.alternative_results.get(backend_name)
+            or scenario.alternative_results.get(f"{backend_name}+{exporter_key}")
+            or scenario.alternative_results.get(exporter_key)
+            or scenario.expected_output
         )
         assert (
             actual_output == expected_output

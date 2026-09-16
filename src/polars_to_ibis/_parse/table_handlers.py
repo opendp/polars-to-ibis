@@ -60,7 +60,35 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 
 def infer_name(expr):
-    return "literal" if "Literal" in expr else find(expr, "Column")
+    match expr:
+        case {
+            "BinaryExpr": {
+                "left": left_expr,
+                "op": _op,  # noqa: F841 (unused)
+                "right": _right_expr,  # noqa: F841 (unused)
+                **extras_1,
+            },
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return infer_name(left_expr)
+        case {"Literal": _, **extras}:
+            assert_no_extras(extras)
+            return "literal"
+        case {"Column": name, **extras}:
+            assert_no_extras(extras)
+            return name
+        case _:
+            if isinstance(expr, list):
+                iter_over = range(len(expr))
+            elif isinstance(expr, dict):
+                iter_over = expr.keys()
+            else:
+                raise NotImplementedError(f"Neither dict nor list: {expr}")
+
+            for i_k in iter_over:
+                if name := infer_name(expr[i_k]):
+                    return name
 
 
 def apply_select_expr(col_list: list[dict[str, Any]], input_table):
@@ -117,8 +145,6 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 tags.value.AGG,
                 expr,
             ):
-                from polars_to_ibis._utils import find
-
                 name = find(expr, tags.value.COLUMN)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (
@@ -178,7 +204,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 },
             ):
                 assert_no_extras(extras_1)
-                column_name = infer_name(predicate_expr)
+                column_name = infer_name(truthy_expr)
                 select_kwargs[column_name] = polars_expr_to_ibis_value(
                     predicate_expr
                 ).ifelse(

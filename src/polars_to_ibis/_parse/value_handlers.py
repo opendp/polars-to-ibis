@@ -63,6 +63,9 @@ def handle_literal(payload: PolarsPlan):
         case {"Scalar": {"String": value, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
+        case {"Scalar": {"Null": "Null", **extras_1}, **extras_2}:
+            assert_no_extras(extras_1, extras_2)
+            return None
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.LITERAL}")
 
