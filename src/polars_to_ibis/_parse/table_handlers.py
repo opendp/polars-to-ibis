@@ -60,9 +60,9 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 
 def infer_name(expr):
-    match expr:
+    match expr:  # pragma: no cover
         case {
-            "BinaryExpr": {
+            tags.value.BINARY_EXPR: {
                 "left": left_expr,
                 "op": _op,  # noqa: F841 (unused)
                 "right": _right_expr,  # noqa: F841 (unused)
@@ -72,10 +72,10 @@ def infer_name(expr):
         }:
             assert_no_extras(extras_1, extras_2)
             return infer_name(left_expr)
-        case {"Literal": _, **extras}:
+        case {tags.value.LITERAL: _, **extras}:
             assert_no_extras(extras)
             return "literal"
-        case {"Column": name, **extras}:
+        case {tags.value.COLUMN: name, **extras}:
             assert_no_extras(extras)
             return name
         case _:
@@ -406,6 +406,21 @@ def handle_hstack(
             ]["schema"]["fields"].keys()
             return update_polars_to_ibis(input, table=table, backend=backend).cast(  # type: ignore
                 {col: dtype_literal.lower() for col in all_columns}
+            )
+        case {
+            "exprs": [{tags.value.ALIAS: [expr, name], **extras_1}],
+            "input": input,
+            "options": {
+                "duplicate_check": True,
+                "run_parallel": True,
+                "should_broadcast": True,
+                **extras_2,
+            },
+            **extras_3,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3)
+            return update_polars_to_ibis(input, table=table, backend=backend).mutate(
+                **{name: polars_expr_to_ibis_value(expr)}
             )
         case {
             "exprs": [

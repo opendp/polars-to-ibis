@@ -86,7 +86,6 @@ parser_scenarios = [
         "numeric",
         "SELECT 42 AS fortytwo FROM lf",
         {"fortytwo": [42, 42, 42, 42]},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
@@ -191,7 +190,6 @@ parser_scenarios = [
         "numeric",
         "SELECT '日本' AS japan FROM lf limit 1",
         {"japan": ["日本"]},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",

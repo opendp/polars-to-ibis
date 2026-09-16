@@ -14,6 +14,7 @@ MIN = "Min"
 
 SELECTOR = "Selector"
 RENAME_ALIAS = "RenameAlias"
+ALIAS = "Alias"
 
 VAR = "Var"
 STD = "Std"
