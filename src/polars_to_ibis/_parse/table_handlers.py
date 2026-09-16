@@ -376,100 +376,77 @@ def handle_hstack(
     input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {
-            "exprs": [
-                {
-                    tags.value.CAST: {
-                        "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
-                        "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
-                        "options": "Strict",
-                        **extras_3,
-                    },
-                    **extras_4,
-                }
-            ],
+            "exprs": exprs,
             "input": input,
             "options": {
                 "duplicate_check": True,
                 "run_parallel": True,
                 "should_broadcast": True,
-                **extras_5,
+                **extras_1,
             },
-            **extras_6,
+            **extras_2,
         }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5, extras_6)
+            pass
+        case _:
+            raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
+
+    match exprs:
+        case [
+            {
+                tags.value.CAST: {
+                    "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
+                    "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
+                    "options": "Strict",
+                    **extras_3,
+                },
+                **extras_4,
+            }
+        ]:
+            assert_no_extras(extras_1, extras_2, extras_3, extras_4)
             all_columns = input[tags.table.MAP_FUNCTION]["input"][
                 tags.table.DATA_FRAME_SCAN
             ]["schema"]["fields"].keys()
             return update_polars_to_ibis(input, table=table, backend=backend).cast(  # type: ignore
                 {col: dtype_literal.lower() for col in all_columns}
             )
-        case {
-            "exprs": [{tags.value.ALIAS: [expr, name], **extras_1}],
-            "input": input,
-            "options": {
-                "duplicate_check": True,
-                "run_parallel": True,
-                "should_broadcast": True,
-                **extras_2,
-            },
-            **extras_3,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3)
+        case [{tags.value.ALIAS: [expr, name], **extras_1}]:
+            assert_no_extras(extras_1)
             return update_polars_to_ibis(input, table=table, backend=backend).mutate(
                 **{name: polars_expr_to_ibis_value(expr)}
             )
-        case {
-            "exprs": [{"Literal": expr, **extras_1}],
-            "input": input,
-            "options": {
-                "duplicate_check": True,
-                "run_parallel": True,
-                "should_broadcast": True,
-                **extras_2,
-            },
-            **extras_3,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3)
+        case [{"Literal": expr, **extras_1}]:
+            assert_no_extras(extras_1)
             return update_polars_to_ibis(input, table=table, backend=backend).mutate(
                 literal=polars_expr_to_ibis_value({"Literal": expr})
             )
-        case {
-            "exprs": [
-                {
-                    tags.value.FUNCTION: {
-                        "input": [
-                            {
-                                tags.value.SELECTOR: {
-                                    "Union": [
-                                        {
-                                            "ByDType": {
-                                                "AnyOf": _,  # Numeric types
-                                                **extras_1,
-                                            },
-                                            **extras_2,
+        case [
+            {
+                tags.value.FUNCTION: {
+                    "input": [
+                        {
+                            tags.value.SELECTOR: {
+                                "Union": [
+                                    {
+                                        "ByDType": {
+                                            "AnyOf": _,  # Numeric types
+                                            **extras_1,
                                         },
-                                        {"ByDType": "Decimal", **extras_3},
-                                    ],
-                                    **extras_4,
-                                },
-                                **extras_5,
+                                        **extras_2,
+                                    },
+                                    {"ByDType": "Decimal", **extras_3},
+                                ],
+                                **extras_4,
                             },
-                            fill_expr,
-                        ],
-                        "function": function,
-                        **extras_6,
-                    },
-                    **extras_7,
-                }
-            ],
-            "options": {
-                "run_parallel": True,
-                "duplicate_check": True,
-                "should_broadcast": True,
-                **extras_8,
-            },
-            **extras_9,
-        }:
+                            **extras_5,
+                        },
+                        fill_expr,
+                    ],
+                    "function": function,
+                    **extras_6,
+                },
+                **extras_7,
+            }
+        ]:
             assert_no_extras(
                 extras_1,
                 extras_2,
@@ -478,8 +455,6 @@ def handle_hstack(
                 extras_5,
                 extras_6,
                 extras_7,
-                extras_8,
-                extras_9,
             )
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
