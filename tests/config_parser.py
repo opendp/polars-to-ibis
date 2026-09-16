@@ -80,7 +80,6 @@ parser_scenarios = [
         "numeric",
         "SELECT 1 + ints / floats FROM lf",
         {"literal": [11, 11, 11, 11]},
-        # convert_errors={"*": "Unsupported select expr BinaryExpr"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
@@ -93,42 +92,39 @@ parser_scenarios = [
         {"literal": [-1, -1, -1, None]},
         alternative_results={"to_pandas": {"literal": [-1, -1, -1, NAN]}},
     ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
-    #     {"literal": [-1, 100, 100, 100]},
-    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
+        {"literal": [-1, 100, 100, 100]},
+    ),
     SQLParserScenario(
         "numeric",
         "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
         {"literal": [-1, None, None, None]},
         alternative_results={"to_pandas": {"literal": [-1, NAN, NAN, NAN]}},
     ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
-    #     {"literal": [-1, -1, -1, -1]},
-    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
+        {"literal": [-1, -1, -1, -1]},
+    ),
     # TODO: This is the output from polars: Doesn't match output from ibis.
     # SQLParserScenario(
     #     "numeric",
     #     "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
     #     {"literal": [-1]},
     # ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     """
-    #     SELECT CASE
-    #     WHEN ints <= 1 THEN -1
-    #     WHEN ints > 1 AND ints <= 3 then 0
-    #     ELSE 1
-    #     END FROM lf
-    #     """,
-    #     {"literal": [-1, 0, 0, 1]},
-    # ),
+    SQLParserScenario(
+        "numeric",
+        """
+        SELECT CASE
+        WHEN ints <= 1 THEN -1
+        WHEN ints > 1 AND ints <= 3 then 0
+        ELSE 1
+        END FROM lf
+        """,
+        {"literal": [-1, 0, 0, 1]},
+    ),
     SQLParserScenario(
         "numeric",
         "SELECT IIF(ints > 2, 'Big', 'Small') AS size FROM lf",
