@@ -406,15 +406,17 @@ def handle_hstack(
             all_columns = input[tags.table.MAP_FUNCTION]["input"][
                 tags.table.DATA_FRAME_SCAN
             ]["schema"]["fields"].keys()
-            return updated_table.cast(  # type: ignore
+            updated_table = updated_table.cast(  # type: ignore
                 {col: dtype_literal.lower() for col in all_columns}
             )
         case [{tags.value.ALIAS: [expr, name], **extras_1}]:
             assert_no_extras(extras_1)
-            return updated_table.mutate(**{name: polars_expr_to_ibis_value(expr)})
+            updated_table = updated_table.mutate(
+                **{name: polars_expr_to_ibis_value(expr)}
+            )
         case [{"Literal": expr, **extras_1}]:
             assert_no_extras(extras_1)
-            return updated_table.mutate(
+            updated_table = updated_table.mutate(
                 literal=polars_expr_to_ibis_value({"Literal": expr})
             )
         case [
@@ -457,13 +459,15 @@ def handle_hstack(
             value = polars_expr_to_ibis_value(fill_expr)
             match function:
                 case "FillNull":
-                    return updated_table.fill_null(value)  # type: ignore
+                    updated_table = updated_table.fill_null(value)  # type: ignore
                 case _:  # pragma: no cover
                     raise NotImplementedError(
                         f"Unsupported {tags.table.H_STACK} function: {function}"
                     )
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
+
+    return updated_table
 
 
 @table_handler(tags.table.GROUP_BY)
