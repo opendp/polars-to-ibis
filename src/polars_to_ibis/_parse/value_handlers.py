@@ -292,6 +292,9 @@ def handle_binary_expr(payload: PolarsPlan):
                 "Minus": sub,
                 "Multiply": mul,
                 "TrueDivide": truediv,
+                "Divide": truediv,
+                # TODO: Should this be "floordiv"?
+                # If not, what's the distinction in polars?
                 "Modulus": mod,
                 "NotEq": ne,
                 "Eq": eq,

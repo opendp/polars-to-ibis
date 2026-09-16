@@ -151,16 +151,16 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 tags.value.BINARY_EXPR,
                 {
                     "left": left_expr,
-                    "op": "TrueDivide",
+                    "op": _op,
                     "right": right_expr,
                     **extras_1,
                 },
             ):
                 assert_no_extras(extras_1)
                 target_name = infer_name(left_expr) or infer_name(right_expr)
-                select_kwargs[target_name] = polars_expr_to_ibis_value(
-                    left_expr
-                ) / polars_expr_to_ibis_value(right_expr)
+                from .value_handlers import handle_binary_expr
+
+                select_kwargs[target_name] = handle_binary_expr(payload)
             case (
                 tags.value.RENAME_ALIAS,
                 {

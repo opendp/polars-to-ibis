@@ -80,7 +80,7 @@ parser_scenarios = [
         "numeric",
         "SELECT 1 + ints / floats FROM lf",
         {"literal": [11, 11, 11, 11]},
-        convert_errors={"*": "Unsupported select expr BinaryExpr"},  # TODO
+        # convert_errors={"*": "Unsupported select expr BinaryExpr"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
