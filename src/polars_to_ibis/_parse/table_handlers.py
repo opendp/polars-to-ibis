@@ -151,7 +151,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 tags.value.BINARY_EXPR,
                 {
                     "left": left_expr,
-                    "op": _op,
+                    "op": _op,  # noqa: F841 (unused)
                     "right": right_expr,
                     **extras_1,
                 },
