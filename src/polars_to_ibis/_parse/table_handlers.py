@@ -419,6 +419,21 @@ def handle_hstack(
                 **{name: polars_expr_to_ibis_value(expr)}
             )
         case {
+            "exprs": [{"Literal": expr, **extras_1}],
+            "input": input,
+            "options": {
+                "duplicate_check": True,
+                "run_parallel": True,
+                "should_broadcast": True,
+                **extras_2,
+            },
+            **extras_3,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3)
+            return update_polars_to_ibis(input, table=table, backend=backend).mutate(
+                literal=polars_expr_to_ibis_value({"Literal": expr})
+            )
+        case {
             "exprs": [
                 {
                     tags.value.FUNCTION: {

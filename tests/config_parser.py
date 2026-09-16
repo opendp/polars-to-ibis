@@ -140,7 +140,10 @@ parser_scenarios = [
         "numeric",
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
+        backend_errors={
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
+        },
     ),
     SQLParserScenario(
         "numeric",

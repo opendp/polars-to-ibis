@@ -190,6 +190,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             return polars_expr_to_ibis_value(expr).log(base)
         case {
             "function": {
+                # TODO: Add test case to exercise params.
                 "Round": {"decimals": 0, "mode": "HalfToEven", **extras_1},
                 **extras_2,
             },
