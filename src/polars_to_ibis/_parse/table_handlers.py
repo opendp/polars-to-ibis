@@ -390,9 +390,9 @@ def handle_hstack(
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
     updated_table = update_polars_to_ibis(input, table=table, backend=backend)
-    match exprs:
-        case [
-            {
+    for expr in exprs:
+        match expr:
+            case {
                 tags.value.CAST: {
                     "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
                     "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
@@ -400,27 +400,25 @@ def handle_hstack(
                     **extras_3,
                 },
                 **extras_4,
-            }
-        ]:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4)
-            all_columns = input[tags.table.MAP_FUNCTION]["input"][
-                tags.table.DATA_FRAME_SCAN
-            ]["schema"]["fields"].keys()
-            updated_table = updated_table.cast(  # type: ignore
-                {col: dtype_literal.lower() for col in all_columns}
-            )
-        case [{tags.value.ALIAS: [expr, name], **extras_1}]:
-            assert_no_extras(extras_1)
-            updated_table = updated_table.mutate(
-                **{name: polars_expr_to_ibis_value(expr)}
-            )
-        case [{"Literal": expr, **extras_1}]:
-            assert_no_extras(extras_1)
-            updated_table = updated_table.mutate(
-                literal=polars_expr_to_ibis_value({"Literal": expr})
-            )
-        case [
-            {
+            }:
+                assert_no_extras(extras_1, extras_2, extras_3, extras_4)
+                all_columns = input[tags.table.MAP_FUNCTION]["input"][
+                    tags.table.DATA_FRAME_SCAN
+                ]["schema"]["fields"].keys()
+                updated_table = updated_table.cast(  # type: ignore
+                    {col: dtype_literal.lower() for col in all_columns}
+                )
+            case {tags.value.ALIAS: [expr, name], **extras_1}:
+                assert_no_extras(extras_1)
+                updated_table = updated_table.mutate(
+                    **{name: polars_expr_to_ibis_value(expr)}
+                )
+            case {"Literal": expr, **extras_1}:
+                assert_no_extras(extras_1)
+                updated_table = updated_table.mutate(
+                    literal=polars_expr_to_ibis_value({"Literal": expr})
+                )
+            case {
                 tags.value.FUNCTION: {
                     "function": function,
                     "input": [
@@ -445,27 +443,26 @@ def handle_hstack(
                     **extras_6,
                 },
                 **extras_7,
-            }
-        ]:
-            assert_no_extras(
-                extras_1,
-                extras_2,
-                extras_3,
-                extras_4,
-                extras_5,
-                extras_6,
-                extras_7,
-            )
-            value = polars_expr_to_ibis_value(fill_expr)
-            match function:
-                case "FillNull":
-                    updated_table = updated_table.fill_null(value)  # type: ignore
-                case _:  # pragma: no cover
-                    raise NotImplementedError(
-                        f"Unsupported {tags.table.H_STACK} function: {function}"
-                    )
-        case _:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
+            }:
+                assert_no_extras(
+                    extras_1,
+                    extras_2,
+                    extras_3,
+                    extras_4,
+                    extras_5,
+                    extras_6,
+                    extras_7,
+                )
+                value = polars_expr_to_ibis_value(fill_expr)
+                match function:
+                    case "FillNull":
+                        updated_table = updated_table.fill_null(value)  # type: ignore
+                    case _:  # pragma: no cover
+                        raise NotImplementedError(
+                            f"Unsupported {tags.table.H_STACK} function: {function}"
+                        )
+            case _:  # pragma: no cover
+                raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
     return updated_table
 

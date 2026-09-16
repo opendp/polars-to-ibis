@@ -165,7 +165,6 @@ parser_scenarios = [
         "numeric",
         "SELECT '' AS empty, '\"' AS dquote FROM lf LIMIT 1",
         {"empty": [""], "dquote": ['"']},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
