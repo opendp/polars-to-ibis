@@ -373,7 +373,6 @@ def handle_hstack(
     table: ir.Table,
     backend: ibis.BaseBackend,
 ) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
     match payload:
         case {
             "exprs": exprs,
@@ -422,6 +421,7 @@ def handle_hstack(
         case [
             {
                 tags.value.FUNCTION: {
+                    "function": function,
                     "input": [
                         {
                             tags.value.SELECTOR: {
@@ -441,7 +441,6 @@ def handle_hstack(
                         },
                         fill_expr,
                     ],
-                    "function": function,
                     **extras_6,
                 },
                 **extras_7,
@@ -456,17 +455,19 @@ def handle_hstack(
                 extras_6,
                 extras_7,
             )
+            value = polars_expr_to_ibis_value(fill_expr)
+            match function:
+                case "FillNull":
+                    input_table = update_polars_to_ibis(
+                        payload["input"], table=table, backend=backend
+                    )
+                    return input_table.fill_null(value)  # type: ignore
+                case _:  # pragma: no cover
+                    raise NotImplementedError(
+                        f"Unsupported {tags.table.H_STACK} function: {function}"
+                    )
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
-
-    value = polars_expr_to_ibis_value(fill_expr)
-    match function:
-        case "FillNull":
-            return input_table.fill_null(value)  # type: ignore
-        case _:  # pragma: no cover
-            raise NotImplementedError(
-                f"Unsupported {tags.table.H_STACK} function: {function}"
-            )
 
 
 @table_handler(tags.table.GROUP_BY)
