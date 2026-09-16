@@ -175,6 +175,30 @@ def handle_agg(payload: PolarsPlan):
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
         case {
+            "function": {"Trigonometry": "Degrees", **extras_1},
+            "input": [expr],
+            **extras_2,
+        }:
+            return polars_expr_to_ibis_value(expr).degrees()
+        case {
+            "function": "Log",
+            "input": [expr, base_expr],
+            **extras_1,
+        }:
+            assert_no_extras(extras_1)
+            base = polars_expr_to_ibis_value(base_expr)
+            return polars_expr_to_ibis_value(expr).log(base)
+        case {
+            "function": {
+                "Round": {"decimals": 0, "mode": "HalfToEven", **extras_1},
+                **extras_2,
+            },
+            "input": [expr],
+            **extras_3,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3)
+            return polars_expr_to_ibis_value(expr).round()
+        case {
             "function": {"Pow": "Generic", **extras_1},
             "input": [left_expr, right_expr],
             **extras_2,

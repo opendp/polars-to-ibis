@@ -135,7 +135,6 @@ parser_scenarios = [
         "numeric",
         "SELECT ROUND(floats * 2) FROM lf",
         {"floats": [0.0, 0.0, 1.0, 1.0]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
@@ -147,13 +146,6 @@ parser_scenarios = [
         "numeric",
         "SELECT DEGREES(ints) FROM lf LIMIT 1",
         {"ints": [180 / math.pi]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
-    ),
-    SQLParserScenario(
-        "numeric",
-        "SELECT DEGREES(ints) FROM lf LIMIT 1",
-        {"ints": [180 / math.pi]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
@@ -191,13 +183,11 @@ parser_scenarios = [
         "numeric",
         "SELECT LN(ints) FROM lf limit 1",
         {"ints": [math.log(1)]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
         "SELECT LOG2(ints) FROM lf limit 1",
         {"ints": [math.log(1)]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     EvalParserScenario(
         "numeric",
@@ -235,8 +225,6 @@ parser_scenarios = [
         {"ints": [10.0, 10.0, 10.0, 10.0]},
     ),
     EvalParserScenario(
-        # TODO: Add more tests of name inference:
-        # Which expression should it be based on?
         "numeric",
         "lf.select(pl.when(pl.col.ints > 3).then(pl.col.ints).otherwise(0))",
         {"ints": [0, 0, 0, 4]},

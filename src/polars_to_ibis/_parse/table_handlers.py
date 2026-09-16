@@ -12,7 +12,11 @@ from polars_to_ibis._utils import abbreviate, find
 
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
-from .value_handlers import polars_expr_to_ibis_value
+from .value_handlers import (
+    handle_binary_expr,
+    handle_function,
+    polars_expr_to_ibis_value,
+)
 
 PolarsPlan = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -131,16 +135,10 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 drop_args += names
             case (
                 tags.value.FUNCTION,
-                {
-                    "function": "FillNull",
-                    "input": [{tags.value.COLUMN: name, **extras_1}, expr],
-                    **extras_2,
-                },
+                payload,
             ):
-                assert_no_extras(extras_1, extras_2)
-                select_kwargs[name] = defer[name].fill_null(
-                    polars_expr_to_ibis_value(expr)
-                )
+                name = infer_name(col)
+                select_kwargs[name] = handle_function(payload)
             case (
                 tags.value.AGG,
                 expr,
@@ -158,8 +156,6 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             ):
                 assert_no_extras(extras_1)
                 target_name = infer_name(left_expr) or infer_name(right_expr)
-                from .value_handlers import handle_binary_expr
-
                 select_kwargs[target_name] = handle_binary_expr(payload)
             case (
                 tags.value.RENAME_ALIAS,
