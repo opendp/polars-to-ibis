@@ -230,7 +230,6 @@ def handle_ir(
 ) -> ir.Table:
     match payload:
         case {"dsl": _, "version": _, **extras_1}:
-            # TODO: Confirm behavior
             assert_no_extras(extras_1)
             return table
         case _:  # pragma: no cover
@@ -386,7 +385,7 @@ def handle_hstack(
             **extras_2,
         }:
             pass
-        case _:
+        case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
     updated_table = update_polars_to_ibis(input, table=table, backend=backend)
@@ -413,7 +412,7 @@ def handle_hstack(
                 updated_table = updated_table.mutate(
                     **{name: polars_expr_to_ibis_value(expr)}
                 )
-            case {"Literal": expr, **extras_1}:
+            case {tags.value.LITERAL: expr, **extras_1}:
                 assert_no_extras(extras_1)
                 updated_table = updated_table.mutate(
                     literal=polars_expr_to_ibis_value({"Literal": expr})

@@ -165,6 +165,7 @@ split_scenarios = [
         get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
     ),
     # TODO: Expand coverage.
+    # https://github.com/opendp/polars-to-ibis/issues/145
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
     # ),

@@ -55,7 +55,6 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
     }
     query = eval(scenario.expression, globals)
 
-    # TODO: Confirm that this is the interface we want.
     def helper_function_to_add_to_opendp(query, table_name, connection):
         query_lf = query.release().lazy()
 
@@ -85,8 +84,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
 
         # Use plugin_parameters:
 
-        # TODO: Probably replace with https://github.com/google/saferpickle
-        # ... but that is work that can be done in opendp, after porting.
+        # In opendp, replace with https://github.com/google/saferpickle.
         import pickle
 
         dp_results = []

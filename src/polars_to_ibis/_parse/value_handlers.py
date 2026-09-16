@@ -191,6 +191,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
         case {
             "function": {
                 # TODO: Add test case to exercise params.
+                # https://github.com/opendp/polars-to-ibis/issues/143
                 "Round": {"decimals": 0, "mode": "HalfToEven", **extras_1},
                 **extras_2,
             },
@@ -320,6 +321,7 @@ def handle_binary_expr(payload: PolarsPlan):
                 "Divide": truediv,
                 # TODO: Should this be "floordiv"?
                 # If not, what's the distinction in polars?
+                # https://github.com/opendp/polars-to-ibis/issues/144
                 "Modulus": mod,
                 "NotEq": ne,
                 "Eq": eq,

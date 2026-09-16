@@ -108,7 +108,13 @@ parser_scenarios = [
         "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
         {"literal": [-1, -1, -1, -1]},
     ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ints) FROM lf",
+        {"ints": [10]},
+    ),
     # TODO: This is the output from polars: Doesn't match output from ibis.
+    # https://github.com/opendp/polars-to-ibis/issues/142
     # SQLParserScenario(
     #     "numeric",
     #     "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
