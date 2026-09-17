@@ -71,17 +71,17 @@ def infer_name(expr):
         case {tags.value.COLUMN: name, **extras}:
             assert_no_extras(extras)
             return name
-        case _:
-            if isinstance(expr, list):
-                iter_over = range(len(expr))
-            elif isinstance(expr, dict):
-                iter_over = expr.keys()
-            else:
-                raise NotImplementedError(f"Neither dict nor list: {expr}")
 
-            for i_k in iter_over:
-                if name := infer_name(expr[i_k]):
-                    return name
+    if isinstance(expr, list):
+        iter_over = range(len(expr))
+    elif isinstance(expr, dict):
+        iter_over = expr.keys()
+    else:
+        raise NotImplementedError(f"Can't infer column name from {expr!r}")
+
+    for i_k in iter_over:
+        if name := infer_name(expr[i_k]):
+            return name
 
 
 def apply_select_expr(col_list: list[dict[str, Any]], input_table):
@@ -132,8 +132,40 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 tags.value.AGG,
                 expr,
             ):
-                name = infer_name(expr)
-                agg_kwargs[name] = polars_expr_to_ibis_value(expr)
+                match expr:
+                    case {
+                        "Count": {
+                            "input": {
+                                "Selector": {
+                                    "ByName": {
+                                        "names": names,
+                                        "strict": True,
+                                        **extras_1,
+                                    },
+                                    **extras_2,
+                                },
+                                **extras_3,
+                            },
+                            "include_nulls": False,
+                            **extras_4,
+                        },
+                        **extras_5,
+                    }:
+                        assert_no_extras(
+                            extras_1, extras_2, extras_3, extras_4, extras_5
+                        )
+                        for name in names:
+                            agg_kwargs[name] = polars_expr_to_ibis_value(
+                                {
+                                    "Count": {
+                                        "input": {"Column": name},
+                                        "include_nulls": False,
+                                    }
+                                }
+                            )
+                    case _:
+                        name = infer_name(expr)
+                        agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (
                 tags.value.BINARY_EXPR,
                 {

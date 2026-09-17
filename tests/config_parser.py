@@ -226,12 +226,12 @@ parser_scenarios = [
         "lf.select(pl.len())",
         {"len": [4]},
     ),
-    # TODO:
-    # EvalParserScenario(
-    #     "nan_null_inf",
-    #     "lf.select(pl.count('nan', 'null', 'inf'))",
-    #     {'inf': [2], 'nan': [2], 'null': [1]},
-    # ),
+    EvalParserScenario(
+        "nan_null_inf",
+        "lf.select(pl.count('nan', 'null', 'inf'))",
+        {"inf": [2], "nan": [2], "null": [1]},
+        alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
+    ),
     EvalParserScenario(
         "nan_null_inf",
         "lf.select(pl.col.nan.count(), pl.col.null.count(), pl.col.inf.count())",
