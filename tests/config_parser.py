@@ -234,8 +234,9 @@ parser_scenarios = [
     # ),
     EvalParserScenario(
         "nan_null_inf",
-        "lf.select(pl.col.null.count())",
-        {"null": [1]},
+        "lf.select(pl.col.nan.count(), pl.col.null.count(), pl.col.inf.count())",
+        {"nan": [2], "null": [1], "inf": [2]},
+        alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
     EvalParserScenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
