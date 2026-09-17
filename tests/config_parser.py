@@ -90,7 +90,10 @@ parser_scenarios = [
         "numeric",
         "SELECT CASE WHEN ints <= 3 THEN -1 END FROM lf",
         {"literal": [-1, -1, -1, None]},
-        alternative_results={"to_pandas": {"literal": [-1, -1, -1, NAN]}},
+        alternative_results={
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/147
+            "to_pandas": {"literal": [-1, -1, -1, NAN]},
+        },
     ),
     SQLParserScenario(
         "numeric",
@@ -101,7 +104,10 @@ parser_scenarios = [
         "numeric",
         "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
         {"literal": [-1, None, None, None]},
-        alternative_results={"to_pandas": {"literal": [-1, NAN, NAN, NAN]}},
+        alternative_results={
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/147
+            "to_pandas": {"literal": [-1, NAN, NAN, NAN]},
+        },
     ),
     SQLParserScenario(
         "numeric",
