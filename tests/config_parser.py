@@ -155,6 +155,12 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
+        "SELECT ROUND(floats * PI(), ints) FROM lf",
+        {},
+        polars_errors={"*": "invalid value for ROUND decimals (ints)"},
+    ),
+    SQLParserScenario(
+        "numeric",
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
         backend_errors={
