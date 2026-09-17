@@ -49,6 +49,16 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 # Value Handlers:
 
 
+# @value_handler(tags.value.COUNT)
+# def handle_count(payload: PolarsPlan):
+#     match payload:
+#         case {"input": expr, "include_nulls": True, **extras_1}:
+#             assert_no_extras(extras_1)
+#             return polars_expr_to_ibis_value(expr).count()
+#         case _:  # pragma: no cover
+#             raise NotImplementedError(f"Unsupported {tags.value.COUNT}")
+
+
 @value_handler(tags.value.LITERAL)
 def handle_literal(payload: PolarsPlan):
     match payload:

@@ -138,7 +138,9 @@ def _check_version():
 
 def scan_database(connection: Any, table_name: str) -> pl.LazyFrame:
     """
-    Get the schema from a database table and convert it to Polars.
+    Get the schema from a database table and convert it to a Polars LazyFrame.
+    If you already know the schema, or at least your columns of interest,
+    feel free to construct the LazyFrame yourself to avoid the database dependency.
     """
     ibis_schema = connection.get_schema(table_name)
     return pl.LazyFrame(schema=ibis_schema.to_polars())
