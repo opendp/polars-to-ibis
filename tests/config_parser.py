@@ -226,6 +226,11 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
+        "lf.select(div=pl.col.ints / 4, int_div=pl.col.ints // 4, mod=pl.col.ints % 4)",
+        {"div": [0.25, 0.5, 0.75, 1.0], "int_div": [0, 0, 0, 1], "mod": [1, 2, 3, 0]},
+    ),
+    EvalParserScenario(
+        "numeric",
         "lf.select(pl.col.floats / 2)",
         {"floats": [0.05, 0.1, 0.15, 0.2]},
     ),

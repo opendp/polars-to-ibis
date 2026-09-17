@@ -297,11 +297,12 @@ def handle_binary_expr(payload: PolarsPlan):
     match payload:
         case {"left": left, "op": op, "right": right, **extras}:
             assert_no_extras(extras)
-            from operator import (
+            from operator import (  # The is no plain "div":
                 __and__,
                 __or__,
                 add,
                 eq,
+                floordiv,
                 ge,
                 gt,
                 le,
@@ -317,11 +318,11 @@ def handle_binary_expr(payload: PolarsPlan):
                 "Plus": add,
                 "Minus": sub,
                 "Multiply": mul,
+                # I think "Divide" is only used when serializing Polars SQL.
+                # Python expr serializations use FloorDivide and TrueDivide.
+                "FloorDivide": floordiv,
                 "TrueDivide": truediv,
                 "Divide": truediv,
-                # TODO: Should this be "floordiv"?
-                # If not, what's the distinction in polars?
-                # https://github.com/opendp/polars-to-ibis/issues/144
                 "Modulus": mod,
                 "NotEq": ne,
                 "Eq": eq,
