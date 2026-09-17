@@ -78,6 +78,9 @@ NAN = approx(float("nan"), nan_ok=True)
 # This error message is generated upstream, and we can't change "can not".
 MYSQL_INF = "inf can not be used with MySQL"
 
+MYSQL_SYNTAX = "You have an error in your SQL syntax"
+POSTGRES_DECIMAL = "Could not convert Decimal"
+
 parser_scenarios = [
     SQLParserScenario(
         "numeric",
@@ -119,12 +122,12 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT SUM(ints) FROM lf",
-        {"ints": [10]},
+        "SELECT SUM(ints) AS sum_no_div FROM lf",
+        {"sum_no_div": [10]},
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT SUM(ints) / 1 as sum_div_1 FROM lf",
+        "SELECT SUM(ints) / 1 AS sum_div_1 FROM lf",
         {"sum_div_1": [10]},
         alternative_results={
             # TODO!
@@ -188,8 +191,8 @@ parser_scenarios = [
         {"literal": [math.pi]},
         backend_errors={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
+            "postgres+to_polars": POSTGRES_DECIMAL,
+            "postgres+to_pyarrow": POSTGRES_DECIMAL,
         },
     ),
     SQLParserScenario(
@@ -238,6 +241,12 @@ parser_scenarios = [
         "SELECT LOG2(ints) FROM lf limit 1",
         {"ints": [math.log(1)]},
     ),
+    # TODO: Seemed to cause an unrelated test to fail?
+    # EvalParserScenario(
+    #     "numeric",
+    #     "lf",
+    #     {'floats': [0.1, 0.2, 0.3, 0.4], 'ints': [1, 2, 3, 4]},
+    # ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
@@ -411,31 +420,31 @@ parser_scenarios = [
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit('ten!'))",
         {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
@@ -443,10 +452,10 @@ parser_scenarios = [
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
+            "postgres+to_polars": POSTGRES_DECIMAL,
+            "postgres+to_pyarrow": POSTGRES_DECIMAL,
         },
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
@@ -454,16 +463,16 @@ parser_scenarios = [
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
+            "postgres+to_polars": POSTGRES_DECIMAL,
+            "postgres+to_pyarrow": POSTGRES_DECIMAL,
         },
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=False)",
         {"ints": [1, 2, 3], "ten": [False, False, False]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "numeric",
@@ -499,7 +508,7 @@ parser_scenarios = [
         "select",
         "lf.select(plus_ten=(-pl.col('ints')) + 10)",
         {"plus_ten": [9, 8, 7]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "grouping",

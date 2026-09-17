@@ -357,6 +357,5 @@ def handle_binary_expr(payload: PolarsPlan):
             return func(
                 polars_expr_to_ibis_value(left), polars_expr_to_ibis_value(right)
             )
-            # return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.BINARY_EXPR}")
