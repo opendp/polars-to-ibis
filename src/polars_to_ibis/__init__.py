@@ -79,9 +79,17 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 - Ibis version: Tested against Ibis 11.0.0.
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
-  The best summary is the collection of [test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
+
+The best summary of supported features is the
+[test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
+
 ---
+
+### API Documentation
 """  # noqa: B950
+
+# Keep the "---" and "###" above: Improves the pdoc rendering.
+# Third-level headings are not added to the sidebar.
 
 from importlib.metadata import version
 from typing import Any
