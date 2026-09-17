@@ -226,6 +226,17 @@ parser_scenarios = [
         "lf.select(pl.len())",
         {"len": [4]},
     ),
+    # TODO:
+    # EvalParserScenario(
+    #     "nan_null_inf",
+    #     "lf.select(pl.count('nan', 'null', 'inf'))",
+    #     {'inf': [2], 'nan': [2], 'null': [1]},
+    # ),
+    # EvalParserScenario(
+    #     "nan_null_inf",
+    #     "lf.select(pl.col.null.count()",
+    #     {'null': [1]},
+    # ),
     EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
     EvalParserScenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
     EvalParserScenario(

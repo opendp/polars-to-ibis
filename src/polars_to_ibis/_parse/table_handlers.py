@@ -8,7 +8,7 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from polars_to_ibis._utils import abbreviate, find
+from polars_to_ibis._utils import abbreviate
 
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
@@ -132,7 +132,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 tags.value.AGG,
                 expr,
             ):
-                name = find(expr, tags.value.COLUMN)
+                name = infer_name(expr)
                 agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (
                 tags.value.BINARY_EXPR,

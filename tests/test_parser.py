@@ -122,33 +122,6 @@ def assert_approx_equal(
             {tags.table.SCAN: {"df": {}, "schema": {}}},
             "Unsupported Scan",
         ),
-        (
-            # When/if Count *is* supported, this test won't work.
-            {
-                tags.table.SELECT: {
-                    "expr": [
-                        {
-                            tags.value.AGG: {
-                                "Count": {
-                                    "include_nulls": False,
-                                    "input": {tags.value.SELECTOR: "Wildcard"},
-                                }
-                            }
-                        }
-                    ],
-                    "input": {
-                        tags.table.DATA_FRAME_SCAN: {"df": {}, "schema": {"fields": {}}}
-                    },
-                    "options": {
-                        "duplicate_check": True,
-                        "run_parallel": True,
-                        "should_broadcast": True,
-                    },
-                }
-            },
-            # Check that the input data structure is shown in error message.
-            "No value handler for 'Count'",
-        ),
     ],
     ids=lambda plan: str(plan),
 )
