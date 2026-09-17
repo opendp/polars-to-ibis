@@ -54,7 +54,9 @@ TABLE_REGISTRY: dict[str, ReturnsTable] = {}
 def table_handler(tag: str) -> Callable[..., ReturnsTable]:
     def deco(func: ReturnsTable) -> ReturnsTable:
         def wrapped_func(*args, **kwargs):
-            logger.debug(f"handle table {tag}:\n{abbreviate(args[0])} ")
+            if logger.isEnabledFor(logging.DEBUG):
+                # Just so we don't call abbreviate unless needed.
+                logger.debug(f"handle table {tag}:\n{abbreviate(args[0])} ")
             return func(*args, **kwargs)
 
         TABLE_REGISTRY[tag] = wrapped_func

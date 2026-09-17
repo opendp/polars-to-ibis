@@ -44,7 +44,9 @@ VALUE_REGISTRY: dict[str, ReturnsValue] = {}
 def value_handler(tag: str) -> Callable[..., ReturnsValue]:
     def deco(func: ReturnsValue) -> ReturnsValue:
         def wrapped_func(*args, **kwargs):
-            logger.debug(f"handle value {tag}:\n{abbreviate(args[0])} ")
+            if logger.isEnabledFor(logging.DEBUG):
+                # Just so we don't call abbreviate unless needed.
+                logger.debug(f"handle value {tag}:\n{abbreviate(args[0])} ")
             return func(*args, **kwargs)
 
         VALUE_REGISTRY[tag] = wrapped_func
