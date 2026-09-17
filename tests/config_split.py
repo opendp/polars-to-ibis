@@ -176,13 +176,13 @@ split_scenarios = [
     #         "AS ints FROM default_table AS t0",
     #     ),
     #     {
-    #         "ints": [
-    #             # TODO: There should only be one result, not four!
-    #             2.5,
-    #             2.5,
-    #             2.5,
-    #             2.5,
-    #         ]
+    #         # "ints": [
+    #         #     # TODO: There should only be one result, not four!
+    #         #     2.5,
+    #         #     2.5,
+    #         #     2.5,
+    #         #     2.5,
+    #         # ]
     #     },
     #     {},
     # ),
