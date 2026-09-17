@@ -159,6 +159,12 @@ parser_scenarios = [
         {},
         polars_errors={"*": "invalid value for ROUND decimals (ints)"},
     ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select((pl.col.floats * 3.14159).round(2, 'half_away_from_zero'))",
+        {"floats": [0.31, 0.63, 0.94, 1.26]},
+        convert_errors={"*": "Unsupported round mode: HalfAwayFromZero"},
+    ),
     SQLParserScenario(
         "numeric",
         "SELECT PI() FROM lf LIMIT 1",

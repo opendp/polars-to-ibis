@@ -190,13 +190,20 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             return polars_expr_to_ibis_value(expr).log(base)
         case {
             "function": {
-                "Round": {"decimals": decimals, "mode": "HalfToEven", **extras_1},
+                # Ibis does not support other rounding modes.
+                "Round": {"decimals": decimals, "mode": mode, **extras_1},
                 **extras_2,
             },
             "input": [expr],
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
+            default = "HalfToEven"
+            if mode != default:
+                raise NotImplementedError(
+                    f"Unsupported round mode: {mode}. "
+                    f"Only the default ({default}) is supported."
+                )
             return polars_expr_to_ibis_value(expr).round(decimals)
         case {
             "function": {"Pow": "Generic", **extras_1},
