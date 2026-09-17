@@ -150,6 +150,11 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
+        "SELECT ROUND(floats * PI(), 2) FROM lf",
+        {"floats": [0.31, 0.63, 0.94, 1.26]},
+    ),
+    SQLParserScenario(
+        "numeric",
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
         backend_errors={

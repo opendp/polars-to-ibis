@@ -190,16 +190,14 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             return polars_expr_to_ibis_value(expr).log(base)
         case {
             "function": {
-                # TODO: Add test case to exercise params.
-                # https://github.com/opendp/polars-to-ibis/issues/143
-                "Round": {"decimals": 0, "mode": "HalfToEven", **extras_1},
+                "Round": {"decimals": decimals, "mode": "HalfToEven", **extras_1},
                 **extras_2,
             },
             "input": [expr],
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
-            return polars_expr_to_ibis_value(expr).round()
+            return polars_expr_to_ibis_value(expr).round(decimals)
         case {
             "function": {"Pow": "Generic", **extras_1},
             "input": [left_expr, right_expr],
@@ -297,7 +295,7 @@ def handle_binary_expr(payload: PolarsPlan):
     match payload:
         case {"left": left, "op": op, "right": right, **extras}:
             assert_no_extras(extras)
-            from operator import (  # The is no plain "div":
+            from operator import (
                 __and__,
                 __or__,
                 add,
@@ -320,6 +318,7 @@ def handle_binary_expr(payload: PolarsPlan):
                 "Multiply": mul,
                 # I think "Divide" is only used when serializing Polars SQL.
                 # Python expr serializations use FloorDivide and TrueDivide.
+                # (There is no plain "div" operation in Python.)
                 "FloorDivide": floordiv,
                 "TrueDivide": truediv,
                 "Divide": truediv,
