@@ -147,6 +147,7 @@ parser_scenarios = [
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
         backend_errors={
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
@@ -382,7 +383,7 @@ parser_scenarios = [
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            # Providing a Polars type may avoid this error. See next scenario.
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
             "postgres+to_polars": "Could not convert Decimal",
             "postgres+to_pyarrow": "Could not convert Decimal",
         },
@@ -393,10 +394,9 @@ parser_scenarios = [
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            "postgres+to_polars+polars==1.36.1": "Could not convert Decimal",
-            "postgres+to_pyarrow+polars==1.36.1": "Could not convert Decimal",
-            "postgres+to_polars+polars==1.41.2": "Could not convert Decimal",
-            "postgres+to_pyarrow+polars==1.41.2": "Could not convert Decimal",
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
+            "postgres+to_polars": "Could not convert Decimal",
+            "postgres+to_pyarrow": "Could not convert Decimal",
         },
         connection_errors={"mysql": "You have an error in your SQL syntax"},
     ),

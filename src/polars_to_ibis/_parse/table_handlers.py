@@ -65,17 +65,6 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 def infer_name(expr):
     match expr:  # pragma: no cover
-        case {
-            tags.value.BINARY_EXPR: {
-                "left": left_expr,
-                "op": _op,  # noqa: F841 (unused)
-                "right": _right_expr,  # noqa: F841 (unused)
-                **extras_1,
-            },
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return infer_name(left_expr)
         case {tags.value.LITERAL: _, **extras}:
             assert_no_extras(extras)
             return "literal"
