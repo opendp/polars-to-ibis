@@ -75,6 +75,9 @@ class SQLParserScenario(BaseParserScenario):
 # (Normally, nan != nan.)
 NAN = approx(float("nan"), nan_ok=True)
 
+# This error message is generated upstream, and we can't change "can not".
+MYSQL_INF = "inf can not be used with MySQL"
+
 parser_scenarios = [
     SQLParserScenario(
         "numeric",
@@ -230,12 +233,14 @@ parser_scenarios = [
         "nan_null_inf",
         "lf.select(pl.count('nan', 'null', 'inf'))",
         {"inf": [2], "nan": [2], "null": [1]},
+        connection_errors={"mysql": MYSQL_INF},
         alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario(
         "nan_null_inf",
         "lf.select(pl.col.nan.count(), pl.col.null.count(), pl.col.inf.count())",
         {"nan": [2], "null": [1], "inf": [2]},
+        connection_errors={"mysql": MYSQL_INF},
         alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
@@ -536,8 +541,7 @@ parser_scenarios = [
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
-        # This error message is generated upstream, and we can't change "can not".
-        connection_errors={"mysql": (MYSQL_INF := "inf can not be used with MySQL")},
+        connection_errors={"mysql": MYSQL_INF},
     ),
     EvalParserScenario(
         "nan_null_inf",

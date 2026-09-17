@@ -52,8 +52,9 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 @value_handler(tags.value.COUNT)
 def handle_count(payload: PolarsPlan):
     match payload:
-        case {"input": expr, "include_nulls": False, **extras_1}:
+        case {"input": expr, "include_nulls": _include_nulls, **extras_1}:
             assert_no_extras(extras_1)
+            # TODO: Use include_nulls to add a where kwarg.
             return polars_expr_to_ibis_value(expr).count()
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.COUNT}")
