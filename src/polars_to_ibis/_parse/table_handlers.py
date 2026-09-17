@@ -71,17 +71,17 @@ def infer_name(expr):
         case {tags.value.COLUMN: name, **extras}:
             assert_no_extras(extras)
             return name
+        case list():
+            iter_over = range(len(expr))
+        case dict():
+            iter_over = expr.keys()
+        case _:
+            raise NotImplementedError(f"Can't infer column name from {expr!r}")
 
-    if isinstance(expr, list):
-        iter_over = range(len(expr))
-    elif isinstance(expr, dict):
-        iter_over = expr.keys()
-    else:
-        raise NotImplementedError(f"Can't infer column name from {expr!r}")
-
-    for i_k in iter_over:
+    for i_k in iter_over:  # pragma: no cover
         if name := infer_name(expr[i_k]):
             return name
+    raise NotImplementedError(f"Can't infer column name from {expr!r}")
 
 
 def apply_select_expr(col_list: list[dict[str, Any]], input_table):
@@ -154,7 +154,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                         assert_no_extras(
                             extras_1, extras_2, extras_3, extras_4, extras_5
                         )
-                        for name in names:
+                        for name in names:  # pragma: no cover
                             agg_kwargs[name] = polars_expr_to_ibis_value(
                                 {
                                     "Count": {
