@@ -2,6 +2,7 @@
 This is a private module: The API may change.
 """
 
+import logging
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
@@ -12,6 +13,8 @@ from polars_to_ibis._utils import abbreviate
 
 from . import tags
 from .utils import assert_no_extras, split_tag_payload
+
+logger = logging.getLogger(__name__)
 
 PolarsPlan = dict[str, Any]
 ReturnsTable = Callable[..., ir.Table]
@@ -40,7 +43,11 @@ VALUE_REGISTRY: dict[str, ReturnsValue] = {}
 
 def value_handler(tag: str) -> Callable[..., ReturnsValue]:
     def deco(func: ReturnsValue) -> ReturnsValue:
-        VALUE_REGISTRY[tag] = func
+        def wrapped_func(*args, **kwargs):
+            logger.debug(f"handle value {tag}:\n{abbreviate(args[0])} ")
+            return func(*args, **kwargs)
+
+        VALUE_REGISTRY[tag] = wrapped_func
         return func
 
     return deco

@@ -75,9 +75,8 @@ class SQLParserScenario(BaseParserScenario):
 # (Normally, nan != nan.)
 NAN = approx(float("nan"), nan_ok=True)
 
-# This error message is generated upstream, and we can't change "can not".
+# Error messages generated upstream: We don't control wording.
 MYSQL_INF = "inf can not be used with MySQL"
-
 MYSQL_SYNTAX = "You have an error in your SQL syntax"
 POSTGRES_DECIMAL = "Could not convert Decimal"
 

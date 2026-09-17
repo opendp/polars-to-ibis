@@ -43,6 +43,13 @@ At this point, tests should pass, and code coverage should be complete (except b
 $ uv run scripts/ci.sh
 ```
 
+The `ci.sh` script passes arguments through to `pytest`. For example, to run tests step-wise, skip mysql, and enable debug logging:
+```shell
+$ ./scripts/ci.sh -vv --sw \
+  -k 'not mysql' \
+  --log-cli-level=DEBUG \
+  --log-cli-format='%(levelname)s %(message)s'
+
 ### Release
 
 - Make one last feature branch with the new version number in the name:

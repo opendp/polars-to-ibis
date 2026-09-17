@@ -2,6 +2,7 @@
 This is a private module: The API may change.
 """
 
+import logging
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
@@ -17,6 +18,8 @@ from .value_handlers import (
     handle_function,
     polars_expr_to_ibis_value,
 )
+
+logger = logging.getLogger(__name__)
 
 PolarsPlan = dict[str, Any]
 NamedValue = tuple[str, ir.Value]
@@ -50,7 +53,11 @@ TABLE_REGISTRY: dict[str, ReturnsTable] = {}
 
 def table_handler(tag: str) -> Callable[..., ReturnsTable]:
     def deco(func: ReturnsTable) -> ReturnsTable:
-        TABLE_REGISTRY[tag] = func
+        def wrapped_func(*args, **kwargs):
+            logger.debug(f"handle table {tag}:\n{abbreviate(args[0])} ")
+            return func(*args, **kwargs)
+
+        TABLE_REGISTRY[tag] = wrapped_func
         return func
 
     return deco
@@ -101,7 +108,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 agg_kwargs["len"] = input_table.count()
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
-            case ("Alias", [expr, new_name]):
+            case (tags.value.ALIAS, [expr, new_name]):
                 ibis_value = polars_expr_to_ibis_value(expr)
                 if split_tag_payload(expr)[0] == tags.value.AGG:
                     agg_kwargs[new_name] = ibis_value.cast("float32")

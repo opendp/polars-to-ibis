@@ -4,6 +4,7 @@ This is a private module: The API may change.
 
 from collections import namedtuple
 from collections.abc import Callable
+from copy import deepcopy
 from pprint import pformat
 from typing import Any
 
@@ -115,6 +116,8 @@ def replace(
 
 
 def abbreviate(source: dict[str, Any]) -> str:
-    replace(source, "kwargs", lambda _: "...")
-    replace(source, tags.table.DATA_FRAME_SCAN, lambda _: "...")
-    return pformat(source)
+    source_copy = deepcopy(source)
+    replace(source_copy, "kwargs", lambda _: "...")
+    replace(source_copy, tags.table.DATA_FRAME_SCAN, lambda _: "...")
+    replace(source_copy, "df", lambda _: "...")
+    return pformat(source_copy)
