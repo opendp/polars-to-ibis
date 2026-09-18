@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 
 import ibis
 import opendp.prelude as dp
@@ -88,10 +89,21 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
         # In opendp, replace with https://github.com/google/saferpickle.
         import pickle
 
-        dp_results = []
+        # Just for tests, check that the param_dict is what we expect,
+        # before calling opendp functions.
         actual_parameters = []
-        for private_item, param_dict in zip(private_items, param_dicts):
+        for param_dict in param_dicts:
+            param_dict_copy = deepcopy(param_dict)
+            kwargs = pickle.loads(bytes(param_dict_copy["kwargs"]))
+            param_dict_copy["unpickled_kwargs"] = kwargs
+            del param_dict_copy["kwargs"]
+            param_dict_copy["lib"] = re.sub(r".*/", ".../", param_dict_copy["lib"])
+            actual_parameters.append(param_dict_copy)
 
+        assert actual_parameters == scenario.expected_parameters
+
+        dp_results = []
+        for private_item, param_dict in zip(private_items, param_dicts):
             kwargs = pickle.loads(bytes(param_dict["kwargs"]))
 
             match kwargs["support"]:
@@ -117,27 +129,21 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                         "Expected 'Laplace' or 'Gaussian', "
                         f"not {kwargs['distribution']}"
                     )
+
             measurement = make(*input_space, scale=kwargs["scale"])
 
-            # Put the pieces together:
-            dp_results.append(measurement(private_item))
+            dp_result = scenario.assert_error_or_return_value(
+                "opendp_errors",
+                backend_name,
+                None,
+                lambda: measurement(private_item),  # noqa: B023 (unbound variable)
+            )
 
-            # Extract parameters for testing:
-            # (Remove when porting to opendp.)
-            param_dict["unpickled_kwargs"] = kwargs
-            del param_dict["kwargs"]
-            param_dict["lib"] = re.sub(r".*/", ".../", param_dict["lib"])
-            actual_parameters.append(param_dict)
+            dp_results.append(dp_result)
 
-        return dp_results, actual_parameters
+        return dp_results
 
-    dp_results, actual_parameters = scenario.assert_error_or_return_value(
-        "opendp_errors",
-        backend_name,
-        None,
-        lambda: helper_function_to_add_to_opendp(query, TABLE_NAME, connection),
-    )
+    dp_results = helper_function_to_add_to_opendp(query, TABLE_NAME, connection)
 
-    assert actual_parameters == scenario.expected_parameters
     assert isinstance(dp_results, list)
     assert all(isinstance(result, (float, int)) for result in dp_results)

@@ -246,6 +246,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 if find(predicate_expr, tags.value.AGG):
                     # TODO: This cast seems arbitrary.
                     # Is it correct in general?
+                    # https://github.com/opendp/polars-to-ibis/issues/153
                     agg_kwargs[column_name] = ibis_value.cast("float32")
                 else:
                     select_kwargs[column_name] = ibis_value
