@@ -9,12 +9,7 @@ from polars_to_ibis._parse import tags
 from polars_to_ibis._parse.table_handlers import update_polars_to_ibis
 
 from .config_parser import BaseParserScenario, input_data, parser_scenarios
-from .utils import (
-    assert_error_or_return_value,
-    backend_names,
-    exporters,
-    get_connection,
-)
+from .utils import backend_names, exporters, get_connection
 
 
 @pytest.mark.parametrize(
@@ -34,9 +29,9 @@ def test_parser_scenarios(
     # Just in polars, no database involved, does the scenario have the expected output?
     frames_from_scenario = {"lf": pl.LazyFrame(input_data[scenario.category])}
 
-    polars_output = assert_error_or_return_value(
+    polars_output = scenario.assert_error_or_return_value(
         "polars_errors",
-        scenario.get_with_keys("polars_errors", *keys),
+        *keys,
         lambda: scenario.exec(frames_from_scenario).collect().to_dict(as_series=False),
     )
     assert polars_output == scenario.expected_output, "Typo in scenario?"
@@ -46,26 +41,26 @@ def test_parser_scenarios(
     input_df = pl.DataFrame(input_data[scenario.category])
     backend = getattr(ibis, backend_name)
 
-    connection = assert_error_or_return_value(
+    connection = scenario.assert_error_or_return_value(
         "connection_errors",
-        scenario.get_with_keys("connection_errors", *keys),
+        *keys,
         lambda: get_connection(input_df, table_name=table_name, backend=backend),
     )
 
     frames_from_db = {"lf": scan_database(connection, table_name)}
     lf = scenario.exec(frames_from_db)
 
-    ibis_table = assert_error_or_return_value(
+    ibis_table = scenario.assert_error_or_return_value(
         "convert_errors",
-        scenario.get_with_keys("convert_errors", *keys),
+        *keys,
         lambda: convert_polars_to_ibis(lf, table_name, backend=backend),
     )
 
     # Run query on target database:
     export = exporters[exporter_key]  # type: ignore
-    actual_output = assert_error_or_return_value(
-        "backend_error",
-        scenario.get_with_keys("backend_errors", *keys),
+    actual_output = scenario.assert_error_or_return_value(
+        "backend_errors",
+        *keys,
         lambda: export(connection, ibis_table),  # type: ignore
     )
 

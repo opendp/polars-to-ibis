@@ -1,11 +1,13 @@
 import dataclasses
 from typing import Any
 
+from .utils import BaseScenario
+
 TABLE_NAME = "default_table"
 
 
 @dataclasses.dataclass
-class SplitScenario:
+class SplitScenario(BaseScenario):
     expression: str
     expected_sql: str
     expected_result: dict[str, Any]

@@ -3,10 +3,9 @@ This is a private module: The API may change.
 """
 
 from collections import namedtuple
-from collections.abc import Callable
 from copy import deepcopy
 from pprint import pformat
-from typing import Any
+from typing import Any, Callable
 
 from ._parse import tags
 

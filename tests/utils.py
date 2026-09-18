@@ -7,18 +7,34 @@ import polars as pl
 import pytest
 
 
-def assert_error_or_return_value(
-    error_type: str, expected_error: str | None, func: Callable[[], Any]
-) -> Any:
-    if expected_error is not None:
-        with pytest.raises(Exception, match=re.escape(expected_error)):
-            func()
-        pytest.xfail(f"expected error: {expected_error}")
-    try:
-        result = func()
-    except Exception as e:  # pragma: no cover
-        pytest.fail(f"(If this is expected, add {error_type} to scenario.) {e}")
-    return result
+class BaseScenario:
+    def get_with_keys(self, errors_dict_name, backend_name, exporter_key):
+        errors_dict = getattr(self, errors_dict_name)
+        return (
+            errors_dict.get("*")
+            or errors_dict.get(f"polars=={pl.__version__}")
+            or errors_dict.get(backend_name)
+            or errors_dict.get(f"{backend_name}+{exporter_key}")
+            or errors_dict.get(exporter_key)
+        )
+
+    def assert_error_or_return_value(
+        self, errors_dict_name, backend_name, exporter_key, func: Callable[[], Any]
+    ) -> Any:
+        expected_error = self.get_with_keys(
+            errors_dict_name, backend_name, exporter_key
+        )
+        if expected_error is not None:
+            with pytest.raises(Exception, match=re.escape(expected_error)):
+                func()
+            pytest.xfail(f"expected error: {expected_error}")
+        try:
+            result = func()
+        except Exception as e:  # pragma: no cover
+            pytest.fail(
+                f"(If this is expected, add {errors_dict_name} to scenario.) {e}"
+            )
+        return result
 
 
 def get_connection(

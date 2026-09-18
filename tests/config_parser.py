@@ -11,6 +11,8 @@ from typing import Any
 import polars as pl
 from pytest import approx
 
+from .utils import BaseScenario
+
 input_data = {
     "numeric": {
         "ints": [1, 2, 3, 4],
@@ -45,7 +47,7 @@ Results = dict[str, list[Any]]
 
 
 @dataclasses.dataclass
-class BaseParserScenario(ABC):
+class BaseParserScenario(ABC, BaseScenario):
     category: str
     expression: str
     expected_output: Results
@@ -58,16 +60,6 @@ class BaseParserScenario(ABC):
 
     @abstractmethod
     def exec(self, named_frames): ...
-
-    def get_with_keys(self, errors_dict_name, backend_name, exporter_key):
-        errors_dict = getattr(self, errors_dict_name)
-        return (
-            errors_dict.get("*")
-            or errors_dict.get(f"polars=={pl.__version__}")
-            or errors_dict.get(backend_name)
-            or errors_dict.get(f"{backend_name}+{exporter_key}")
-            or errors_dict.get(exporter_key)
-        )
 
 
 class EvalParserScenario(BaseParserScenario):
