@@ -13,6 +13,7 @@ class SplitScenario(BaseScenario):
     expected_result: dict[str, Any]
     expected_parameters: dict[str, Any]
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    opendp_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
 
 
 def get_case_clause(table: str) -> str:
@@ -166,9 +167,16 @@ split_scenarios = [
         },
         get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
     ),
-    # TODO: Expand coverage.
-    # https://github.com/opendp/polars-to-ibis/issues/145
-    # SplitScenario(
-    #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
-    # ),
+    SplitScenario(
+        "context.query().select(pl.col.ints.dp.mean((0,10)))",
+        get_select_int_sum("t0").replace(
+            "AS ints", "/ COUNT(t0.ints) AS ints FROM default_table AS t0"
+        ),
+        {"ints": [2.5]},
+        # Shouldn't we have the same number of private items and parameters?
+        get_expected_parameters([(20.0, "Integer"), (2.0, "Integer")]),
+        # TODO: Fix error!
+        # https://github.com/opendp/polars-to-ibis/issues/145
+        opendp_errors={"*": "inferred type is f64, expected i32."},
+    ),
 ]

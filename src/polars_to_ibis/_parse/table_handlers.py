@@ -120,6 +120,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 if find(expr, tags.value.AGG):
                     # TODO: This cast seems arbitrary.
                     # Is it correct in general?
+                    # https://github.com/opendp/polars-to-ibis/issues/153
                     agg_kwargs[new_name] = ibis_value.cast("float32")
                 else:
                     select_kwargs[new_name] = ibis_value
@@ -186,16 +187,14 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                         agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (
                 tags.value.BINARY_EXPR,
-                {
-                    "left": left_expr,
-                    "op": _op,  # noqa: F841 (unused)
-                    "right": right_expr,
-                    **extras_1,
-                },
+                _,
             ):
-                assert_no_extras(extras_1)
-                target_name = infer_name(left_expr) or infer_name(right_expr)
-                select_kwargs[target_name] = handle_binary_expr(payload)
+                target_name = infer_name(payload)
+                ibis_value = handle_binary_expr(payload)
+                if find(payload, tags.value.AGG):
+                    agg_kwargs[target_name] = ibis_value
+                else:
+                    select_kwargs[target_name] = ibis_value
             case (
                 tags.value.RENAME_ALIAS,
                 {
@@ -247,6 +246,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 if find(predicate_expr, tags.value.AGG):
                     # TODO: This cast seems arbitrary.
                     # Is it correct in general?
+                    # https://github.com/opendp/polars-to-ibis/issues/153
                     agg_kwargs[column_name] = ibis_value.cast("float32")
                 else:
                     select_kwargs[column_name] = ibis_value
