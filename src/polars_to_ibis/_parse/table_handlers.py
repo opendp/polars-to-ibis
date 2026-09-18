@@ -9,7 +9,7 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from polars_to_ibis._utils import abbreviate
+from polars_to_ibis._utils import abbreviate, find
 
 from . import tags
 from .utils import assert_no_extras, indent, outdent, split_tag_payload
@@ -117,7 +117,11 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 select_kwargs[payload] = payload
             case (tags.value.ALIAS, [expr, new_name]):
                 ibis_value = polars_expr_to_ibis_value(expr)
-                if split_tag_payload(expr)[0] == tags.value.AGG:
+                if find(expr, tags.value.AGG):
+                    # TODO: find() is too general.
+                    # Just look for tags?
+                    # TODO: This cast seems arbitrary.
+                    # Is it correct in general?
                     agg_kwargs[new_name] = ibis_value.cast("float32")
                 else:
                     select_kwargs[new_name] = ibis_value

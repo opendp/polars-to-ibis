@@ -128,10 +128,6 @@ parser_scenarios = [
         "numeric",
         "SELECT SUM(ints) / 1 AS sum_div_1 FROM lf",
         {"sum_div_1": [10]},
-        alternative_results={
-            # TODO!
-            "*": {"sum_div_1": [10, 10, 10, 10]}
-        },
     ),
     # SQLParserScenario(
     #     "numeric",
