@@ -141,6 +141,11 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
+        "SELECT CASE WHEN ints > 1 THEN ints ELSE SUM(ints) END FROM lf",
+        {"ints": [10, 2, 3, 4]},
+    ),
+    SQLParserScenario(
+        "numeric",
         """
         SELECT CASE
         WHEN ints <= 1 THEN -1
