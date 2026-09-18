@@ -114,7 +114,7 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
-            return ibis.literal(polars_expr_to_ibis_value(expr)).cast(  # type: ignore
+            return polars_expr_to_ibis_value(expr).cast(  # type: ignore
                 dtype_literal.lower()
             )
         case _:  # pragma: no cover
