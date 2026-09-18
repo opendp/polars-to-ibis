@@ -81,10 +81,7 @@ def test_parser_scenarios(
         )
     else:
         expected_output = (
-            scenario.alternative_results.get("*")
-            or scenario.alternative_results.get(backend_name)
-            or scenario.alternative_results.get(f"{backend_name}+{exporter_key}")
-            or scenario.alternative_results.get(exporter_key)
+            scenario.get_with_keys("alternative_results", backend_name, exporter_key)
             or scenario.expected_output
         )
         assert (

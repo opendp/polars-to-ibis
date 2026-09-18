@@ -59,6 +59,15 @@ class BaseParserScenario(ABC):
     @abstractmethod
     def exec(self, named_frames): ...
 
+    def get_with_keys(self, errors_dict_name, backend_name, exporter_key):
+        errors_dict = getattr(self, errors_dict_name)
+        return (
+            errors_dict.get("*")
+            or errors_dict.get(backend_name)
+            or errors_dict.get(f"{backend_name}+{exporter_key}")
+            or errors_dict.get(exporter_key)
+        )
+
 
 class EvalParserScenario(BaseParserScenario):
     def exec(self, named_frames):
