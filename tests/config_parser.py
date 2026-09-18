@@ -254,6 +254,7 @@ parser_scenarios = [
         {"ints": [math.log(1)]},
     ),
     # TODO: Seemed to cause an unrelated test to fail?
+    # https://github.com/opendp/polars-to-ibis/issues/151
     # EvalParserScenario(
     #     "numeric",
     #     "lf",

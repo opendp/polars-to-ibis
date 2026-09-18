@@ -17,7 +17,7 @@ _logger_depth = 0
 
 def indent():  # pragma: no cover
     global _logger_depth
-    spaces = "    " * _logger_depth
+    spaces = " " * 4 * _logger_depth
     _logger_depth += 1
     return spaces
 
@@ -25,7 +25,7 @@ def indent():  # pragma: no cover
 def outdent():  # pragma: no cover
     global _logger_depth
     _logger_depth -= 1
-    return "    " * _logger_depth
+    return " " * 4 * _logger_depth
 
 
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
