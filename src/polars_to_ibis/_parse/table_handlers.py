@@ -240,12 +240,18 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             ):
                 assert_no_extras(extras_1)
                 column_name = infer_name(truthy_expr)
-                select_kwargs[column_name] = polars_expr_to_ibis_value(
-                    predicate_expr
-                ).ifelse(
+                ibis_value = polars_expr_to_ibis_value(predicate_expr).ifelse(
                     polars_expr_to_ibis_value(truthy_expr),
                     polars_expr_to_ibis_value(falsy_expr),
                 )
+                if find(predicate_expr, tags.value.AGG):
+                    # TODO: find() is too general.
+                    # Just look for tags?
+                    # TODO: This cast seems arbitrary.
+                    # Is it correct in general?
+                    agg_kwargs[column_name] = ibis_value.cast("float32")
+                else:
+                    select_kwargs[column_name] = ibis_value
             case _:  # pragma: no cover
                 raise NotImplementedError(f"Unsupported select expr {tag}")
 

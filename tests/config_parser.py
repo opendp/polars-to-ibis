@@ -134,13 +134,11 @@ parser_scenarios = [
     #     "SELECT SUM(ints) / CAST(COUNT(ints) AS FLOAT) AS mean_by_division FROM lf",
     #     {'mean_by_division': [2.5]},
     # ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # https://github.com/opendp/polars-to-ibis/issues/142
-    # SQLParserScenario(
-    #     "numeric",
-    #     "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
-    #     {"literal": [-1]},
-    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
+        {"literal": [-1]},
+    ),
     SQLParserScenario(
         "numeric",
         """
