@@ -269,6 +269,8 @@ parser_scenarios = [
         "lf.select(pl.count('nan', 'null', 'inf'))",
         {"inf": [2], "nan": [2], "null": [1]},
         connection_errors={"mysql": MYSQL_INF},
+        # TODO: sqlite treats nan as null and excludes from count
+        # https://github.com/opendp/polars-to-ibis/issues/150
         alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario(
@@ -276,6 +278,8 @@ parser_scenarios = [
         "lf.select(pl.col.nan.count(), pl.col.null.count(), pl.col.inf.count())",
         {"nan": [2], "null": [1], "inf": [2]},
         connection_errors={"mysql": MYSQL_INF},
+        # TODO: sqlite treats nan as null and excludes from count
+        # https://github.com/opendp/polars-to-ibis/issues/150
         alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),

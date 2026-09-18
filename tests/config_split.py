@@ -170,22 +170,5 @@ split_scenarios = [
     # https://github.com/opendp/polars-to-ibis/issues/145
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
-    #     get_select_int_sum("t0").replace(
-    #         "AS ints",
-    #         "OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) "
-    #         "/ COUNT(t0.ints) "
-    #         "OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) "
-    #         "AS ints FROM default_table AS t0",
-    #     ),
-    #     {
-    #         # "ints": [
-    #         #     # TODO: There should only be one result, not four!
-    #         #     2.5,
-    #         #     2.5,
-    #         #     2.5,
-    #         #     2.5,
-    #         # ]
-    #     },
-    #     {},
     # ),
 ]

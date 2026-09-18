@@ -118,8 +118,6 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             case (tags.value.ALIAS, [expr, new_name]):
                 ibis_value = polars_expr_to_ibis_value(expr)
                 if find(expr, tags.value.AGG):
-                    # TODO: find() is too general.
-                    # Just look for tags?
                     # TODO: This cast seems arbitrary.
                     # Is it correct in general?
                     agg_kwargs[new_name] = ibis_value.cast("float32")
@@ -172,6 +170,8 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                         assert_no_extras(
                             extras_1, extras_2, extras_3, extras_4, extras_5
                         )
+                        # Pull names from deep in the polars expr,
+                        # and make each a high-level agg in ibis.
                         for name in names:  # pragma: no cover
                             agg_kwargs[name] = polars_expr_to_ibis_value(
                                 {
@@ -245,8 +245,6 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                     polars_expr_to_ibis_value(falsy_expr),
                 )
                 if find(predicate_expr, tags.value.AGG):
-                    # TODO: find() is too general.
-                    # Just look for tags?
                     # TODO: This cast seems arbitrary.
                     # Is it correct in general?
                     agg_kwargs[column_name] = ibis_value.cast("float32")

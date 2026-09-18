@@ -73,6 +73,7 @@ def handle_count(payload: PolarsPlan):
         }:
             assert_no_extras(extras_1)
             # TODO: Use include_nulls to add a where kwarg.
+            # https://github.com/opendp/polars-to-ibis/issues/149
             return polars_expr_to_ibis_value(expr).count()
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.COUNT}")
