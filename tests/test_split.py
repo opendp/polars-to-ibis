@@ -102,6 +102,9 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
 
         assert actual_parameters == scenario.expected_parameters
 
+        # TODO: Enable once it works!
+        # assert len(private_items) == len(param_dicts)
+
         dp_results = []
         for private_item, param_dict in zip(private_items, param_dicts):
             kwargs = pickle.loads(bytes(param_dict["kwargs"]))

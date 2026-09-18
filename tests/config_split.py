@@ -173,7 +173,7 @@ split_scenarios = [
             "AS ints", "/ COUNT(t0.ints) AS ints FROM default_table AS t0"
         ),
         {"ints": [2.5]},
-        # Not sure these are actually what we want!
+        # Shouldn't we have the same number of private items and parameters?
         get_expected_parameters([(20.0, "Integer"), (2.0, "Integer")]),
         # TODO: Fix error!
         # https://github.com/opendp/polars-to-ibis/issues/145
