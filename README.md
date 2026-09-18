@@ -43,13 +43,7 @@ At this point, tests should pass, and code coverage should be complete (except b
 $ uv run scripts/ci.sh
 ```
 
-The `ci.sh` script passes arguments through to `pytest`. For example, to run tests step-wise, skip mysql, and enable debug logging:
-```shell
-$ ./scripts/ci.sh -vv --sw \
-  -k 'not mysql' \
-  --log-cli-level=DEBUG \
-  --log-cli-format='%(levelname)s %(message)s'
-```
+The `debug.sh` script may also be helpful: It runs tests step-wise with debug logging. Both `debug.sh` and `ci.sh` pass extra parameters through to pytest.
 
 ### Release
 

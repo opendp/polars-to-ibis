@@ -173,9 +173,9 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
-        "SELECT SUM(ROUND(floats * 2)), ints FROM lf",
-        {"floats": [2, 2, 2, 2], "ints": [1, 2, 3, 4]},
-        # TODO: Fix bug!
+        "SELECT SUM(floats) AS agg, ints AS not_agg FROM lf",
+        {"agg": [1, 1, 1, 1], "not_agg": [1, 2, 3, 4]},
+        # TODO: https://github.com/opendp/polars-to-ibis/issues/148
         convert_errors={"*": "Column 'floats' is not found in table."},
     ),
     SQLParserScenario(
