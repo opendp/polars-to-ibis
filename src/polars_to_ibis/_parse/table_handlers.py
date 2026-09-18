@@ -187,14 +187,8 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                         agg_kwargs[name] = polars_expr_to_ibis_value(expr)
             case (
                 tags.value.BINARY_EXPR,
-                {
-                    "left": left_expr,
-                    "op": _op,  # noqa: F841 (unused)
-                    "right": right_expr,
-                    **extras_1,
-                },
+                _,
             ):
-                assert_no_extras(extras_1)
                 target_name = infer_name(payload)
                 ibis_value = handle_binary_expr(payload)
                 if find(payload, tags.value.AGG):
