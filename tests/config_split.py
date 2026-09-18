@@ -1,11 +1,13 @@
 import dataclasses
 from typing import Any
 
+from .utils import BaseScenario
+
 TABLE_NAME = "default_table"
 
 
 @dataclasses.dataclass
-class SplitScenario:
+class SplitScenario(BaseScenario):
     expression: str
     expected_sql: str
     expected_result: dict[str, Any]
@@ -165,6 +167,7 @@ split_scenarios = [
         get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
     ),
     # TODO: Expand coverage.
+    # https://github.com/opendp/polars-to-ibis/issues/145
     # SplitScenario(
     #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
     # ),

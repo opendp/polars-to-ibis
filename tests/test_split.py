@@ -8,7 +8,7 @@ import pytest
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
 from .config_split import TABLE_NAME, SplitScenario, split_scenarios
-from .utils import assert_error_or_none, backend_names, get_connection
+from .utils import backend_names, get_connection
 
 
 def norm_sql(sql: str):
@@ -55,7 +55,6 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
     }
     query = eval(scenario.expression, globals)
 
-    # TODO: Confirm that this is the interface we want.
     def helper_function_to_add_to_opendp(query, table_name, connection):
         query_lf = query.release().lazy()
 
@@ -67,9 +66,10 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
         )
 
         # Use ibis_table:
-        private_result = assert_error_or_none(
-            "backend_error",
-            scenario.backend_errors.get(backend_name),
+        private_result = scenario.assert_error_or_return_value(
+            "backend_errors",
+            backend_name,
+            None,
             lambda: connection.to_polars(ibis_table).to_dict(as_series=False),
         )
         # For now, assume result dataframe is only a single row,
@@ -85,8 +85,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
 
         # Use plugin_parameters:
 
-        # TODO: Probably replace with https://github.com/google/saferpickle
-        # ... but that is work that can be done in opendp, after porting.
+        # In opendp, replace with https://github.com/google/saferpickle.
         import pickle
 
         dp_results = []

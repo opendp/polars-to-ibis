@@ -2,6 +2,7 @@
 This is a private module: The API may change.
 """
 
+import logging
 from typing import Any, Callable
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
@@ -11,7 +12,9 @@ from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 from polars_to_ibis._utils import abbreviate
 
 from . import tags
-from .utils import assert_no_extras, split_tag_payload
+from .utils import assert_no_extras, indent, outdent, split_tag_payload
+
+logger = logging.getLogger(__name__)
 
 PolarsPlan = dict[str, Any]
 ReturnsTable = Callable[..., ir.Table]
@@ -40,13 +43,40 @@ VALUE_REGISTRY: dict[str, ReturnsValue] = {}
 
 def value_handler(tag: str) -> Callable[..., ReturnsValue]:
     def deco(func: ReturnsValue) -> ReturnsValue:
-        VALUE_REGISTRY[tag] = func
+        def wrapped_func(*args, **kwargs):
+            if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
+                # Just so we don't call abbreviate unless needed.
+                logger.debug(
+                    f"{indent()}--> polars value {tag}:\n{abbreviate(args[0])} "
+                )
+            to_return = func(*args, **kwargs)
+            if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
+                logger.debug(f"{outdent()}<-- ibis value:\n{to_return}")
+            return to_return
+
+        VALUE_REGISTRY[tag] = wrapped_func
         return func
 
     return deco
 
 
 # Value Handlers:
+
+
+@value_handler(tags.value.COUNT)
+def handle_count(payload: PolarsPlan):
+    match payload:
+        case {
+            "input": expr,
+            "include_nulls": _include_nulls,  # noqa: F841 (unused)
+            **extras_1,
+        }:
+            assert_no_extras(extras_1)
+            # TODO: Use include_nulls to add a where kwarg.
+            # https://github.com/opendp/polars-to-ibis/issues/149
+            return polars_expr_to_ibis_value(expr).count()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.value.COUNT}")
 
 
 @value_handler(tags.value.LITERAL)
@@ -63,6 +93,9 @@ def handle_literal(payload: PolarsPlan):
         case {"Scalar": {"String": value, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return ibis.literal(value)  # pyright: ignore[reportUnknownMemberType]
+        case {"Scalar": {"Null": "Null", **extras_1}, **extras_2}:
+            assert_no_extras(extras_1, extras_2)
+            return None
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.LITERAL}")
 
@@ -82,7 +115,7 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
-            return ibis.literal(polars_expr_to_ibis_value(expr)).cast(  # type: ignore
+            return polars_expr_to_ibis_value(expr).cast(  # type: ignore
                 dtype_literal.lower()
             )
         case _:  # pragma: no cover
@@ -171,6 +204,37 @@ def handle_agg(payload: PolarsPlan):
 @value_handler(tags.value.FUNCTION)
 def handle_function(payload: PolarsPlan) -> ir.Value:
     match payload:
+        case {
+            "function": {"Trigonometry": "Degrees", **extras_1},
+            "input": [expr],
+            **extras_2,
+        }:
+            return polars_expr_to_ibis_value(expr).degrees()
+        case {
+            "function": "Log",
+            "input": [expr, base_expr],
+            **extras_1,
+        }:
+            assert_no_extras(extras_1)
+            base = polars_expr_to_ibis_value(base_expr)
+            return polars_expr_to_ibis_value(expr).log(base)
+        case {
+            "function": {
+                # Ibis does not support other rounding modes.
+                "Round": {"decimals": decimals, "mode": mode, **extras_1},
+                **extras_2,
+            },
+            "input": [expr],
+            **extras_3,
+        }:
+            assert_no_extras(extras_1, extras_2, extras_3)
+            default = "HalfToEven"
+            if mode != default:
+                raise NotImplementedError(
+                    f"Unsupported round mode: {mode}. "
+                    f"Only the default ({default}) is supported."
+                )
+            return polars_expr_to_ibis_value(expr).round(decimals)
         case {
             "function": {"Pow": "Generic", **extras_1},
             "input": [left_expr, right_expr],
@@ -273,6 +337,7 @@ def handle_binary_expr(payload: PolarsPlan):
                 __or__,
                 add,
                 eq,
+                floordiv,
                 ge,
                 gt,
                 le,
@@ -288,7 +353,12 @@ def handle_binary_expr(payload: PolarsPlan):
                 "Plus": add,
                 "Minus": sub,
                 "Multiply": mul,
+                # I think "Divide" is only used when serializing Polars SQL.
+                # Python expr serializations use FloorDivide and TrueDivide.
+                # (There is no plain "div" operation in Python.)
+                "FloorDivide": floordiv,
                 "TrueDivide": truediv,
+                "Divide": truediv,
                 "Modulus": mod,
                 "NotEq": ne,
                 "Eq": eq,
@@ -302,6 +372,5 @@ def handle_binary_expr(payload: PolarsPlan):
             return func(
                 polars_expr_to_ibis_value(left), polars_expr_to_ibis_value(right)
             )
-            # return polars_expr_to_ibis_value(left) + polars_expr_to_ibis_value(right)
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.BINARY_EXPR}")

@@ -43,6 +43,8 @@ At this point, tests should pass, and code coverage should be complete (except b
 $ uv run scripts/ci.sh
 ```
 
+The `debug.sh` script may also be helpful: It runs tests step-wise with debug logging. Both `debug.sh` and `ci.sh` pass extra parameters through to pytest.
+
 ### Release
 
 - Make one last feature branch with the new version number in the name:

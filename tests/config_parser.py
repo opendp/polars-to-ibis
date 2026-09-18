@@ -11,6 +11,8 @@ from typing import Any
 import polars as pl
 from pytest import approx
 
+from .utils import BaseScenario
+
 input_data = {
     "numeric": {
         "ints": [1, 2, 3, 4],
@@ -45,7 +47,7 @@ Results = dict[str, list[Any]]
 
 
 @dataclasses.dataclass
-class BaseParserScenario(ABC):
+class BaseParserScenario(ABC, BaseScenario):
     category: str
     expression: str
     expected_output: Results
@@ -75,61 +77,86 @@ class SQLParserScenario(BaseParserScenario):
 # (Normally, nan != nan.)
 NAN = approx(float("nan"), nan_ok=True)
 
+# Error messages generated upstream: We don't control wording.
+MYSQL_INF = "inf can not be used with MySQL"
+MYSQL_SYNTAX = "You have an error in your SQL syntax"
+POSTGRES_DECIMAL = "Could not convert Decimal"
+
 parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT 1 + ints / floats FROM lf",
         {"literal": [11, 11, 11, 11]},
-        convert_errors={"*": "Unsupported select expr BinaryExpr"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
         "SELECT 42 AS fortytwo FROM lf",
         {"fortytwo": [42, 42, 42, 42]},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
         "SELECT CASE WHEN ints <= 3 THEN -1 END FROM lf",
         {"literal": [-1, -1, -1, None]},
-        convert_errors={"*": "Unsupported Literal"},  # TODO
+        alternative_results={
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/147
+            "to_pandas": {"literal": [-1, -1, -1, NAN]},
+        },
     ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
-    #     {"literal": [-1, 100, 100, 100]},
-    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN ints <= 1 THEN -1 ELSE 100 END FROM lf",
+        {"literal": [-1, 100, 100, 100]},
+    ),
     SQLParserScenario(
         "numeric",
         "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
         {"literal": [-1, None, None, None]},
-        convert_errors={"*": "Unsupported Literal"},  # TODO
+        alternative_results={
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/147
+            "to_pandas": {"literal": [-1, NAN, NAN, NAN]},
+        },
     ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
-    #     {"literal": [-1, -1, -1, -1]},
-    # ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
-    #     {"literal": [-1]},
-    # ),
-    # TODO: This is the output from polars: Doesn't match output from ibis.
-    # SQLParserScenario(
-    #     "numeric",
-    #     """
-    #     SELECT CASE
-    #     WHEN ints <= 1 THEN -1
-    #     WHEN ints > 1 AND ints <= 3 then 0
-    #     ELSE 1
-    #     END FROM lf
-    #     """,
-    #     {"literal": [-1, 0, 0, 1]},
-    # ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE ints WHEN ints THEN -1 ELSE 100 END FROM lf",
+        {"literal": [-1, -1, -1, -1]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ints) AS sum_no_div FROM lf",
+        {"sum_no_div": [10]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ints) / 1 AS sum_div_1 FROM lf",
+        {"sum_div_1": [10]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ints) / CAST(COUNT(ints) AS FLOAT) AS mean_by_division FROM lf",
+        {"mean_by_division": [2.5]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
+        {"literal": [-1]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT CASE WHEN ints > 1 THEN ints ELSE SUM(ints) END FROM lf",
+        {"ints": [10, 2, 3, 4]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        """
+        SELECT CASE
+        WHEN ints <= 1 THEN -1
+        WHEN ints > 1 AND ints <= 3 then 0
+        ELSE 1
+        END FROM lf
+        """,
+        {"literal": [-1, 0, 0, 1]},
+    ),
     SQLParserScenario(
         "numeric",
         "SELECT IIF(ints > 2, 'Big', 'Small') AS size FROM lf",
@@ -140,25 +167,50 @@ parser_scenarios = [
         "numeric",
         "SELECT ROUND(floats * 2) FROM lf",
         {"floats": [0.0, 0.0, 1.0, 1.0]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ROUND(floats * 2)) FROM lf",
+        {"floats": [2]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(floats) AS agg, ints AS not_agg FROM lf",
+        {"agg": [1, 1, 1, 1], "not_agg": [1, 2, 3, 4]},
+        # TODO: https://github.com/opendp/polars-to-ibis/issues/148
+        convert_errors={"*": "Column 'floats' is not found in table."},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT ROUND(floats * PI(), 2) FROM lf",
+        {"floats": [0.31, 0.63, 0.94, 1.26]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT ROUND(floats * PI(), ints) FROM lf",
+        {},
+        polars_errors={"*": "invalid value for ROUND decimals (ints)"},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select((pl.col.floats * 3.14159).round(2, 'half_away_from_zero'))",
+        {"floats": [0.31, 0.63, 0.94, 1.26]},
+        convert_errors={"*": "Unsupported round mode: HalfAwayFromZero"},
     ),
     SQLParserScenario(
         "numeric",
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
+        backend_errors={
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
+            "postgres+to_polars": POSTGRES_DECIMAL,
+            "postgres+to_pyarrow": POSTGRES_DECIMAL,
+        },
     ),
     SQLParserScenario(
         "numeric",
         "SELECT DEGREES(ints) FROM lf LIMIT 1",
         {"ints": [180 / math.pi]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
-    ),
-    SQLParserScenario(
-        "numeric",
-        "SELECT DEGREES(ints) FROM lf LIMIT 1",
-        {"ints": [180 / math.pi]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
@@ -175,7 +227,6 @@ parser_scenarios = [
         "numeric",
         "SELECT '' AS empty, '\"' AS dquote FROM lf LIMIT 1",
         {"empty": [""], "dquote": ['"']},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
@@ -191,24 +242,46 @@ parser_scenarios = [
         "numeric",
         "SELECT '日本' AS japan FROM lf limit 1",
         {"japan": ["日本"]},
-        convert_errors={"*": "Unsupported HStack"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
         "SELECT LN(ints) FROM lf limit 1",
         {"ints": [math.log(1)]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
     SQLParserScenario(
         "numeric",
         "SELECT LOG2(ints) FROM lf limit 1",
         {"ints": [math.log(1)]},
-        convert_errors={"*": "Unsupported select expr Function"},  # TODO
     ),
+    # TODO: Seemed to cause an unrelated test to fail?
+    # https://github.com/opendp/polars-to-ibis/issues/151
+    # EvalParserScenario(
+    #     "numeric",
+    #     "lf",
+    #     {'floats': [0.1, 0.2, 0.3, 0.4], 'ints': [1, 2, 3, 4]},
+    # ),
     EvalParserScenario(
         "numeric",
         "lf.select(pl.len())",
         {"len": [4]},
+    ),
+    EvalParserScenario(
+        "nan_null_inf",
+        "lf.select(pl.count('nan', 'null', 'inf'))",
+        {"inf": [2], "nan": [2], "null": [1]},
+        connection_errors={"mysql": MYSQL_INF},
+        # TODO: sqlite treats nan as null and excludes from count
+        # https://github.com/opendp/polars-to-ibis/issues/150
+        alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
+    ),
+    EvalParserScenario(
+        "nan_null_inf",
+        "lf.select(pl.col.nan.count(), pl.col.null.count(), pl.col.inf.count())",
+        {"nan": [2], "null": [1], "inf": [2]},
+        connection_errors={"mysql": MYSQL_INF},
+        # TODO: sqlite treats nan as null and excludes from count
+        # https://github.com/opendp/polars-to-ibis/issues/150
+        alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
     EvalParserScenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
@@ -227,6 +300,11 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
+        "lf.select(div=pl.col.ints / 4, int_div=pl.col.ints // 4, mod=pl.col.ints % 4)",
+        {"div": [0.25, 0.5, 0.75, 1.0], "int_div": [0, 0, 0, 1], "mod": [1, 2, 3, 0]},
+    ),
+    EvalParserScenario(
+        "numeric",
         "lf.select(pl.col.floats / 2)",
         {"floats": [0.05, 0.1, 0.15, 0.2]},
     ),
@@ -241,8 +319,6 @@ parser_scenarios = [
         {"ints": [10.0, 10.0, 10.0, 10.0]},
     ),
     EvalParserScenario(
-        # TODO: Add more tests of name inference:
-        # Which expression should it be based on?
         "numeric",
         "lf.select(pl.when(pl.col.ints > 3).then(pl.col.ints).otherwise(0))",
         {"ints": [0, 0, 0, 4]},
@@ -361,60 +437,59 @@ parser_scenarios = [
         "select",
         "lf.select('ints')",
         {"ints": [1, 2, 3]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.drop(['strs', 'bools', 'bytes'])",
         {"ints": [1, 2, 3]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select(new_name='ints')",
         {"new_name": [1, 2, 3]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=10)",
         {"ints": [1, 2, 3], "ten": [10, 10, 10]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit('ten!'))",
         {"ints": [1, 2, 3], "ten": ["ten!", "ten!", "ten!"]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            # Providing a Polars type may avoid this error. See next scenario.
-            "postgres+to_polars": "Could not convert Decimal",
-            "postgres+to_pyarrow": "Could not convert Decimal",
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
+            "postgres+to_polars": POSTGRES_DECIMAL,
+            "postgres+to_pyarrow": POSTGRES_DECIMAL,
         },
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
         backend_errors={
-            "postgres+to_polars+polars==1.36.1": "Could not convert Decimal",
-            "postgres+to_pyarrow+polars==1.36.1": "Could not convert Decimal",
-            "postgres+to_polars+polars==1.41.2": "Could not convert Decimal",
-            "postgres+to_pyarrow+polars==1.41.2": "Could not convert Decimal",
+            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
+            "postgres+to_polars": POSTGRES_DECIMAL,
+            "postgres+to_pyarrow": POSTGRES_DECIMAL,
         },
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=False)",
         {"ints": [1, 2, 3], "ten": [False, False, False]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "numeric",
@@ -450,7 +525,7 @@ parser_scenarios = [
         "select",
         "lf.select(plus_ten=(-pl.col('ints')) + 10)",
         {"plus_ten": [9, 8, 7]},
-        connection_errors={"mysql": "You have an error in your SQL syntax"},
+        connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "grouping",
@@ -506,8 +581,7 @@ parser_scenarios = [
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
         {"null": [0.0, 111.0]},
-        # This error message is generated upstream, and we can't change "can not".
-        connection_errors={"mysql": (MYSQL_INF := "inf can not be used with MySQL")},
+        connection_errors={"mysql": MYSQL_INF},
     ),
     EvalParserScenario(
         "nan_null_inf",
