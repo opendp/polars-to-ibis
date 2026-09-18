@@ -131,8 +131,11 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
 
         return dp_results, actual_parameters
 
-    dp_results, actual_parameters = helper_function_to_add_to_opendp(
-        query, TABLE_NAME, connection
+    dp_results, actual_parameters = scenario.assert_error_or_return_value(
+        "opendp_errors",
+        backend_name,
+        None,
+        lambda: helper_function_to_add_to_opendp(query, TABLE_NAME, connection),
     )
 
     assert actual_parameters == scenario.expected_parameters
