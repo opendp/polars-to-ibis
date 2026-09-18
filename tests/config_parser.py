@@ -63,6 +63,7 @@ class BaseParserScenario(ABC):
         errors_dict = getattr(self, errors_dict_name)
         return (
             errors_dict.get("*")
+            or errors_dict.get(f"polars=={pl.__version__}")
             or errors_dict.get(backend_name)
             or errors_dict.get(f"{backend_name}+{exporter_key}")
             or errors_dict.get(exporter_key)

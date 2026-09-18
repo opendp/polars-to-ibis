@@ -7,7 +7,7 @@ import polars as pl
 import pytest
 
 
-def assert_error_or_none(
+def assert_error_or_return_value(
     error_type: str, expected_error: str | None, func: Callable[[], Any]
 ) -> Any:
     if expected_error is not None:
