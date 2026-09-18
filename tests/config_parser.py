@@ -168,6 +168,18 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "numeric",
+        "SELECT SUM(ROUND(floats * 2)) FROM lf",
+        {"floats": [2]},
+    ),
+    SQLParserScenario(
+        "numeric",
+        "SELECT SUM(ROUND(floats * 2)), ints FROM lf",
+        {"floats": [2, 2, 2, 2], "ints": [1, 2, 3, 4]},
+        # TODO: Fix bug!
+        convert_errors={"*": "Column 'floats' is not found in table."},
+    ),
+    SQLParserScenario(
+        "numeric",
         "SELECT ROUND(floats * PI(), 2) FROM lf",
         {"floats": [0.31, 0.63, 0.94, 1.26]},
     ),
