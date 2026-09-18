@@ -12,6 +12,22 @@ ReturnsTable = Callable[..., ir.Table]
 ReturnsValue = Callable[..., NamedValue]
 
 
+_logger_depth = 0
+
+
+def indent():
+    global _logger_depth
+    spaces = "    " * _logger_depth
+    _logger_depth += 1
+    return spaces
+
+
+def outdent():
+    global _logger_depth
+    _logger_depth -= 1
+    return "    " * _logger_depth
+
+
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
     if polars_plan == "Len":
         return ("Len", None)

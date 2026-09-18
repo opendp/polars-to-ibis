@@ -49,6 +49,7 @@ $ ./scripts/ci.sh -vv --sw \
   -k 'not mysql' \
   --log-cli-level=DEBUG \
   --log-cli-format='%(levelname)s %(message)s'
+```
 
 ### Release
 

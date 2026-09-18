@@ -119,5 +119,4 @@ def abbreviate(source: dict[str, Any]) -> str:
     source_copy = deepcopy(source)
     replace(source_copy, "kwargs", lambda _: "...")
     replace(source_copy, tags.table.DATA_FRAME_SCAN, lambda _: "...")
-    replace(source_copy, "df", lambda _: "...")
     return pformat(source_copy)

@@ -12,7 +12,7 @@ from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 from polars_to_ibis._utils import abbreviate
 
 from . import tags
-from .utils import assert_no_extras, split_tag_payload
+from .utils import assert_no_extras, indent, outdent, split_tag_payload
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +46,13 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
         def wrapped_func(*args, **kwargs):
             if logger.isEnabledFor(logging.DEBUG):
                 # Just so we don't call abbreviate unless needed.
-                logger.debug(f"handle value {tag}:\n{abbreviate(args[0])} ")
-            return func(*args, **kwargs)
+                logger.debug(
+                    f"{indent()}--> polars value {tag}:\n{abbreviate(args[0])} "
+                )
+            to_return = func(*args, **kwargs)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"{outdent()}<-- ibis value:\n{to_return}")
+            return to_return
 
         VALUE_REGISTRY[tag] = wrapped_func
         return func

@@ -12,7 +12,7 @@ from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 from polars_to_ibis._utils import abbreviate
 
 from . import tags
-from .utils import assert_no_extras, split_tag_payload
+from .utils import assert_no_extras, indent, outdent, split_tag_payload
 from .value_handlers import (
     handle_binary_expr,
     handle_function,
@@ -56,7 +56,12 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
         def wrapped_func(*args, **kwargs):
             if logger.isEnabledFor(logging.DEBUG):
                 # Just so we don't call abbreviate unless needed.
-                logger.debug(f"handle table {tag}:\n{abbreviate(args[0])} ")
+                logger.debug(
+                    f"{indent()}--> polars table {tag}:\n{abbreviate(args[0])} "
+                )
+            to_return = func(*args, **kwargs)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"{outdent()}<-- ibis table:\n{to_return}")
             return func(*args, **kwargs)
 
         TABLE_REGISTRY[tag] = wrapped_func
