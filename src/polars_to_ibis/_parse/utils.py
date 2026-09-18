@@ -15,14 +15,14 @@ ReturnsValue = Callable[..., NamedValue]
 _logger_depth = 0
 
 
-def indent():
+def indent():  # pragma: no cover
     global _logger_depth
     spaces = "    " * _logger_depth
     _logger_depth += 1
     return spaces
 
 
-def outdent():
+def outdent():  # pragma: no cover
     global _logger_depth
     _logger_depth -= 1
     return "    " * _logger_depth

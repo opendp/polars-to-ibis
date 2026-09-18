@@ -54,13 +54,13 @@ TABLE_REGISTRY: dict[str, ReturnsTable] = {}
 def table_handler(tag: str) -> Callable[..., ReturnsTable]:
     def deco(func: ReturnsTable) -> ReturnsTable:
         def wrapped_func(*args, **kwargs):
-            if logger.isEnabledFor(logging.DEBUG):
+            if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 # Just so we don't call abbreviate unless needed.
                 logger.debug(
                     f"{indent()}--> polars table {tag}:\n{abbreviate(args[0])} "
                 )
             to_return = func(*args, **kwargs)
-            if logger.isEnabledFor(logging.DEBUG):
+            if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 logger.debug(f"{outdent()}<-- ibis table:\n{to_return}")
             return func(*args, **kwargs)
 

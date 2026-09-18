@@ -44,13 +44,13 @@ VALUE_REGISTRY: dict[str, ReturnsValue] = {}
 def value_handler(tag: str) -> Callable[..., ReturnsValue]:
     def deco(func: ReturnsValue) -> ReturnsValue:
         def wrapped_func(*args, **kwargs):
-            if logger.isEnabledFor(logging.DEBUG):
+            if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 # Just so we don't call abbreviate unless needed.
                 logger.debug(
                     f"{indent()}--> polars value {tag}:\n{abbreviate(args[0])} "
                 )
             to_return = func(*args, **kwargs)
-            if logger.isEnabledFor(logging.DEBUG):
+            if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 logger.debug(f"{outdent()}<-- ibis value:\n{to_return}")
             return to_return
 
