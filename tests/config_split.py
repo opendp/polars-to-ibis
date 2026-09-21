@@ -172,11 +172,13 @@ split_scenarios = [
         get_select_int_sum("t0").replace(
             "AS ints", "/ COUNT(t0.ints) AS ints FROM default_table AS t0"
         ),
-        {"ints": [2.5]},
-        # Shouldn't we have the same number of private items and parameters?
-        get_expected_parameters([(20.0, "Integer"), (2.0, "Integer")]),
-        # TODO: Fix error!
+        # TODO: We need more extensive re-writing so we get two results,
+        # to go with our two parameter dicts.
         # https://github.com/opendp/polars-to-ibis/issues/145
+        {"ints": [2.5]},
+        get_expected_parameters([(20.0, "Integer"), (2.0, "Integer")]),
+        # TODO: Once we get the right number of results, worry about types.
+        # (Right now, the second param dict isn't even being used.)
         opendp_errors={"*": "inferred type is f64, expected i32."},
     ),
 ]
