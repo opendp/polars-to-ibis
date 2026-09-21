@@ -80,7 +80,6 @@ NAN = approx(float("nan"), nan_ok=True)
 # Error messages generated upstream: We don't control wording.
 MYSQL_INF = "inf can not be used with MySQL"
 MYSQL_SYNTAX = "You have an error in your SQL syntax"
-POSTGRES_DECIMAL = "Could not convert Decimal"
 
 parser_scenarios = [
     SQLParserScenario(
@@ -201,11 +200,6 @@ parser_scenarios = [
         "numeric",
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
-        backend_errors={
-            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": POSTGRES_DECIMAL,
-            "postgres+to_pyarrow": POSTGRES_DECIMAL,
-        },
     ),
     SQLParserScenario(
         "numeric",
@@ -467,22 +461,12 @@ parser_scenarios = [
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        backend_errors={
-            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": POSTGRES_DECIMAL,
-            "postgres+to_pyarrow": POSTGRES_DECIMAL,
-        },
         connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        backend_errors={
-            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": POSTGRES_DECIMAL,
-            "postgres+to_pyarrow": POSTGRES_DECIMAL,
-        },
         connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(

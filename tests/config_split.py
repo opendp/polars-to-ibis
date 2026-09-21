@@ -40,24 +40,25 @@ def get_select_int_sum(table: str) -> str:
 
 
 def get_select_float_sum() -> str:
-    case_when_not = """
-    CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) )
-              OR ( COALESCE(t0.floats, 0.5) IS NULL )
-        THEN COALESCE(t0.floats, 0.5)
-        ELSE 0.5
+    hack = "CAST(0 AS DOUBLE) +"
+    case_when_not = f"""
+    CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, {hack} 0.5)) )
+              OR ( COALESCE(t0.floats, {hack} 0.5) IS NULL )
+        THEN COALESCE(t0.floats, {hack} 0.5)
+        ELSE {hack} 0.5
     END
     """
     case_when_nested = f"""
     CASE WHEN {case_when_not} IS NULL
         THEN {case_when_not}
-        ELSE LEAST( 1.0, {case_when_not} )
+        ELSE LEAST( {hack} 1.0, {case_when_not} )
     END
     """
     return f"""
     SELECT SUM(
         CASE WHEN {case_when_nested} IS NULL
             THEN {case_when_nested}
-            ELSE GREATEST( 0.0, {case_when_nested} )
+            ELSE GREATEST( {hack} 0.0, {case_when_nested} )
         END
     ) AS floats
     """

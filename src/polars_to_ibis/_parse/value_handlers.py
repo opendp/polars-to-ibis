@@ -82,13 +82,18 @@ def handle_count(payload: PolarsPlan):
 @value_handler(tags.value.LITERAL)
 def handle_literal(payload: PolarsPlan):
     match payload:
-        case (
-            {"Dyn": {"Int": value, **extras_1}, **extras_2}
-            | {"Dyn": {"Float": value, **extras_1}, **extras_2}
-            | {"Scalar": {"Boolean": value, **extras_1}, **extras_2}
-            | {"Scalar": {"Float32": value, **extras_1}, **extras_2}
-        ):
+        case {"Dyn": {"Float": value, **extras_1}, **extras_2} | {
+            "Scalar": {"Float32": value, **extras_1},
+            **extras_2,
+        }:
             assert_no_extras(extras_1, extras_2)
+            # Ibis was returning a Decimal: This forces float64.
+            # Hack suggested by https://github.com/ibis-project/ibis/issues/11947
+            return ibis.literal(0).cast("float64") + value
+        case {"Dyn": {"Int": value, **extras_1}, **extras_2} | {
+            "Scalar": {"Boolean": value, **extras_1},
+            **extras_2,
+        }:
             return value
         case {"Scalar": {"String": value, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
