@@ -12,6 +12,13 @@ from .config_parser import BaseParserScenario, input_data, parser_scenarios
 from .utils import backend_names, exporters, get_connection
 
 
+def sort_keys(unsorted_dict):
+    # We want to make sure the expected types returned, not just values,
+    # but we don't care about key order.
+    dict_str = str({k: unsorted_dict[k] for k in sorted(unsorted_dict.keys())})
+    return re.sub(r"nan([^ ])", r"nan ± ???\1", dict_str)
+
+
 @pytest.mark.parametrize(
     "scenario",
     parser_scenarios,
@@ -78,8 +85,9 @@ def test_parser_scenarios(
             scenario.get_with_keys("alternative_results", *keys)
             or scenario.expected_output
         )
-        assert (
-            actual_output == expected_output
+
+        assert sort_keys(actual_output) == sort_keys(
+            expected_output
         ), f"Via ibis, {backend_name} does not produce expected output"
 
 

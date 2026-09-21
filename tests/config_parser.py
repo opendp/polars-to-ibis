@@ -86,7 +86,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT 1 + ints / floats FROM lf",
-        {"literal": [11, 11, 11, 11]},
+        {"literal": [11.0, 11.0, 11.0, 11.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -99,7 +99,7 @@ parser_scenarios = [
         {"literal": [-1, -1, -1, None]},
         alternative_results={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1, -1, -1, NAN]},
+            "to_pandas": {"literal": [-1.0, -1.0, -1.0, NAN]},
         },
     ),
     SQLParserScenario(
@@ -113,7 +113,7 @@ parser_scenarios = [
         {"literal": [-1, None, None, None]},
         alternative_results={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1, NAN, NAN, NAN]},
+            "to_pandas": {"literal": [-1.0, NAN, NAN, NAN]},
         },
     ),
     SQLParserScenario(
@@ -124,12 +124,12 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT SUM(ints) AS sum_no_div FROM lf",
-        {"sum_no_div": [10]},
+        {"sum_no_div": [10.0]},
     ),
     SQLParserScenario(
         "numeric",
         "SELECT SUM(ints) / 1 AS sum_div_1 FROM lf",
-        {"sum_div_1": [10]},
+        {"sum_div_1": [10.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -139,7 +139,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
-        {"literal": [-1]},
+        {"literal": [-1.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -166,7 +166,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT ROUND(floats * 2) FROM lf",
-        {"floats": [0.0, 0.0, 1.0, 1.0]},
+        {"floats": [0, 0, 1, 1]},
     ),
     SQLParserScenario(
         "numeric",
@@ -231,12 +231,12 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT POWER(ints, 2) AS squares FROM lf",
-        {"squares": [1, 4, 9, 16]},
+        {"squares": [1.0, 4.0, 9.0, 16.0]},
     ),
     SQLParserScenario(
         "numeric",
         "SELECT POWER(2, ints) AS power_2 FROM lf",
-        {"power_2": [2, 4, 8, 16]},
+        {"power_2": [2.0, 4.0, 8.0, 16.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -509,12 +509,12 @@ parser_scenarios = [
     EvalParserScenario(
         "numeric",
         "lf.select(div=pl.col('ints') / 2)",
-        {"div": [0.5, 1, 1.5, 2]},
+        {"div": [0.5, 1.0, 1.5, 2.0]},
     ),
     EvalParserScenario(
         "numeric",
         "lf.select(square=pl.col('ints') ** 2)",
-        {"square": [1, 4, 9, 16]},
+        {"square": [1.0, 4.0, 9.0, 16.0]},
     ),
     EvalParserScenario(
         "numeric",
@@ -597,7 +597,7 @@ parser_scenarios = [
     EvalParserScenario(
         "nan_null_inf",
         "lf.select(pl.col.null.fill_null(999))",
-        {"null": [0, 999]},
+        {"null": [0.0, 999.0]},
         connection_errors={"mysql": MYSQL_INF},
     ),
     EvalParserScenario(
@@ -632,7 +632,7 @@ parser_scenarios = [
         "    floats=pl.col('floats').sum(),"
         "    ints=pl.col('ints').sum()"
         ")",
-        {"floats": [1.0], "ints": [10]},
+        {"floats": [1.0], "ints": [10.0]},
     ),
     EvalParserScenario(
         "numeric",
