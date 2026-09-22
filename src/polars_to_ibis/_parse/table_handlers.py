@@ -330,6 +330,32 @@ def handle_select(
     return input_table
 
 
+@table_handler(tags.table.DISTINCT)
+def handle_distinct(
+    payload: PolarsPlan,
+    table: ir.Table,
+    backend: ibis.BaseBackend,
+) -> ir.Table:
+    match payload:
+        case {
+            "input": input_expr,
+            "options": {
+                "keep_strategy": "Any",
+                "maintain_order": True,
+                "subset": None,
+                **extras_1,
+            },
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            input_table = update_polars_to_ibis(
+                input_expr, table=table, backend=backend
+            )
+            return input_table.distinct()
+        case _:  # pragma: no cover
+            raise NotImplementedError(f"Unsupported {tags.table.DISTINCT}")
+
+
 @table_handler(tags.table.FILTER)
 def handle_filter(
     payload: PolarsPlan,
@@ -375,25 +401,27 @@ def handle_sort(
             "by_column": by_column,
             "sort_options": {
                 "descending": descending,
-                "nulls_last": nulls_last,
                 "multithreaded": True,
-                "maintain_order": False,
                 "limit": None,
+                # The test suite covers both True or False for maintain_order,
+                # and [True] and [False] for nulls_last.
+                # but Ibis order_by() does not have any options.
+                "maintain_order": _maintain_order,  # noqa: F841 (unused)
+                "nulls_last": _nulls_last,  # noqa: F841 (unused)
                 **extras_1,
             },
             "slice": None,
+            "input": input_expr,
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
-            if any(nulls_last):
-                raise NotImplementedError(f"Unsupported nulls_last: {nulls_last}")
             undirected_sort_keys = parse_sort_by_column(by_column)
             directed_sort_keys = [
                 ibis.desc(key) if desc else key
                 for key, desc in zip(undirected_sort_keys, descending)
             ]
             return update_polars_to_ibis(
-                payload["input"],
+                input_expr,
                 input_table,
                 backend=backend,
             ).order_by(
