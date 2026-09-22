@@ -118,10 +118,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             case (tags.value.ALIAS, [expr, new_name]):
                 ibis_value = polars_expr_to_ibis_value(expr)
                 if find(expr, tags.value.AGG):
-                    # TODO: This cast seems arbitrary.
-                    # Is it correct in general?
-                    # https://github.com/opendp/polars-to-ibis/issues/153
-                    agg_kwargs[new_name] = ibis_value.cast("float32")
+                    agg_kwargs[new_name] = ibis_value
                 else:
                     select_kwargs[new_name] = ibis_value
             case (
@@ -244,10 +241,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                     polars_expr_to_ibis_value(falsy_expr),
                 )
                 if find(predicate_expr, tags.value.AGG):
-                    # TODO: This cast seems arbitrary.
-                    # Is it correct in general?
-                    # https://github.com/opendp/polars-to-ibis/issues/153
-                    agg_kwargs[column_name] = ibis_value.cast("float32")
+                    agg_kwargs[column_name] = ibis_value
                 else:
                     select_kwargs[column_name] = ibis_value
             case _:  # pragma: no cover

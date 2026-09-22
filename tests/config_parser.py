@@ -123,7 +123,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT SUM(ints) AS sum_no_div FROM lf",
-        {"sum_no_div": [10.0]},
+        {"sum_no_div": [10]},
     ),
     SQLParserScenario(
         "numeric",
@@ -138,7 +138,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT CASE WHEN SUM(ints) > 1 THEN -1 ELSE 100 END FROM lf",
-        {"literal": [-1.0]},
+        {"literal": [-1]},
     ),
     SQLParserScenario(
         "numeric",
@@ -616,7 +616,7 @@ parser_scenarios = [
         "    floats=pl.col('floats').sum(),"
         "    ints=pl.col('ints').sum()"
         ")",
-        {"floats": [1.0], "ints": [10.0]},
+        {"floats": [1.0], "ints": [10]},
     ),
     EvalParserScenario(
         "numeric",
@@ -625,7 +625,6 @@ parser_scenarios = [
         "    ints=pl.col('ints').min()"
         ")",
         {"floats": [0.1], "ints": [1]},
-        tolerance=0.0000001,
     ),
     EvalParserScenario(
         "numeric",
@@ -634,7 +633,6 @@ parser_scenarios = [
         "    ints=pl.col('ints').max()"
         ")",
         {"floats": [0.4], "ints": [4]},
-        tolerance=0.0000001,
     ),
     EvalParserScenario(
         "numeric",
@@ -648,7 +646,6 @@ parser_scenarios = [
         "    ints=pl.col('ints').std()"
         ")",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        tolerance=0.00001,
     ),
     EvalParserScenario(
         "numeric",
@@ -657,7 +654,9 @@ parser_scenarios = [
         "    ints=pl.col('ints').var()"
         ")",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        tolerance=0.00001,
+        alternative_results={
+            "postgres": {"floats": [0.016666666666666663], "ints": [5 / 3]}
+        },
     ),
     EvalParserScenario(
         "numeric",

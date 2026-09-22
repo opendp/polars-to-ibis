@@ -134,7 +134,7 @@ def handle_sum(payload: PolarsPlan):
 
 @value_handler(tags.value.MEAN)
 def handle_mean(payload: PolarsPlan):
-    return polars_expr_to_ibis_value(payload).mean()
+    return polars_expr_to_ibis_value(payload).cast("float64").mean()
 
 
 @value_handler(tags.value.MEDIAN)
@@ -166,7 +166,7 @@ def handle_min(payload: PolarsPlan):
 def handle_var(payload: PolarsPlan):
     match payload:
         case [expr, 1]:
-            return polars_expr_to_ibis_value(expr).var()
+            return polars_expr_to_ibis_value(expr).cast("float64").var()
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.VAR}")
 
@@ -175,7 +175,7 @@ def handle_var(payload: PolarsPlan):
 def handle_std(payload: PolarsPlan):
     match payload:
         case [expr, 1]:
-            return polars_expr_to_ibis_value(expr).std()
+            return polars_expr_to_ibis_value(expr).cast("float64").std()
         case _:  # pragma: no cover
             raise NotImplementedError(f"Unsupported {tags.value.STD}")
 
