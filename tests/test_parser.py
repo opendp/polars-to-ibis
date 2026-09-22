@@ -39,7 +39,7 @@ def test_parser_scenarios(
     polars_output = scenario.assert_error_or_return_value(
         "polars_errors",
         *keys,
-        lambda: scenario.exec(frames_from_scenario).collect().to_dict(as_series=False),
+        lambda: scenario.run(frames_from_scenario).collect().to_dict(as_series=False),
     )
     assert polars_output == scenario.expected_output, "Typo in scenario?"
 
@@ -55,7 +55,7 @@ def test_parser_scenarios(
     )
 
     frames_from_db = {"lf": scan_database(connection, table_name)}
-    lf = scenario.exec(frames_from_db)
+    lf = scenario.run(frames_from_db)
 
     ibis_table = scenario.assert_error_or_return_value(
         "convert_errors",

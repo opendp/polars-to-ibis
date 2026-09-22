@@ -59,17 +59,17 @@ class BaseParserScenario(ABC, BaseScenario):
     tolerance: float = 0
 
     @abstractmethod
-    def exec(self, named_frames): ...
+    def run(self, named_frames): ...
 
 
 class EvalParserScenario(BaseParserScenario):
-    def exec(self, named_frames):
+    def run(self, named_frames):
         named_frames["pl"] = pl
         return eval(self.expression, named_frames)
 
 
 class SQLParserScenario(BaseParserScenario):
-    def exec(self, named_frames):
+    def run(self, named_frames):
         return pl.SQLContext(**named_frames).execute(self.expression)
 
 
