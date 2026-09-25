@@ -283,7 +283,6 @@ def handle_scan(
     # Serialization changes between polars versions,
     # so only one of these will be covered in a given test run.
     match payload:  # pragma: no cover
-
         case {
             "df": _,
             "schema": {"fields": _, "metadata": None, **extras_1},

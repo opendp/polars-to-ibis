@@ -84,8 +84,43 @@ MYSQL_SYNTAX = "You have an error in your SQL syntax"
 parser_scenarios = [
     SQLParserScenario(
         "sorting",
+        "FROM lf",
+        {},
+        polars_errors={
+            # This minimal syntax is given in the polars docs,
+            # so I'm not sure why it doesn't work here. Low priority!
+            # https://docs.pola.rs/api/python/stable/reference/sql/clauses.html#from
+            "*": "this `SELECT` flavor is not supported"
+        },
+    ),
+    SQLParserScenario(
+        "sorting",
         "SELECT DISTINCT ints FROM lf ORDER BY ints",
         {"ints": [1, 9]},
+    ),
+    SQLParserScenario(
+        "sorting",
+        "SELECT DISTINCT ON (ints) * FROM lf ORDER BY strs",
+        {"ints": [9, 1], "strs": ["A", "B"]},
+        convert_errors={
+            # TODO: Support "DISTINCT ON"
+            # https://github.com/opendp/polars-to-ibis/issues/156
+            "*": "Unsupported Distinct"
+        },
+    ),
+    SQLParserScenario(
+        "grouping",
+        "SELECT keys, SUM(values) FROM lf GROUP BY keys ORDER BY values",
+        {"keys": [0, 1], "values": [3, 7]},
+        alternative_results={
+            # TODO: "GROUP BY" isn't being translated.
+            "*": {"keys": [0, 0, 1, 1], "values": [1, 2, 3, 4]}
+        },
+    ),
+    SQLParserScenario(
+        "sorting",
+        "SELECT ints FROM lf WHERE strs > 'X'",
+        {"ints": [9]},
     ),
     SQLParserScenario(
         "numeric",
