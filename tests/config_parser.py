@@ -83,6 +83,11 @@ MYSQL_SYNTAX = "You have an error in your SQL syntax"
 
 parser_scenarios = [
     SQLParserScenario(
+        "sorting",
+        "SELECT DISTINCT ints FROM lf ORDER BY ints",
+        {"ints": [1, 9]},
+    ),
+    SQLParserScenario(
         "numeric",
         "SELECT 1 + ints / floats FROM lf",
         {"literal": [11.0, 11.0, 11.0, 11.0]},

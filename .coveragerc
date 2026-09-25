@@ -11,4 +11,5 @@ skip_covered = True
 fail_under = 100
 
 exclude_also =
+    case _:
     raise NotImplementedError

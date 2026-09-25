@@ -75,7 +75,7 @@ def handle_count(payload: PolarsPlan):
             # TODO: Use include_nulls to add a where kwarg.
             # https://github.com/opendp/polars-to-ibis/issues/149
             return polars_expr_to_ibis_value(expr).count()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.COUNT}")
 
 
@@ -101,7 +101,7 @@ def handle_literal(payload: PolarsPlan):
         case {"Scalar": {"Null": "Null", **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             return None
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.LITERAL}")
 
 
@@ -123,7 +123,7 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
             return polars_expr_to_ibis_value(expr).cast(  # type: ignore
                 dtype_literal.lower()
             )
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.CAST}")
 
 
@@ -148,7 +148,7 @@ def handle_max(payload: PolarsPlan):
         case {"input": expr, "propagate_nans": False, **extras}:
             assert_no_extras(extras)
             return polars_expr_to_ibis_value(expr).max()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.MAX}")
 
 
@@ -158,7 +158,7 @@ def handle_min(payload: PolarsPlan):
         case {"input": expr, "propagate_nans": False, **extras}:
             assert_no_extras(extras)
             return polars_expr_to_ibis_value(expr).min()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.MIN}")
 
 
@@ -167,7 +167,7 @@ def handle_var(payload: PolarsPlan):
     match payload:
         case [expr, 1]:
             return polars_expr_to_ibis_value(expr).cast("float64").var()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.VAR}")
 
 
@@ -176,7 +176,7 @@ def handle_std(payload: PolarsPlan):
     match payload:
         case [expr, 1]:
             return polars_expr_to_ibis_value(expr).cast("float64").std()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.STD}")
 
 
@@ -197,7 +197,7 @@ def handle_quantile(payload: PolarsPlan):
         }:
             assert_no_extras(extras_1, extras_2, extras_3, extras_4)
             return polars_expr_to_ibis_value(expr).quantile(quantile)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.QUANTILE}")
 
 
@@ -310,7 +310,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
         }:
             assert_no_extras(extras_1, extras_2)
             return polars_expr_to_ibis_value(input_expr).isnull()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 
 
@@ -328,7 +328,7 @@ def handle_ternary(payload: PolarsPlan):
                 polars_expr_to_ibis_value(truthy_expr),
                 polars_expr_to_ibis_value(falsy_expr),
             )
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.TERNARY}")
 
 
@@ -377,5 +377,5 @@ def handle_binary_expr(payload: PolarsPlan):
             return func(
                 polars_expr_to_ibis_value(left), polars_expr_to_ibis_value(right)
             )
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.value.BINARY_EXPR}")
