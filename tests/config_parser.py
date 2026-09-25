@@ -130,6 +130,11 @@ parser_scenarios = [
         },
     ),
     SQLParserScenario(
+        "grouping",
+        "SELECT keys, SUM(values) FROM lf GROUP BY keys HAVING keys = 0",
+        {"keys": [0], "values": [3]},
+    ),
+    SQLParserScenario(
         "sorting",
         "SELECT ints FROM lf WHERE strs > 'X'",
         {"ints": [9]},
