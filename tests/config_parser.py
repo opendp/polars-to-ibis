@@ -131,8 +131,18 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "grouping",
-        "SELECT * FROM lf ORDER BY ALL",
-        {"keys": [0, 0, 1, 1], "values": [1, 2, 3, 4]},
+        "SELECT * FROM lf ORDER BY ALL OFFSET 1 LIMIT 2",
+        {"keys": [0, 1], "values": [2, 3]},
+    ),
+    SQLParserScenario(
+        "grouping",
+        "SELECT * FROM lf ORDER BY ALL OFFSET 1 FETCH NEXT 2",
+        # NOTE: "ROWS ONLY" seems to be optional
+        # TODO; This doesn't seem correct.
+        # Expecting the same results from "LIMIT 2" and "FETCH NEXT 2"
+        # {"keys": [0, 1], "values": [2, 3]}
+        # https://github.com/opendp/polars-to-ibis/issues/164
+        {"keys": [0, 1, 1], "values": [2, 3, 4]},
     ),
     SQLParserScenario(
         "grouping",
