@@ -71,24 +71,34 @@ def test_parser_scenarios(
         lambda: export(connection, ibis_table),  # type: ignore
     )
 
+    TOLERANCE = "tolerance"
+    ALT_PASS = "alt_pass"
+    ALT_XFAIL = "alt_xfail"
+    tolerance = getattr(scenario, TOLERANCE)
+    alt_pass = scenario.get_with_keys(ALT_PASS, *keys)
+    alt_xfail = scenario.get_with_keys(ALT_XFAIL, *keys)
+
+    assert (
+        sum(int(bool(field)) for field in [tolerance, alt_pass, alt_xfail]) <= 1
+    ), f"{TOLERANCE}, {ALT_PASS}, and {ALT_XFAIL} are mutually exclusive"
+
     # Check if result is what we expect:
-    if scenario.tolerance:
+    if tolerance:
         assert_approx_equal(
             actual_output,  # type: ignore
             scenario.expected_output,
-            scenario.tolerance,
-            f"Via ibis, {backend_name} does not produce output "
-            f"within {scenario.tolerance}",
+            tolerance,
+            f"Via ibis, {backend_name} does not produce output " f"within {tolerance}",
         )
     else:
-        expected_output = (
-            scenario.get_with_keys("alternative_results", *keys)
-            or scenario.expected_output
-        )
+        expected_output = alt_pass or alt_xfail or scenario.expected_output
 
         assert sort_keys(actual_output) == sort_keys(
             expected_output
         ), f"Via ibis, {backend_name} does not produce expected output"
+
+        if alt_xfail:
+            pytest.xfail("Results as expected, but definitely not correct!")
 
 
 def assert_approx_equal(
