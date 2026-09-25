@@ -114,7 +114,8 @@ parser_scenarios = [
         "SELECT keys, SUM(values) FROM lf GROUP BY keys ORDER BY values",
         {"keys": [0, 1], "values": [3, 7]},
         alt_xfail={
-            # TODO: "GROUP BY" isn't being translated.
+            # TODO: "GROUP BY" isn't being translated!
+            # https://github.com/opendp/polars-to-ibis/issues/157
             "*": {"keys": [0, 0, 1, 1], "values": [1, 2, 3, 4]}
         },
     ),
