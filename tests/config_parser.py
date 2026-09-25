@@ -131,8 +131,25 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "grouping",
+        # Note: Adding a HAVING clause returns the correct results;
+        # Without HAVING the results are wrong. (See above.)
         "SELECT keys, SUM(values) FROM lf GROUP BY keys HAVING keys = 0",
         {"keys": [0], "values": [3]},
+    ),
+    SQLParserScenario(
+        "grouping",
+        "SELECT keys, values, SUM(values) OVER key_window AS sum_values_by_key "
+        "FROM lf WINDOW key_window AS (PARTITION BY keys)",
+        {
+            "keys": [0, 0, 1, 1],
+            "values": [1, 2, 3, 4],
+            "sum_values_by_key": [3, 3, 7, 7],
+        },
+        convert_errors={
+            # TODO: Support "WINDOW" and "OVER"
+            # https://github.com/opendp/polars-to-ibis/issues/162
+            "*": "No value handler for 'Over'"
+        },
     ),
     SQLParserScenario(
         "sorting",
