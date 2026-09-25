@@ -280,21 +280,22 @@ def handle_scan(
     table: ir.Table,
     backend: ibis.BaseBackend,
 ) -> ir.Table:
-    match payload:
-        # Serialization changes between polars versions,
-        # so only one of these will be covered in a given test run.
+    # Serialization changes between polars versions,
+    # so only one of these will be covered in a given test run.
+    match payload:  # pragma: no cover
+
         case {
             "df": _,
             "schema": {"fields": _, "metadata": None, **extras_1},
             **extras_2,
-        }:  # pragma: no cover
+        }:
             assert_no_extras(extras_1, extras_2)
             return table
         case {
             "df": _,
             "schema": {"fields": _, **extras_1},
             **extras_2,
-        }:  # pragma: no cover
+        }:
             assert_no_extras(extras_1, extras_2)
             return table
         case _:
