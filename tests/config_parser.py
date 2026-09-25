@@ -55,7 +55,8 @@ class BaseParserScenario(ABC, BaseScenario):
     convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
-    alternative_results: dict[str, Results] = dataclasses.field(default_factory=dict)  # type: ignore
+    alt_pass: dict[str, Results] = dataclasses.field(default_factory=dict)  # type: ignore
+    alt_xfail: dict[str, Results] = dataclasses.field(default_factory=dict)  # type: ignore
     tolerance: float = 0
 
     @abstractmethod
@@ -84,8 +85,44 @@ MYSQL_SYNTAX = "You have an error in your SQL syntax"
 parser_scenarios = [
     SQLParserScenario(
         "sorting",
+        "FROM lf",
+        {},
+        polars_errors={
+            # This minimal syntax is given in the polars docs,
+            # so I'm not sure why it doesn't work here. Low priority!
+            # https://docs.pola.rs/api/python/stable/reference/sql/clauses.html#from
+            "*": "this `SELECT` flavor is not supported"
+        },
+    ),
+    SQLParserScenario(
+        "sorting",
         "SELECT DISTINCT ints FROM lf ORDER BY ints",
         {"ints": [1, 9]},
+    ),
+    SQLParserScenario(
+        "sorting",
+        "SELECT DISTINCT ON (ints) * FROM lf ORDER BY strs",
+        {"ints": [9, 1], "strs": ["A", "B"]},
+        convert_errors={
+            # TODO: Support "DISTINCT ON"
+            # https://github.com/opendp/polars-to-ibis/issues/156
+            "*": "Unsupported Distinct"
+        },
+    ),
+    SQLParserScenario(
+        "grouping",
+        "SELECT keys, SUM(values) FROM lf GROUP BY keys ORDER BY values",
+        {"keys": [0, 1], "values": [3, 7]},
+        alt_xfail={
+            # TODO: "GROUP BY" isn't being translated!
+            # https://github.com/opendp/polars-to-ibis/issues/157
+            "*": {"keys": [0, 0, 1, 1], "values": [1, 2, 3, 4]}
+        },
+    ),
+    SQLParserScenario(
+        "sorting",
+        "SELECT ints FROM lf WHERE strs > 'X'",
+        {"ints": [9]},
     ),
     SQLParserScenario(
         "numeric",
@@ -101,7 +138,7 @@ parser_scenarios = [
         "numeric",
         "SELECT CASE WHEN ints <= 3 THEN -1 END FROM lf",
         {"literal": [-1, -1, -1, None]},
-        alternative_results={
+        alt_xfail={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
             "to_pandas": {"literal": [-1.0, -1.0, -1.0, NAN]},
         },
@@ -115,7 +152,7 @@ parser_scenarios = [
         "numeric",
         "SELECT CASE ints WHEN 1 THEN -1 END FROM lf",
         {"literal": [-1, None, None, None]},
-        alternative_results={
+        alt_xfail={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
             "to_pandas": {"literal": [-1.0, NAN, NAN, NAN]},
         },
@@ -271,7 +308,7 @@ parser_scenarios = [
         connection_errors={"mysql": MYSQL_INF},
         # TODO: sqlite treats nan as null and excludes from count
         # https://github.com/opendp/polars-to-ibis/issues/150
-        alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
+        alt_xfail={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario(
         "nan_null_inf",
@@ -280,7 +317,7 @@ parser_scenarios = [
         connection_errors={"mysql": MYSQL_INF},
         # TODO: sqlite treats nan as null and excludes from count
         # https://github.com/opendp/polars-to-ibis/issues/150
-        alternative_results={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
+        alt_xfail={"sqlite": {"nan": [1], "null": [1], "inf": [2]}},
     ),
     EvalParserScenario("numeric", "lf.sum()", {"floats": [1.0], "ints": [10]}),
     EvalParserScenario("numeric", "lf.select(pl.col.ints.sum())", {"ints": [10]}),
@@ -577,7 +614,7 @@ parser_scenarios = [
         "lf.select('nan').fill_nan(111)",
         {"nan": [0.0, 111.0]},
         connection_errors={"mysql": MYSQL_INF},
-        alternative_results={
+        alt_xfail={
             "sqlite+to_polars": {"nan": [0.0, None]},
             "sqlite+to_pandas": {"nan": [0.0, NAN]},
             "sqlite+to_pyarrow": {"nan": [0.0, None]},
@@ -659,7 +696,9 @@ parser_scenarios = [
         "    ints=pl.col('ints').var()"
         ")",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        alternative_results={
+        alt_pass={
+            # TODO: Confirm that this is an ok result for OpenDP,
+            # since we care about small differences in floats!
             "postgres": {"floats": [0.016666666666666663], "ints": [5 / 3]}
         },
     ),
