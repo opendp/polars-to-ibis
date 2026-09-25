@@ -13,6 +13,7 @@ class SplitScenario(BaseScenario):
     expected_result: dict[str, Any]
     expected_parameters: dict[str, Any]
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    opendp_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
 
 
 def get_case_clause(table: str) -> str:
@@ -39,24 +40,25 @@ def get_select_int_sum(table: str) -> str:
 
 
 def get_select_float_sum() -> str:
-    case_when_not = """
-    CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, 0.5)) )
-              OR ( COALESCE(t0.floats, 0.5) IS NULL )
-        THEN COALESCE(t0.floats, 0.5)
-        ELSE 0.5
+    hack = "CAST(0 AS DOUBLE) +"
+    case_when_not = f"""
+    CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, {hack} 0.5)) )
+              OR ( COALESCE(t0.floats, {hack} 0.5) IS NULL )
+        THEN COALESCE(t0.floats, {hack} 0.5)
+        ELSE {hack} 0.5
     END
     """
     case_when_nested = f"""
     CASE WHEN {case_when_not} IS NULL
         THEN {case_when_not}
-        ELSE LEAST( 1.0, {case_when_not} )
+        ELSE LEAST( {hack} 1.0, {case_when_not} )
     END
     """
     return f"""
     SELECT SUM(
         CASE WHEN {case_when_nested} IS NULL
             THEN {case_when_nested}
-            ELSE GREATEST( 0.0, {case_when_nested} )
+            ELSE GREATEST( {hack} 0.0, {case_when_nested} )
         END
     ) AS floats
     """
@@ -166,9 +168,18 @@ split_scenarios = [
         },
         get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
     ),
-    # TODO: Expand coverage.
-    # https://github.com/opendp/polars-to-ibis/issues/145
-    # SplitScenario(
-    #     "context.query().select(pl.col.ints.dp.mean((0,10)))",
-    # ),
+    SplitScenario(
+        "context.query().select(pl.col.ints.dp.mean((0,10)))",
+        get_select_int_sum("t0").replace(
+            "AS ints", "/ COUNT(t0.ints) AS ints FROM default_table AS t0"
+        ),
+        # TODO: We need more extensive re-writing so we get two results,
+        # to go with our two parameter dicts.
+        # https://github.com/opendp/polars-to-ibis/issues/145
+        {"ints": [2.5]},
+        get_expected_parameters([(20.0, "Integer"), (2.0, "Integer")]),
+        # TODO: Once we get the right number of results, worry about types.
+        # (Right now, the second param dict isn't even being used.)
+        opendp_errors={"*": "inferred type is f64, expected i32."},
+    ),
 ]

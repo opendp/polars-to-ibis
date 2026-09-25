@@ -59,17 +59,17 @@ class BaseParserScenario(ABC, BaseScenario):
     tolerance: float = 0
 
     @abstractmethod
-    def exec(self, named_frames): ...
+    def run(self, named_frames): ...
 
 
 class EvalParserScenario(BaseParserScenario):
-    def exec(self, named_frames):
+    def run(self, named_frames):
         named_frames["pl"] = pl
         return eval(self.expression, named_frames)
 
 
 class SQLParserScenario(BaseParserScenario):
-    def exec(self, named_frames):
+    def run(self, named_frames):
         return pl.SQLContext(**named_frames).execute(self.expression)
 
 
@@ -80,13 +80,12 @@ NAN = approx(float("nan"), nan_ok=True)
 # Error messages generated upstream: We don't control wording.
 MYSQL_INF = "inf can not be used with MySQL"
 MYSQL_SYNTAX = "You have an error in your SQL syntax"
-POSTGRES_DECIMAL = "Could not convert Decimal"
 
 parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT 1 + ints / floats FROM lf",
-        {"literal": [11, 11, 11, 11]},
+        {"literal": [11.0, 11.0, 11.0, 11.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -99,7 +98,7 @@ parser_scenarios = [
         {"literal": [-1, -1, -1, None]},
         alternative_results={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1, -1, -1, NAN]},
+            "to_pandas": {"literal": [-1.0, -1.0, -1.0, NAN]},
         },
     ),
     SQLParserScenario(
@@ -113,7 +112,7 @@ parser_scenarios = [
         {"literal": [-1, None, None, None]},
         alternative_results={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1, NAN, NAN, NAN]},
+            "to_pandas": {"literal": [-1.0, NAN, NAN, NAN]},
         },
     ),
     SQLParserScenario(
@@ -129,7 +128,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT SUM(ints) / 1 AS sum_div_1 FROM lf",
-        {"sum_div_1": [10]},
+        {"sum_div_1": [10.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -166,7 +165,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT ROUND(floats * 2) FROM lf",
-        {"floats": [0.0, 0.0, 1.0, 1.0]},
+        {"floats": [0, 0, 1, 1]},
     ),
     SQLParserScenario(
         "numeric",
@@ -201,11 +200,6 @@ parser_scenarios = [
         "numeric",
         "SELECT PI() FROM lf LIMIT 1",
         {"literal": [math.pi]},
-        backend_errors={
-            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": POSTGRES_DECIMAL,
-            "postgres+to_pyarrow": POSTGRES_DECIMAL,
-        },
     ),
     SQLParserScenario(
         "numeric",
@@ -231,12 +225,12 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT POWER(ints, 2) AS squares FROM lf",
-        {"squares": [1, 4, 9, 16]},
+        {"squares": [1.0, 4.0, 9.0, 16.0]},
     ),
     SQLParserScenario(
         "numeric",
         "SELECT POWER(2, ints) AS power_2 FROM lf",
-        {"power_2": [2, 4, 8, 16]},
+        {"power_2": [2.0, 4.0, 8.0, 16.0]},
     ),
     SQLParserScenario(
         "numeric",
@@ -467,22 +461,12 @@ parser_scenarios = [
         "select",
         "lf.select('ints', ten=10.0)",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        backend_errors={
-            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": POSTGRES_DECIMAL,
-            "postgres+to_pyarrow": POSTGRES_DECIMAL,
-        },
         connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
         "select",
         "lf.select('ints', ten=pl.lit(10.0, pl.Float32))",
         {"ints": [1, 2, 3], "ten": [10.0, 10.0, 10.0]},
-        backend_errors={
-            # TODO: https://github.com/opendp/polars-to-ibis/issues/146
-            "postgres+to_polars": POSTGRES_DECIMAL,
-            "postgres+to_pyarrow": POSTGRES_DECIMAL,
-        },
         connection_errors={"mysql": MYSQL_SYNTAX},
     ),
     EvalParserScenario(
@@ -509,12 +493,12 @@ parser_scenarios = [
     EvalParserScenario(
         "numeric",
         "lf.select(div=pl.col('ints') / 2)",
-        {"div": [0.5, 1, 1.5, 2]},
+        {"div": [0.5, 1.0, 1.5, 2.0]},
     ),
     EvalParserScenario(
         "numeric",
         "lf.select(square=pl.col('ints') ** 2)",
-        {"square": [1, 4, 9, 16]},
+        {"square": [1.0, 4.0, 9.0, 16.0]},
     ),
     EvalParserScenario(
         "numeric",
@@ -597,7 +581,7 @@ parser_scenarios = [
     EvalParserScenario(
         "nan_null_inf",
         "lf.select(pl.col.null.fill_null(999))",
-        {"null": [0, 999]},
+        {"null": [0.0, 999.0]},
         connection_errors={"mysql": MYSQL_INF},
     ),
     EvalParserScenario(
@@ -641,7 +625,6 @@ parser_scenarios = [
         "    ints=pl.col('ints').min()"
         ")",
         {"floats": [0.1], "ints": [1]},
-        tolerance=0.0000001,
     ),
     EvalParserScenario(
         "numeric",
@@ -650,7 +633,6 @@ parser_scenarios = [
         "    ints=pl.col('ints').max()"
         ")",
         {"floats": [0.4], "ints": [4]},
-        tolerance=0.0000001,
     ),
     EvalParserScenario(
         "numeric",
@@ -664,7 +646,6 @@ parser_scenarios = [
         "    ints=pl.col('ints').std()"
         ")",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        tolerance=0.00001,
     ),
     EvalParserScenario(
         "numeric",
@@ -673,7 +654,9 @@ parser_scenarios = [
         "    ints=pl.col('ints').var()"
         ")",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        tolerance=0.00001,
+        alternative_results={
+            "postgres": {"floats": [0.016666666666666663], "ints": [5 / 3]}
+        },
     ),
     EvalParserScenario(
         "numeric",

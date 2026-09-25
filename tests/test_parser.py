@@ -12,6 +12,13 @@ from .config_parser import BaseParserScenario, input_data, parser_scenarios
 from .utils import backend_names, exporters, get_connection
 
 
+def sort_keys(unsorted_dict):
+    # We want to make sure the expected types returned, not just values,
+    # but we don't care about key order.
+    dict_str = str({k: unsorted_dict[k] for k in sorted(unsorted_dict.keys())})
+    return re.sub(r"nan([^ ])", r"nan ± ???\1", dict_str)
+
+
 @pytest.mark.parametrize(
     "scenario",
     parser_scenarios,
@@ -32,7 +39,7 @@ def test_parser_scenarios(
     polars_output = scenario.assert_error_or_return_value(
         "polars_errors",
         *keys,
-        lambda: scenario.exec(frames_from_scenario).collect().to_dict(as_series=False),
+        lambda: scenario.run(frames_from_scenario).collect().to_dict(as_series=False),
     )
     assert polars_output == scenario.expected_output, "Typo in scenario?"
 
@@ -48,7 +55,7 @@ def test_parser_scenarios(
     )
 
     frames_from_db = {"lf": scan_database(connection, table_name)}
-    lf = scenario.exec(frames_from_db)
+    lf = scenario.run(frames_from_db)
 
     ibis_table = scenario.assert_error_or_return_value(
         "convert_errors",
@@ -78,8 +85,9 @@ def test_parser_scenarios(
             scenario.get_with_keys("alternative_results", *keys)
             or scenario.expected_output
         )
-        assert (
-            actual_output == expected_output
+
+        assert sort_keys(actual_output) == sort_keys(
+            expected_output
         ), f"Via ibis, {backend_name} does not produce expected output"
 
 
