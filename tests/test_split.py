@@ -114,7 +114,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                     support = int
                 case "Float":  # pragma: no cover
                     support = float
-                case _:  # pragma: no cover
+                case _:
                     raise ValueError(
                         f"Expected 'Integer' or 'Float', not {kwargs['support']}"
                     )
@@ -127,7 +127,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                     make = dp.m.make_laplace
                 case "Gaussian":  # pragma: no cover
                     make = dp.m.make_gaussian
-                case _:  # pragma: no cover
+                case _:
                     raise ValueError(
                         "Expected 'Laplace' or 'Gaussian', "
                         f"not {kwargs['distribution']}"

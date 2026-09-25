@@ -244,7 +244,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                     agg_kwargs[column_name] = ibis_value
                 else:
                     select_kwargs[column_name] = ibis_value
-            case _:  # pragma: no cover
+            case _:
                 raise NotImplementedError(f"Unsupported select expr {tag}")
 
     if select_kwargs:
@@ -269,7 +269,7 @@ def handle_ir(
         case {"dsl": _, "version": _, **extras_1}:
             assert_no_extras(extras_1)
             return table
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.IR}")
 
 
@@ -323,7 +323,7 @@ def handle_select(
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.SELECT}")
 
     input_table = apply_select_expr(expr, input_table)
@@ -352,7 +352,7 @@ def handle_distinct(
                 input_expr, table=table, backend=backend
             )
             return input_table.distinct()
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.DISTINCT}")
 
 
@@ -368,7 +368,7 @@ def handle_filter(
             assert_no_extras(extras)
             value = polars_expr_to_ibis_value(predicate)
             return input_table.filter(value)  # type: ignore
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.FILTER}")
 
 
@@ -385,7 +385,7 @@ def handle_slice(
             if offset < 0:
                 raise NotImplementedError(f"Unsupported offset: {offset}")
             return input_table.limit(len, offset=offset)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.SLICE}")
 
 
@@ -427,7 +427,7 @@ def handle_sort(
             ).order_by(
                 *directed_sort_keys  # type: ignore
             )
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.SORT}")
 
 
@@ -450,7 +450,7 @@ def handle_hstack(
             **extras_2,
         }:
             pass
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
     updated_table = update_polars_to_ibis(input, table=table, backend=backend)
@@ -521,11 +521,11 @@ def handle_hstack(
                 match function:
                     case "FillNull":
                         updated_table = updated_table.fill_null(value)  # type: ignore
-                    case _:  # pragma: no cover
+                    case _:
                         raise NotImplementedError(
                             f"Unsupported {tags.table.H_STACK} function: {function}"
                         )
-            case _:  # pragma: no cover
+            case _:
                 raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
 
     return updated_table
@@ -570,13 +570,13 @@ def handle_group_by(
         case {tags.value.AGG: agg_payload, **extras_1}:
             assert_no_extras(extras_1)
             agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg")
 
     match agg_payload_payload:
         case {tags.value.COLUMN: column, **extras}:
             assert_no_extras(extras)
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
 
     match agg_payload_tag:
@@ -590,7 +590,7 @@ def handle_group_by(
             return grouped_table.aggregate(  # type: ignore
                 **{column: getattr(defer[column], agg_payload_tag.lower())()}
             )
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg stat")
 
 
@@ -618,7 +618,7 @@ def handle_map_function(
                     for col in input_table.columns
                 }
             )
-        case _:  # pragma: no cover
+        case _:
             raise NotImplementedError(f"Unsupported {tags.table.MAP_FUNCTION}")
 
     match stats:
@@ -680,5 +680,5 @@ def handle_map_function(
                 }
             )
 
-        case _:  # pragma: no cover
+        case _:
             raise ValueError(f"unsupported stats type: {stats}")
