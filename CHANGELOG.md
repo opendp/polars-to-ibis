@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## v0.3.0
+
+Functionality:
+
+- support SQL DISTINCT [#155](https://github.com/opendp/polars-to-ibis/pull/155)
+- Handle more test cases [#141](https://github.com/opendp/polars-to-ibis/pull/141)
+- Allow ibis generation to depend on features of target DB [#123](https://github.com/opendp/polars-to-ibis/pull/123)
+- handle len along with other select expressions [#120](https://github.com/opendp/polars-to-ibis/pull/120)
+- Handle `dp.sum` and some column rename functions [#108](https://github.com/opendp/polars-to-ibis/pull/108)
+
+Documentation:
+
+- Move example from README to API docs [#127](https://github.com/opendp/polars-to-ibis/pull/127)
+- Add py.typed and docs site [#126](https://github.com/opendp/polars-to-ibis/pull/126)
+
+Internals and cleanup:
+
+- Polish before release [#154](https://github.com/opendp/polars-to-ibis/pull/154)
+- fix merge [#140](https://github.com/opendp/polars-to-ibis/pull/140)
+- Fill in SQL tests [#138](https://github.com/opendp/polars-to-ibis/pull/138)
+- Framework for SQL tests [#137](https://github.com/opendp/polars-to-ibis/pull/137)
+- Clean up expression handling [#134](https://github.com/opendp/polars-to-ibis/pull/134)
+- remove old commented-out blocks [#132](https://github.com/opendp/polars-to-ibis/pull/132)
+- More serialization constants [#129](https://github.com/opendp/polars-to-ibis/pull/129)
+- Add tag name constants [#118](https://github.com/opendp/polars-to-ibis/pull/118)
+- better recursion logic in `replace_ffi_with_input` [#112](https://github.com/opendp/polars-to-ibis/pull/112)
+
+CI:
+
+- check precommits in CI [#136](https://github.com/opendp/polars-to-ibis/pull/136)
+- add missing build step [#107](https://github.com/opendp/polars-to-ibis/pull/107)
+
 ## v0.2.0
 
 - Split LazyFrame on FFI plugin with `split_polars_on_ffi` (for a very limited set of expressions) [#93](https://github.com/opendp/polars-to-ibis/pull/93)
