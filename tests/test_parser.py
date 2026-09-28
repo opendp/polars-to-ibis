@@ -78,6 +78,8 @@ def test_parser_scenarios(
     alt_pass = scenario.get_with_keys(ALT_PASS, *keys)
     alt_xfail = scenario.get_with_keys(ALT_XFAIL, *keys)
 
+    # alt_pass and alt_xfail dicts can both be given for a scenario,
+    # but only one should apply for a given set of parameters.
     assert (
         sum(int(bool(field)) for field in [tolerance, alt_pass, alt_xfail]) <= 1
     ), f"{TOLERANCE}, {ALT_PASS}, and {ALT_XFAIL} are mutually exclusive"
@@ -88,7 +90,7 @@ def test_parser_scenarios(
             actual_output,  # type: ignore
             scenario.expected_output,
             tolerance,
-            f"Via ibis, {backend_name} does not produce output " f"within {tolerance}",
+            f"Via ibis, {backend_name} does not produce output within {tolerance}",
         )
     else:
         expected_output = alt_pass or alt_xfail or scenario.expected_output
