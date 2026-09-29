@@ -113,6 +113,8 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                 case "Integer":
                     support = int
                 case "Float":  # pragma: no cover
+                    # TODO: Add a test case with float support.
+                    # https://github.com/opendp/polars-to-ibis/issues/166
                     support = float
                 case _:
                     raise ValueError(
@@ -126,6 +128,8 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                 case "Laplace":
                     make = dp.m.make_laplace
                 case "Gaussian":  # pragma: no cover
+                    # TODO: Add a test case that uses gaussian.
+                    # https://github.com/opendp/polars-to-ibis/issues/166
                     make = dp.m.make_gaussian
                 case _:
                     raise ValueError(
