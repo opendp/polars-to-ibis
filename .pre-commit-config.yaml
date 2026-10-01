@@ -5,16 +5,12 @@ repos:
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
-  # Using this mirror lets us use mypyc-compiled black, which is about 2x faster
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 4160603246a6b365d4a2af661c6d71b0a0f50478  # frozen: 26.5.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: cb8c523fd4835aba42af70f4cad5568db4df0b6c  # frozen: v0.16.0
     hooks:
-      - id: black
-        # It is recommended to specify the latest version of Python
-        # supported by your project here, or alternatively use
-        # pre-commit's default_language_version, see
-        # https://pre-commit.com/#top_level-default_language_version
-        language_version: python3.11
+      - id: ruff-check
+      - id: ruff-format
+        args: ['--diff'] # or '--check' for just an error
   - repo: https://github.com/pycqa/isort
     rev: dac090ce4d9ee313d086e2e89ab1acb8c2664fa1  # frozen: 9.0.0a3
     hooks:
