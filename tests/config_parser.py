@@ -50,7 +50,7 @@ Results = dict[str, list[Any]]
 class BaseParserScenario(ABC, BaseScenario):
     category: str
     expression: str
-    expected_output: Results
+    expected_output: Results | str = "*"
     polars_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
