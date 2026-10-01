@@ -43,7 +43,6 @@ dev = [
     "ibis-framework[duckdb,mysql,polars,postgres,sqlite]>=12.0.0",
     "opendp[polars]==0.15.1",
     "pdoc>=16.0.0",
-    "pip==25.3",
     "polars>=1.32.0",
     "pre-commit>=4.6.0",
     "psycopg-binary>=3.3.4",
