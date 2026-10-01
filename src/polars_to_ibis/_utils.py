@@ -3,9 +3,10 @@ This is a private module: The API may change.
 """
 
 from collections import namedtuple
+from collections.abc import Callable
 from copy import deepcopy
 from pprint import pformat
-from typing import Any, Callable
+from typing import Any
 
 from ._parse import tags
 
@@ -44,7 +45,7 @@ class PluginReplacer:
     def replace(self):
         self._sub_replace(self._source)
         if not self._param_dicts:
-            raise Exception(
+            raise ValueError(
                 f"Did not find FFI in:\n{abbreviate(self._source)}"
             )  # pragma: no cover
         return self._param_dicts

@@ -22,7 +22,7 @@ def sort_keys(unsorted_dict):
 @pytest.mark.parametrize(
     "scenario",
     parser_scenarios,
-    ids=lambda scenario: (f"{scenario.category}-{scenario.expression}"),
+    ids=lambda scenario: f"{scenario.category}-{scenario.expression}",
 )
 @pytest.mark.parametrize("backend_name", backend_names)
 @pytest.mark.parametrize("exporter_key", exporters.keys())  # type: ignore
@@ -80,9 +80,9 @@ def test_parser_scenarios(
 
     # alt_pass and alt_xfail dicts can both be given for a scenario,
     # but only one should apply for a given set of parameters.
-    assert (
-        sum(int(bool(field)) for field in [tolerance, alt_pass, alt_xfail]) <= 1
-    ), f"{TOLERANCE}, {ALT_PASS}, and {ALT_XFAIL} are mutually exclusive"
+    assert sum(int(bool(field)) for field in [tolerance, alt_pass, alt_xfail]) <= 1, (
+        f"{TOLERANCE}, {ALT_PASS}, and {ALT_XFAIL} are mutually exclusive"
+    )
 
     # Check if result is what we expect:
     if tolerance:
@@ -95,9 +95,9 @@ def test_parser_scenarios(
     else:
         expected_output = alt_pass or alt_xfail or scenario.expected_output
 
-        assert sort_keys(actual_output) == sort_keys(
-            expected_output
-        ), f"Via ibis, {backend_name} does not produce expected output"
+        assert sort_keys(actual_output) == sort_keys(expected_output), (
+            f"Via ibis, {backend_name} does not produce expected output"
+        )
 
         if alt_xfail:
             pytest.xfail("Results as expected, but definitely not correct!")
@@ -113,7 +113,9 @@ def assert_approx_equal(
     for key in actual.keys() | expected.keys():
         actual_col = actual[key]
         expected_col = expected[key]
-        assert actual_col == pytest.approx(expected_col, abs=tolerance), f"{message} on {key}"  # type: ignore  # noqa: B950 (line too long)
+        assert actual_col == pytest.approx(expected_col, abs=tolerance), (
+            f"{message} on {key}"
+        )  # type: ignore  # noqa: B950 (line too long)
         any_not_equal |= actual_col != expected_col
     assert any_not_equal, "All are equal; approx not needed"
 

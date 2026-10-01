@@ -3,7 +3,8 @@ This is a private module: The API may change.
 """
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
@@ -68,7 +69,7 @@ def handle_count(payload: PolarsPlan):
     match payload:
         case {
             "input": expr,
-            "include_nulls": _include_nulls,  # noqa: F841 (unused)
+            "include_nulls": _include_nulls,
             **extras_1,
         }:
             assert_no_extras(extras_1)
@@ -282,7 +283,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             },
             "input": [
                 input_expr,
-                _quantile_expr,  # noqa: F841 (unused)
+                _quantile_expr,
             ],
             **extras_3,
         }:

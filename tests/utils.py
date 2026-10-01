@@ -1,10 +1,14 @@
+import logging
 import re
+from collections.abc import Callable
 from os import environ
-from typing import Any, Callable
+from typing import Any
 
 import ibis  # type: ignore
 import polars as pl
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 class BaseScenario:
@@ -30,7 +34,7 @@ class BaseScenario:
             pytest.xfail(f"expected error: {expected_error}")
         try:
             result = func()
-        except Exception as e:  # pragma: no cover
+        except Exception as e:  # noqa: BLE001  # pragma: no cover
             pytest.fail(
                 f"(If this is expected, add {errors_dict_name} to scenario.) {e}"
             )
@@ -59,8 +63,8 @@ def get_connection(
     # NOTE: overwrite=True would be simpler, but not supported by MySQL.
     try:
         connection.drop_table(table_name)
-    except BaseException:  # noqa: B036
-        pass
+    except Exception as e:  # noqa: BLE001
+        logger.info(f"Expected error from drop_table: {e}")
     connection.create_table(table_name, df)
 
     return connection

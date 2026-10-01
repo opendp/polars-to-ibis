@@ -11,11 +11,6 @@ repos:
       - id: ruff-check
       - id: ruff-format
         args: ['--diff'] # or '--check' for just an error
-  - repo: https://github.com/pycqa/isort
-    rev: dac090ce4d9ee313d086e2e89ab1acb8c2664fa1  # frozen: 9.0.0a3
-    hooks:
-      - id: isort
-        name: isort (python)
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 84ed656d5ada0b07830b74fb0fe18b3bc1029441  # frozen: 0.11.26
     hooks:
