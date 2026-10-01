@@ -115,7 +115,7 @@ def assert_approx_equal(
         expected_col = expected[key]
         assert actual_col == pytest.approx(expected_col, abs=tolerance), (
             f"{message} on {key}"
-        )  # type: ignore  # noqa: B950 (line too long)
+        )  # type: ignore
         any_not_equal |= actual_col != expected_col
     assert any_not_equal, "All are equal; approx not needed"
 
