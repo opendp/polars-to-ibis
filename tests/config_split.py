@@ -99,7 +99,7 @@ split_scenarios = [
     SplitScenario(
         "context.query().filter(pl.col.ints!=1).select(pl.col.ints.dp.sum((0,10)))",
         f"""
-        {get_select_int_sum('t1')} FROM (
+        {get_select_int_sum("t1")} FROM (
             SELECT * FROM {TABLE_NAME} AS t0 WHERE t0.ints <> 1
         ) AS t1
         """,

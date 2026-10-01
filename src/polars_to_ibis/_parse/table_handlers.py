@@ -3,7 +3,8 @@ This is a private module: The API may change.
 """
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
@@ -74,7 +75,7 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
 
 
 def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
-    return [list(col.values())[0] for col in col_list]
+    return [next(iter(col.values())) for col in col_list]
 
 
 def infer_name(expr):
@@ -406,8 +407,8 @@ def handle_sort(
                 # The test suite covers both True or False for maintain_order,
                 # and [True] and [False] for nulls_last.
                 # but Ibis order_by() does not have any options.
-                "maintain_order": _maintain_order,  # noqa: F841 (unused)
-                "nulls_last": _nulls_last,  # noqa: F841 (unused)
+                "maintain_order": _maintain_order,
+                "nulls_last": _nulls_last,
                 **extras_1,
             },
             "slice": None,

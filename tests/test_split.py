@@ -120,8 +120,9 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                     raise ValueError(
                         f"Expected 'Integer' or 'Float', not {kwargs['support']}"
                     )
-            input_space = dp.atom_domain(T=support, nan=False), dp.absolute_distance(
-                T=support
+            input_space = (
+                dp.atom_domain(T=support, nan=False),
+                dp.absolute_distance(T=support),
             )
 
             match kwargs["distribution"]:

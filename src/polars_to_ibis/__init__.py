@@ -229,7 +229,7 @@ def _get_type(polars_type_name: str) -> type:
         return bool
     if polars_type_name == "Binary":
         return bytes
-    raise Exception(
+    raise ValueError(
         f"No python type defined for {polars_type_name}"
     )  # pragma: no cover
 
