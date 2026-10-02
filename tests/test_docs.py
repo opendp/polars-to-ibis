@@ -1,5 +1,4 @@
 import re
-from json import loads
 
 import ibis
 import polars as pl
@@ -33,7 +32,8 @@ def get_dataframe():
     shape: ...
     """
     json_str = get_code(polars_to_ibis.__doc__, "json")
-    json_data = loads(json_str)
+    # Use eval so rather than json.loads because the parsing is less fussy.
+    json_data = eval(json_str)
     return pl.DataFrame(json_data)
 
 
@@ -44,16 +44,18 @@ def get_scenarios():
     """
     sql_lines = get_code(polars_to_ibis.__doc__, "sql")
     sql_result_pairs = [re.split(r"\s*--\s*", line) for line in sql_lines.split("\n\n")]
-    return [(sql, loads(result)) for (sql, result) in sql_result_pairs]
+
+    # Use eval so rather than json.loads because the parsing is less fussy.
+    return [(sql, eval(result)) for (sql, result) in sql_result_pairs]
 
 
 @pytest.mark.parametrize("scenario", get_scenarios())
-def test_failing_docs(scenario):
+def test_scenarios(scenario):
     sql, expected_result = scenario
 
     backend = ibis.sqlite
     connection = backend.connect()
-    table_name = "readme_example"
+    table_name = "my_table"
     connection.create_table(
         table_name,
         get_dataframe(),

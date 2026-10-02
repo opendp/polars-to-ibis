@@ -74,7 +74,6 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 ## Coverage
 
 A range of Polars expressions are handled.
-For readability, these example will use [Polars SQL](https://docs.pola.rs/api/python/stable/reference/sql/).
 Assuming this dataframe:
 ```json
 {
@@ -84,13 +83,17 @@ Assuming this dataframe:
 }
 ```
 
-These expressions produce the given results:
+These [Polars SQL](https://docs.pola.rs/api/python/stable/reference/sql/) expressions produce the given results,
+when translated to Ibis and executed on the target database:
 ```sql
 SELECT wings, SUM(legs) FROM self GROUP BY wings
 -- {"wings": [0, 2, 4], "legs": [12, 2, 6]}
 
 SELECT animal, 3 * wings / legs AS ratio FROM self
 -- {"animal": ["bird", "mouse", "butterfly", "spider"], "ratio": [3, 0, 2, 0]}
+
+SELECT animal, CASE WHEN wings > 0 THEN 'flies' ELSE 'walks' END AS movement FROM self
+-- {"animal": ["bird", "mouse", "butterfly", "spider"], "movement": ["flies", "walks", "flies", "walks"]}
 ```
 
 For more details on what is and isn't covered,
