@@ -40,16 +40,9 @@ polars-to-ibis = { workspace = true, editable = true }
 
 [dependency-groups]
 dev = [
-    "black>=26.5.1",
-    "flake8>=7.3.0",
-    "flake8-bugbear>=25.11.29",
-    "flit>=3.12.0",
     "ibis-framework[duckdb,mysql,polars,postgres,sqlite]>=12.0.0",
-    "isort>=8.0.1",
     "opendp[polars]==0.15.1",
     "pdoc>=16.0.0",
-    "pip==25.3",
-    "pip-tools==7.5.3",
     "polars>=1.32.0",
     "pre-commit>=4.6.0",
     "psycopg-binary>=3.3.4",
@@ -57,5 +50,6 @@ dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "pyyaml>=6.0.3",
+    "ruff>=0.16.9",
     "tomlkit>=0.15.0",
 ]

@@ -684,10 +684,7 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
-        "lf.select("
-        "    floats=pl.col('floats').mean(),"
-        "    ints=pl.col('ints').mean()"
-        ")",
+        "lf.select(floats=pl.col('floats').mean(), ints=pl.col('ints').mean())",
         {"floats": [0.25], "ints": [2.5]},
     ),
     EvalParserScenario(
@@ -704,26 +701,17 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
-        "lf.select("
-        "    floats=pl.col('floats').sum(),"
-        "    ints=pl.col('ints').sum()"
-        ")",
+        "lf.select(floats=pl.col('floats').sum(), ints=pl.col('ints').sum())",
         {"floats": [1.0], "ints": [10]},
     ),
     EvalParserScenario(
         "numeric",
-        "lf.select("
-        "    floats=pl.col('floats').min(),"
-        "    ints=pl.col('ints').min()"
-        ")",
+        "lf.select(floats=pl.col('floats').min(), ints=pl.col('ints').min())",
         {"floats": [0.1], "ints": [1]},
     ),
     EvalParserScenario(
         "numeric",
-        "lf.select("
-        "    floats=pl.col('floats').max(),"
-        "    ints=pl.col('ints').max()"
-        ")",
+        "lf.select(floats=pl.col('floats').max(), ints=pl.col('ints').max())",
         {"floats": [0.4], "ints": [4]},
     ),
     EvalParserScenario(
@@ -733,18 +721,12 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
-        "lf.select("
-        "    floats=pl.col('floats').std(),"
-        "    ints=pl.col('ints').std()"
-        ")",
+        "lf.select(floats=pl.col('floats').std(), ints=pl.col('ints').std())",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
     ),
     EvalParserScenario(
         "numeric",
-        "lf.select("
-        "    floats=pl.col('floats').var(),"
-        "    ints=pl.col('ints').var()"
-        ")",
+        "lf.select(floats=pl.col('floats').var(), ints=pl.col('ints').var())",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
         alt_pass={
             # TODO: Confirm that this is an ok result for OpenDP,

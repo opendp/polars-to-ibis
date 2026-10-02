@@ -2,7 +2,8 @@
 This is a private module: The API may change.
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
@@ -32,9 +33,7 @@ def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
     if polars_plan == "Len":
         return ("Len", None)
     if isinstance(polars_plan, str):
-        raise ValueError(
-            f"Unexpected string as plan: {polars_plan}"
-        )  # pragma: no cover
+        raise TypeError(f"Unexpected string as plan: {polars_plan}")  # pragma: no cover
     match list(polars_plan.items()):
         case [[tag, payload]]:
             return (tag, payload)
@@ -57,6 +56,6 @@ def assert_no_extras(*extras_dicts: dict[str, Any]) -> None:
     for i, extras in enumerate(extras_dicts):
         unexpected = extras.keys() - {"input"}
         if unexpected:
-            errors.append(f"{i+1}: {unexpected}")
+            errors.append(f"{i + 1}: {unexpected}")
     if errors:
         raise NotImplementedError(f"Unsupported extra parameters: {'; '.join(errors)}")
