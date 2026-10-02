@@ -109,36 +109,23 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
         for private_item, param_dict in zip(private_items, param_dicts):
             kwargs = pickle.loads(bytes(param_dict["kwargs"]))
 
-            match kwargs["support"]:
-                case "Integer":
-                    support = int
-                case "Float":  # pragma: no cover
-                    # TODO: Add a test case with float support.
-                    # https://github.com/opendp/polars-to-ibis/issues/166
-                    support = float
-                case _:
-                    raise ValueError(
-                        f"Expected 'Integer' or 'Float', not {kwargs['support']}"
-                    )
+            support = {
+                "Integer": int,
+                "Float": float,
+            }[kwargs["support"]]
             input_space = (
                 dp.atom_domain(T=support, nan=False),
                 dp.absolute_distance(T=support),
             )
 
-            match kwargs["distribution"]:
-                case "Laplace":
-                    make = dp.m.make_laplace
-                case "Gaussian":  # pragma: no cover
-                    # TODO: Add a test case that uses gaussian.
-                    # https://github.com/opendp/polars-to-ibis/issues/166
-                    make = dp.m.make_gaussian
-                case _:
-                    raise ValueError(
-                        "Expected 'Laplace' or 'Gaussian', "
-                        f"not {kwargs['distribution']}"
-                    )
-
-            measurement = make(*input_space, scale=kwargs["scale"])
+            make = {
+                "Laplace": dp.m.make_laplace,
+                "Gaussian": dp.m.make_gaussian,
+            }[kwargs["distribution"]]
+            measurement = make(
+                *input_space,
+                scale=kwargs["scale"],
+            )
 
             dp_result = scenario.assert_error_or_return_value(
                 "opendp_errors",
