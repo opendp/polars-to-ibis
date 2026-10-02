@@ -5,7 +5,6 @@ and even in that narrow scope you'll see a number of quirks.
 
 import dataclasses
 import math
-import re
 from abc import ABC, abstractmethod
 from typing import Any
 
