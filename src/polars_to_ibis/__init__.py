@@ -73,14 +73,24 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 
 ## Coverage
 
-These [Polars SQL](https://docs.pola.rs/api/python/stable/reference/sql/) expressions are handled:
-```passing
-SELECT DISTINCT ints FROM table ORDER BY ints
+A range of Polars expressions are handled.
+For readability, these example will use [Polars SQL](https://docs.pola.rs/api/python/stable/reference/sql/).
+Assuming this dataframe:
+```json
+{
+    "animal": ["bird", "mouse", "butterfly", "spider"],
+    "legs": [2, 4, 6, 8],
+    "wings": [2, 0, 4, 0]
+}
 ```
 
-These are **not**:
-```failing
-SELECT DISTINCT ON (ints) * FROM table
+These expressions produce the given results:
+```sql
+SELECT wings, SUM(legs) FROM self GROUP BY wings
+-- {"wings": [0, 2, 4], "legs": [12, 2, 6]}
+
+SELECT animal, 3 * wings / legs AS ratio FROM self
+-- {"animal": ["bird", "mouse", "butterfly", "spider"], "ratio": [3, 0, 2, 0]}
 ```
 
 For more details on what is and isn't covered,

@@ -5,6 +5,7 @@ and even in that narrow scope you'll see a number of quirks.
 
 import dataclasses
 import math
+import re
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -50,7 +51,7 @@ Results = dict[str, list[Any]]
 class BaseParserScenario(ABC, BaseScenario):
     category: str
     expression: str
-    expected_output: Results | str = "*"
+    expected_output: Results
     polars_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     convert_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     connection_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
