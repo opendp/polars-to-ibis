@@ -1,6 +1,6 @@
 """
 [![pypi](https://img.shields.io/pypi/v/polars_to_ibis)](https://pypi.org/project/polars_to_ibis/)
-[![github](https://img.shields.io/badge/github-polars_to_ibis-blue?logo=github)](https://github.com/opendp/polars-to-ibis)
+[![github](https://img.shields.io/badge/github-polars__to__ibis-blue?logo=github)](https://github.com/opendp/polars-to-ibis)
 
 Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/lazyframe/index.html)
 to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expression#unbound-tables).
@@ -71,6 +71,35 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 
 ```
 
+## Coverage
+
+A range of Polars expressions are handled.
+Assuming this dataframe:
+```json
+{
+    "animal": ["bird", "mouse", "butterfly", "spider"],
+    "legs": [2, 4, 6, 8],
+    "wings": [2, 0, 4, 0]
+}
+```
+
+These [Polars SQL](https://docs.pola.rs/api/python/stable/reference/sql/) expressions produce the given results,
+when translated to Ibis and executed on the target database:
+```sql
+SELECT wings, SUM(legs) FROM self GROUP BY wings
+-- {"wings": [0, 2, 4], "legs": [12, 2, 6]}
+
+SELECT animal, 3 * wings / legs AS ratio FROM self
+-- {"animal": ["bird", "mouse", "butterfly", "spider"], "ratio": [3, 0, 2, 0]}
+
+SELECT animal, CASE WHEN wings > 0 THEN 'flies' ELSE 'walks' END AS movement FROM self
+-- {"animal": ["bird", "mouse", "butterfly", "spider"], "movement": ["flies", "walks", "flies", "walks"]}
+```
+
+For more details on what is and isn't covered,
+see the [issues](https://github.com/opendp/polars-to-ibis/issues)
+and the [tests](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
+
 
 ## Limitations
 
@@ -79,9 +108,6 @@ Finally, we can execute in SQLite the query which we constructed in Polars and t
 - Ibis version: Tested against Ibis 11.0.0.
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
-
-The best summary of supported features is the
-[test scenarios](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_parser.py).
 
 ---
 

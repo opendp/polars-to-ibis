@@ -1,12 +1,10 @@
 # polars-to-ibis
 
-[![pypi](https://img.shields.io/pypi/v/polars_to_ibis)](https://pypi.org/project/polars_to_ibis/)
+[![pypi](https://img.shields.io/pypi/v/polars_to_ibis)](https://pypi.org/project/polars_to_ibis/) [![docs](https://img.shields.io/badge/docs-latest-blue)](https://opendp.github.io/polars-to-ibis)
 
 Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/lazyframe/index.html) to [Ibis unbound tables](https://ibis-project.org/how-to/extending/unbound_expression#unbound-tables).
 
 Polars and Ibis have similar APIs, but while Polars supports computation in-memory and on [Polars Cloud](https://cloud.pola.rs/), Ibis by itself does not handle computation: Instead it translates the dataframe expression into idiomatic SQL for a particular database.
-
-For examples of using `polars-to-ibis`, see the [API docs](https://opendp.github.io/polars-to-ibis).
 
 ## Contributions
 
@@ -44,6 +42,15 @@ $ uv run scripts/ci.sh
 ```
 
 The `debug.sh` script may also be helpful: It runs tests step-wise with debug logging. Both `debug.sh` and `ci.sh` pass extra parameters through to pytest.
+
+### Documentation
+
+To build the docs locally:
+```
+pdoc -o docs/ src/polars_to_ibis
+```
+
+The Github Pages [docs site](https://opendp.github.io/polars-to-ibis/polars_to_ibis.html) is updated automatically on pushes to main, so it may be ahead of the latest release.
 
 ### Release
 
