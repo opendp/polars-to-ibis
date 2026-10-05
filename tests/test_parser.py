@@ -71,6 +71,8 @@ def test_parser_scenarios(
         lambda: export(connection, ibis_table),  # type: ignore
     )
 
+    connection.disconnect()
+
     TOLERANCE = "tolerance"
     ALT_PASS = "alt_pass"
     ALT_XFAIL = "alt_xfail"
