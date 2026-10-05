@@ -32,7 +32,7 @@ def get_dataframe():
     shape: ...
     """
     json_str = get_code(polars_to_ibis.__doc__, "json")
-    # Use eval so rather than json.loads because the parsing is less fussy.
+    # Use eval() rather than json.loads() because the parsing is less fussy.
     json_data = eval(json_str)
     return pl.DataFrame(json_data)
 
@@ -45,7 +45,7 @@ def get_scenarios():
     sql_lines = get_code(polars_to_ibis.__doc__, "sql")
     sql_result_pairs = [re.split(r"\s*--\s*", line) for line in sql_lines.split("\n\n")]
 
-    # Use eval so rather than json.loads because the parsing is less fussy.
+    # Use eval() rather than json.loads() because the parsing is less fussy.
     return [(sql, eval(result)) for (sql, result) in sql_result_pairs]
 
 
