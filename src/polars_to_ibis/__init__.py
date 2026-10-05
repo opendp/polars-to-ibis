@@ -92,7 +92,7 @@ The best summary of supported features is the
 # Third-level headings are not added to the sidebar.
 
 from importlib.metadata import version
-from typing import Any
+from typing import Any, Final
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
@@ -104,8 +104,8 @@ from ._utils import PluginReplacer
 
 __version__ = version("polars_to_ibis")
 
-_MIN_POLARS: str = "1.32.0"
-_MAX_POLARS: str = "1.41.2"
+_MIN_POLARS: Final = "1.32.0"
+_MAX_POLARS: Final = "1.41.2"
 
 __all__ = ["convert_polars_to_ibis", "scan_database", "split_polars_on_ffi"]
 
