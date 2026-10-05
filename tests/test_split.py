@@ -152,5 +152,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
 
     dp_results = helper_function_to_add_to_opendp(query, TABLE_NAME, connection)
 
+    connection.disconnect()
+
     assert isinstance(dp_results, list)
     assert all(isinstance(result, (float, int)) for result in dp_results)
