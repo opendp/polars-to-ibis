@@ -109,19 +109,31 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
         for private_item, param_dict in zip(private_items, param_dicts):
             kwargs = pickle.loads(bytes(param_dict["kwargs"]))
 
-            support = {
+            support_key = kwargs["support"]
+            support_dict = {
                 "Integer": int,
                 "Float": float,
-            }[kwargs["support"]]
+            }
+            support = support_dict.get(support_key)
+            if support is None:
+                raise KeyError(
+                    f"In pickled kwargs expected one of {support_dict.keys()}, not '{support_key}'"
+                )  # pragma: no cover
             input_space = (
                 dp.atom_domain(T=support, nan=False),
                 dp.absolute_distance(T=support),
             )
 
-            make = {
+            make_key = kwargs["distribution"]
+            make_dict = {
                 "Laplace": dp.m.make_laplace,
                 "Gaussian": dp.m.make_gaussian,
-            }[kwargs["distribution"]]
+            }
+            make = make_dict.get(make_key)
+            if make is None:
+                raise KeyError(
+                    f"In pickled kwargs expected one of {make_dict.keys()}, not '{make_key}'"
+                )  # pragma: no cover
             measurement = make(
                 *input_space,
                 scale=kwargs["scale"],
