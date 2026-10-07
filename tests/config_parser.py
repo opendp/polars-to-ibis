@@ -425,6 +425,17 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
+        "lf.select((pl.col.ints + 2**17).cast(pl.Int16, strict=True))",
+        {},
+        polars_errors={"*": "conversion from `i64` to `i16` failed"},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select((pl.col.ints + 2**17).cast(pl.Int16, strict=False))",
+        {"ints": [None, None, None, None]},
+    ),
+    EvalParserScenario(
+        "numeric",
         "lf.median()",
         {"floats": [0.25], "ints": [2.5]},
         backend_errors={
