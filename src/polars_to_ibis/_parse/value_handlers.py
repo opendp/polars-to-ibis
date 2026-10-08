@@ -113,7 +113,7 @@ def handle_column(payload: PolarsPlan):
 
 @value_handler(tags.value.CAST)
 def handle_cast(payload: PolarsPlan) -> ir.Value:
-    match payload:  # pragma: no cover (Only for polars==1.36.1)
+    match payload:
         case {
             "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
             "expr": expr,

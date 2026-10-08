@@ -465,9 +465,9 @@ def handle_hstack(
                 tags.value.CAST: {
                     "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
                     "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
-                    # TODO: Preserve semantics for overflow values:
-                    # Strict: raise error
-                    # NonStrict: return null
+                    # TODO: "NonStrict" can cause downstream errors in the DB,
+                    # which we definitely don't want, particularly for OpenDP.
+                    # https://github.com/opendp/polars-to-ibis/issues/182
                     "options": "Strict" | "NonStrict",
                     **extras_3,
                 },
