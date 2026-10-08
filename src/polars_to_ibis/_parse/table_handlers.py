@@ -115,7 +115,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
         match (tag, payload):
             case ("Len", None):
                 agg_kwargs["len"] = input_table.count()
-            case (tags.value.CAST, payload):
+            case (tags.value.CAST, _):
                 name = infer_name(payload)
                 select_kwargs[name] = handle_cast(payload)
             case (tags.value.COLUMN, _):
@@ -141,17 +141,11 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             ):
                 assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
-            case (
-                tags.value.FUNCTION,
-                payload,
-            ):
+            case (tags.value.FUNCTION, _):
                 name = infer_name(col)
                 select_kwargs[name] = handle_function(payload)
-            case (
-                tags.value.AGG,
-                expr,
-            ):
-                match expr:
+            case (tags.value.AGG, _):
+                match payload:
                     case {
                         "Count": {
                             "input": {
@@ -187,10 +181,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                     case _:
                         name = infer_name(expr)
                         agg_kwargs[name] = polars_expr_to_ibis_value(expr)
-            case (
-                tags.value.BINARY_EXPR,
-                _,
-            ):
+            case (tags.value.BINARY_EXPR, _):
                 target_name = infer_name(payload)
                 ibis_value = handle_binary_expr(payload)
                 if find(payload, tags.value.AGG):
