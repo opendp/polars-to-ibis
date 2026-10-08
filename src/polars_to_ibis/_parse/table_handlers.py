@@ -179,8 +179,8 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                                 }
                             )
                     case _:
-                        name = infer_name(expr)
-                        agg_kwargs[name] = polars_expr_to_ibis_value(expr)
+                        name = infer_name(payload)
+                        agg_kwargs[name] = polars_expr_to_ibis_value(payload)
             case (tags.value.BINARY_EXPR, _):
                 target_name = infer_name(payload)
                 ibis_value = handle_binary_expr(payload)
