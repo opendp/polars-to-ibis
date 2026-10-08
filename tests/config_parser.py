@@ -425,6 +425,16 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
+        "lf.select((pl.col.ints + 2).cast(pl.Int16, strict=True))",
+        {"ints": [3, 4, 5, 6]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select((pl.col.ints + 2).cast(pl.Int16, strict=False))",
+        {"ints": [3, 4, 5, 6]},
+    ),
+    EvalParserScenario(
+        "numeric",
         "lf.select((pl.col.ints + 2**17).cast(pl.Int16, strict=True))",
         {},
         polars_errors={"*": "conversion from `i64` to `i16` failed"},
@@ -433,6 +443,11 @@ parser_scenarios = [
         "numeric",
         "lf.select((pl.col.ints + 2**17).cast(pl.Int16, strict=False))",
         {"ints": [None, None, None, None]},
+        backend_errors={
+            "duckdb": "Type INT64 with value 131073 can't be cast",
+            "postgres": "smallint out of range",
+        },
+        alt_xfail={"*": {"ints": [1, 2, 3, 4]}},
     ),
     EvalParserScenario(
         "numeric",

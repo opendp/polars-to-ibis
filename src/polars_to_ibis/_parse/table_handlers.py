@@ -114,6 +114,23 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
         match (tag, payload):
             case ("Len", None):
                 agg_kwargs["len"] = input_table.count()
+            case (
+                tags.value.CAST,
+                {
+                    "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
+                    "expr": expr,
+                    # TODO: Preserve semantics for overflow values:
+                    # Strict: raise error
+                    # NonStrict: return null
+                    "options": "Strict" | "NonStrict",
+                    **extras_2,
+                },
+            ):
+                assert_no_extras(extras_1, extras_2)
+                name = infer_name(expr)
+                select_kwargs[name] = polars_expr_to_ibis_value(expr).cast(
+                    dtype_literal.lower()
+                )
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case (tags.value.ALIAS, [expr, new_name]):
