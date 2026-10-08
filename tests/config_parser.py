@@ -440,6 +440,8 @@ parser_scenarios = [
         polars_errors={"*": "conversion from `i64` to `i16` failed"},
     ),
     EvalParserScenario(
+        # TODO: See handle_cast() and
+        # https://github.com/opendp/polars-to-ibis/issues/182
         "numeric",
         "lf.select((pl.col.ints + 2**17).cast(pl.Int16, strict=False))",
         {"ints": [None, None, None, None]},
