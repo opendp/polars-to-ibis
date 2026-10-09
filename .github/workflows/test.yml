@@ -48,8 +48,11 @@ jobs:
       - name: Install polars ${{ matrix.polars-version }}
         run: uv pip install polars==${{ matrix.polars-version }}
 
-      - name: Confirm polars install
+      - name: Confirm polars version
         run: diff <( echo ${{ matrix.polars-version }} ) <( uv run python -c 'import polars; print(polars.__version__)' )
+
+      - name: Confirm python install
+        run: diff <( echo "Python ${{ matrix.python-version }}" ) <( python --version )
 
       - name: Test
         run: uv run scripts/ci.sh
