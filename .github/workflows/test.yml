@@ -23,7 +23,6 @@ jobs:
           # - '1.41.2'
           - '1.44.2' # Highest 1.x release.
           - '2.0.0'  # Should definitely fail tests!
-          - '3.0.0'  # Doesn't even exist!
           # NOTE: Update __init__.py ("Limitations") if there are changes.
 
     steps:
