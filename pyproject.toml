@@ -15,7 +15,6 @@ version = "0.3.0"
 description = "Convert Polars LazyFrames to Ibis unbound tables"
 dependencies = [
     "ibis-framework",
-    "polars>=1.32.0",
 ]
 requires-python = ">=3.11"
 
@@ -41,10 +40,7 @@ polars-to-ibis = { workspace = true, editable = true }
 
 [dependency-groups]
 dev = [
-    "ibis-framework[duckdb,mysql,polars,postgres,sqlite]>=12.0.0",
-    "opendp[polars]==0.15.1",
     "pdoc>=16.0.0",
-    "polars>=1.32.0",
     "pre-commit>=4.6.0",
     "psycopg-binary>=3.3.4",
     "pyright>=1.1.411",
@@ -53,4 +49,9 @@ dev = [
     "pyyaml>=6.0.3",
     "ruff>=0.16.9",
     "tomlkit>=0.15.0",
+]
+polars-1-36-1 = [
+    "opendp[polars]==0.16.0",
+    "polars==1.36.1",
+    {include-group = "dev"},
 ]
