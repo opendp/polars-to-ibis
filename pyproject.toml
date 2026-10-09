@@ -40,6 +40,7 @@ polars-to-ibis = { workspace = true, editable = true }
 
 [dependency-groups]
 dev = [
+    "ibis-framework[duckdb,polars,postgres,sqlite]>=12.0.0",
     "pdoc>=16.0.0",
     "pre-commit>=4.6.0",
     "psycopg-binary>=3.3.4",
