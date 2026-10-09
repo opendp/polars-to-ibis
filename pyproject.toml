@@ -51,7 +51,7 @@ dev = [
     "ruff>=0.16.9",
     "tomlkit>=0.15.0",
 ]
-polars-1-36-1 = [
+"polars-1.36.1" = [
     "opendp[polars]==0.16.0",
     "polars==1.36.1",
     {include-group = "dev"},

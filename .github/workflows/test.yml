@@ -16,7 +16,8 @@ jobs:
           - '3.12'
           - '3.13'
         polars-version:
-          - polars-1-36-1
+          - '1.36.1'
+          - '1.44.2'
           # - '1.44.2' # Highest 1.x release.
           # - '2.0.0'  # Should definitely fail tests!
           # NOTE: Update __init__.py ("Limitations") if there are changes.
@@ -36,7 +37,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group ${{ matrix.polars-version }}
+        run: uv sync --group polars-${{ matrix.polars-version }}
 
       - name: Run pre-commit checks
         run: uv run pre-commit run --all-files
