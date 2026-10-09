@@ -104,7 +104,8 @@ and the [tests](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_
 ## Limitations
 
 - Python versions: Tested against Python 3.11 and 3.13.
-- Polars versions: Tested against Polars 1.32.0, 1.36.1, and 1.41.2.
+- Polars versions: Tested against Polars 1.36.1, 1.41.2, and 1.44.2
+
 - Ibis version: Tested against Ibis 11.0.0.
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
@@ -130,8 +131,8 @@ from ._utils import PluginReplacer
 
 __version__ = version("polars_to_ibis")
 
-_MIN_POLARS: Final = "1.32.0"
-_MAX_POLARS: Final = "1.41.2"
+_MIN_POLARS: Final = "1.36.1"
+_MAX_POLARS: Final = "1.44.2"
 
 __all__ = ["convert_polars_to_ibis", "scan_database", "split_polars_on_ffi"]
 
