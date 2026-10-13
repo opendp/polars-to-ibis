@@ -17,7 +17,7 @@ dependencies = [
     "ibis-framework",
     "polars>=1.32.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [project.urls]
 Home = "https://github.com/opendp/polars-to-ibis"
