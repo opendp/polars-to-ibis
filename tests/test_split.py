@@ -2,7 +2,6 @@ import re
 from copy import deepcopy
 
 import ibis
-import opendp.prelude as dp
 import polars as pl
 import pytest
 
@@ -10,6 +9,8 @@ from polars_to_ibis import scan_database, split_polars_on_ffi
 
 from .config_split import TABLE_NAME, SplitScenario, split_scenarios
 from .utils import backend_names, get_connection
+
+dp = pytest.importorskip("opendp.prelude")
 
 
 def norm_sql(sql: str):

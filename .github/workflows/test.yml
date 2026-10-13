@@ -16,10 +16,7 @@ jobs:
           - '3.12'
           - '3.13'
         polars-version:
-          # TODO: Old, but may be supported?
-          # - '1.32.0' # OpenDP v0.14.1
-
-          # Current
+          - '1.32.0'
           - '1.36.1' # OpenDP v0.15.1
 
           # Next higher
@@ -50,5 +47,4 @@ jobs:
         run: uv run pre-commit run --all-files
 
       - name: Test
-        # TODO: Remove --stepwise
-        run: uv run scripts/ci.sh --stepwise
+        run: uv run scripts/ci.sh

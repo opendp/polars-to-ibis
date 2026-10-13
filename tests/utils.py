@@ -52,6 +52,8 @@ def get_connection(
             "password": "",
             "database": environ["USER"],
         }
+        # Accessing the attribute actually checks for install,
+        # so "backend.mysql" would fail if mysql is not installed.
         if backend.name == "mysql"
         else {}
     )
@@ -79,6 +81,7 @@ backend_names = [
     "duckdb",
     pytest.param("postgres", marks=pytest.mark.extra_install),
     # TODO: restore mysql
+    # https://github.com/opendp/polars-to-ibis/issues/190
     # pytest.param("mysql", marks=pytest.mark.extra_install),
 ]
 

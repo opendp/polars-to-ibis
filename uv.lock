@@ -900,6 +900,20 @@ dev = [
     { name = "sqlglot" },
     { name = "tomlkit" },
 ]
+polars-1-32-0 = [
+    { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"] },
+    { name = "pdoc" },
+    { name = "polars" },
+    { name = "pre-commit" },
+    { name = "psycopg-binary" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+    { name = "sqlglot" },
+    { name = "tomlkit" },
+]
 polars-1-36-1 = [
     { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"] },
     { name = "opendp", extra = ["polars"] },
@@ -926,6 +940,20 @@ requires-dist = [
 dev = [
     { name = "ibis-framework", extras = ["duckdb", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
     { name = "pdoc", specifier = ">=16.0.0" },
+    { name = "pre-commit", specifier = ">=4.6.0" },
+    { name = "psycopg-binary", specifier = ">=3.3.4" },
+    { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "ruff", specifier = ">=0.16.9" },
+    { name = "sqlglot", specifier = "<30.18" },
+    { name = "tomlkit", specifier = ">=0.15.0" },
+]
+polars-1-32-0 = [
+    { name = "ibis-framework", extras = ["duckdb", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
+    { name = "pdoc", specifier = ">=16.0.0" },
+    { name = "polars", specifier = "==1.36.1" },
     { name = "pre-commit", specifier = ">=4.6.0" },
     { name = "psycopg-binary", specifier = ">=3.3.4" },
     { name = "pyright", specifier = ">=1.1.411" },

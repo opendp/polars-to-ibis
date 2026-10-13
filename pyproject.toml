@@ -56,6 +56,12 @@ dev = [
     "sqlglot<30.18",
 ]
 
+"polars-1.32.0" = [
+    # opendp pins polars version, so skip opendp to test other polars versions.
+    "polars==1.36.1",
+    {include-group = "dev"},
+]
+
 "polars-1.36.1" = [
     "opendp[polars]==0.16.0",
     "polars==1.36.1",
