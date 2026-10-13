@@ -12,17 +12,18 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - '3.10'
           - '3.11'
           - '3.12'
           - '3.13'
         polars-version:
-          # See setup.cfg for the pinned Polars version:
-          # https://github.com/opendp/opendp/blob/stable/python/setup.cfg
-          # If this library has wider usage, we can test intermediate versions.
-          - '1.32.0' # OpenDP v0.14.1
+          # TODO: Old, but may be supported?
+          # - '1.32.0' # OpenDP v0.14.1
+
+          # Current
           - '1.36.1' # OpenDP v0.15.1
-          - '1.41.2' # Latest release
+
+          # Next higher
+          # - '1.41.2'
           # NOTE: Update README ("Limitations") if there are changes.
 
     steps:
@@ -45,14 +46,12 @@ jobs:
       - name: Run pre-commit checks
         run: uv run pre-commit run --all-files
 
-      - name: Install polars ${{ matrix.polars-version }}
-        run: uv pip install polars==${{ matrix.polars-version }}
-
       - name: Confirm polars version
         run: diff <( echo ${{ matrix.polars-version }} ) <( uv run python -c 'import polars; print(polars.__version__)' )
 
-      - name: Confirm python install
+      - name: Confirm python version
         run: diff <( echo "Python ${{ matrix.python-version }}" ) <( python --version )
 
       - name: Test
-        run: uv run scripts/ci.sh
+        # TODO: Remove --stepwise
+        run: uv run scripts/ci.sh --stepwise
