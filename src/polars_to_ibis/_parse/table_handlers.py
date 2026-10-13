@@ -16,6 +16,7 @@ from . import tags
 from .utils import assert_no_extras, indent, outdent, split_tag_payload
 from .value_handlers import (
     handle_binary_expr,
+    handle_cast,
     handle_function,
     polars_expr_to_ibis_value,
 )
@@ -114,6 +115,9 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
         match (tag, payload):
             case ("Len", None):
                 agg_kwargs["len"] = input_table.count()
+            case (tags.value.CAST, _):
+                name = infer_name(payload)
+                select_kwargs[name] = handle_cast(payload)
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case (tags.value.ALIAS, [expr, new_name]):
@@ -137,17 +141,11 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             ):
                 assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
-            case (
-                tags.value.FUNCTION,
-                payload,
-            ):
+            case (tags.value.FUNCTION, _):
                 name = infer_name(col)
                 select_kwargs[name] = handle_function(payload)
-            case (
-                tags.value.AGG,
-                expr,
-            ):
-                match expr:
+            case (tags.value.AGG, _):
+                match payload:
                     case {
                         "Count": {
                             "input": {
@@ -181,12 +179,9 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                                 }
                             )
                     case _:
-                        name = infer_name(expr)
-                        agg_kwargs[name] = polars_expr_to_ibis_value(expr)
-            case (
-                tags.value.BINARY_EXPR,
-                _,
-            ):
+                        name = infer_name(payload)
+                        agg_kwargs[name] = polars_expr_to_ibis_value(payload)
+            case (tags.value.BINARY_EXPR, _):
                 target_name = infer_name(payload)
                 ibis_value = handle_binary_expr(payload)
                 if find(payload, tags.value.AGG):
@@ -461,7 +456,10 @@ def handle_hstack(
                 tags.value.CAST: {
                     "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
                     "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
-                    "options": "Strict",
+                    # TODO: "NonStrict" can cause downstream errors in the DB,
+                    # which we definitely don't want, particularly for OpenDP.
+                    # https://github.com/opendp/polars-to-ibis/issues/182
+                    "options": "Strict" | "NonStrict",
                     **extras_3,
                 },
                 **extras_4,
