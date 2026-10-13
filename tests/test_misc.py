@@ -56,4 +56,4 @@ def test_polars_versions_in_docs():
 def test_python_min_version(rel_path):
     root = Path(__file__).parent.parent
     text = (root / rel_path).read_text()
-    assert "3.10" in text
+    assert "3.11" in text
