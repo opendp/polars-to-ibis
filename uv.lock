@@ -581,20 +581,20 @@ wheels = [
 
 [[package]]
 name = "opendp"
-version = "0.15.1"
+version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/eb/5956e64b09aef432a70161325a7e0507ea22240083c7014871d6bd2417a1/opendp-0.15.1.tar.gz", hash = "sha256:0fb85667f321659c8cc7ae317c117e31e555c0b36e48522092002a5f24d5d795", size = 756989, upload-time = "2026-05-29T02:57:52.261Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/d8/82c8bb1ccdb6d45587e4bb320631738e5e8373ddb07fccd8014d210ac6b5/opendp-0.16.0.tar.gz", hash = "sha256:eff7bbb7e896a8461d06dd8fc28c3c67c798267c4487b284f4917cb3fbe0caaf", size = 769499, upload-time = "2026-10-06T17:50:50.283Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/60/18588e19a2848058dadfd5eaa7a126343fd0f1588440d96c7d2a44ce524f/opendp-0.15.1-cp310-abi3-macosx_10_13_x86_64.whl", hash = "sha256:490f29b587132822f99fe3ed3fe380af8b74f98261a2e60f3d98775c9119a153", size = 50282029, upload-time = "2026-05-29T02:57:32.53Z" },
-    { url = "https://files.pythonhosted.org/packages/78/2d/022201037293cf07aef1bff59df521c7701853cb2cd4b5dcb5c4a80fa503/opendp-0.15.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:48c4038b2d946c83db0b6cf5b9f2a9331b2c09e7172a2fb00d51734563a52dd1", size = 48033939, upload-time = "2026-05-29T02:57:35.261Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/2f/e536fb003181e21031c0623c37a8f30bed9e0971916b183e2f63dcf7aba0/opendp-0.15.1-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:5fcce9157b80c79be490bb24aff0c5557bb06fc90974d403c1c4c6cf7fadb737", size = 50967178, upload-time = "2026-05-29T02:57:38.096Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/d2/673c4beb6beafe160acc025ce7bd3857c59adaf25ed2912e6ec8a33ba1ea/opendp-0.15.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8a39e4e30c6c52d5303cd47a0642f8e4748096a4eb513355db1bab6855566215", size = 53899521, upload-time = "2026-05-29T02:57:41.455Z" },
-    { url = "https://files.pythonhosted.org/packages/64/e4/2cf584a9c358b18d6a91d8c9fb055bca6363fbd077bbcb30231dae252dd6/opendp-0.15.1-cp310-abi3-win32.whl", hash = "sha256:8d0e37c36a2493ae356724b20b0e419950d7bfb00670e48e89ad5afe139ddec5", size = 39806602, upload-time = "2026-05-29T02:57:44.406Z" },
-    { url = "https://files.pythonhosted.org/packages/7d/6a/00faaa65fdb3ac4db93d05c1039a844ff4ac95476b074b7c802e37c7fe7e/opendp-0.15.1-cp310-abi3-win_amd64.whl", hash = "sha256:f01413dee6b4ce174bb6e1be868d38bb0e15aa34312da5f647496aac48c7862a", size = 45840119, upload-time = "2026-05-29T02:57:47.134Z" },
-    { url = "https://files.pythonhosted.org/packages/82/e0/329d729e123d640226d5b6cd6a1fa2ae4c262adef8f585cc8bdcaae7342e/opendp-0.15.1-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:d0e3df48a6641dabd8b32c652be8c2b035debdb735b36bd08bbe36d75cc6bba5", size = 52308044, upload-time = "2026-05-29T02:57:49.971Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/a3/3f234e1f550c76fe087353212ac7f73495630b0c49a40045540092c6371d/opendp-0.16.0-cp310-abi3-macosx_10_13_x86_64.whl", hash = "sha256:a40e0c9f7a6f5a23856f48f395062a0c957a7ee5a29b1f1c23ac2ae9296149e4", size = 44603198, upload-time = "2026-10-06T17:50:19.528Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/e5/8bd56a92855402f32a79a8f78cc82b1d0a9d8c245cfbaada0559a6529262/opendp-0.16.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:27dbbf0cb7cc63e504ee85137ec361f707ed4fc171812fe0544d85355889cb32", size = 43217664, upload-time = "2026-10-06T17:50:23.729Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/10/ce4834b1c4a75f56d1efc472eab9a508042dd7ab178b40d29b127b9a0146/opendp-0.16.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:e128faea9ac5404877f560d93039a081c3ef2b5661acdbd786b33cdbb3f737ec", size = 46901616, upload-time = "2026-10-06T17:50:28.166Z" },
+    { url = "https://files.pythonhosted.org/packages/37/7c/476e661a0ca283a6753de043ec974fe081ba8220d0f9a2b0fb68e7cb1d21/opendp-0.16.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:724c85997bb1035e355a29d4e115d1378d9ccf171b50853c7a96c23d4374c4e4", size = 57901680, upload-time = "2026-10-06T17:50:33.295Z" },
+    { url = "https://files.pythonhosted.org/packages/88/12/5b59ecac3e550f3fe8ca52af93c2bebdb4c19bb8c3491c75204b23caf790/opendp-0.16.0-cp310-abi3-win32.whl", hash = "sha256:5bb64e535637697ec3c9a8bfb52b1c0fdf5be1fab908b8d0eb8bd7436a52e4b9", size = 36827562, upload-time = "2026-10-06T17:50:37.646Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/43/4c4a201473645f0b18d21e7733b6985f136e7e4ac278087067e4abb92aa4/opendp-0.16.0-cp310-abi3-win_amd64.whl", hash = "sha256:0e21ba3908cd16d31697f4f4081d287ea3a38a3a066e72ae33bb4f2f0b688540", size = 42778297, upload-time = "2026-10-06T17:50:42.781Z" },
+    { url = "https://files.pythonhosted.org/packages/32/a2/a2df28ec938da9e605102b87672a5f8addf898a54f89ccd28f634ca5492b/opendp-0.16.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:b04bb6904c2f6691841225e456825aa074cac59a271d2b73d81954b8b385f19b", size = 56636872, upload-time = "2026-10-06T17:50:48Z" },
 ]
 
 [package.optional-dependencies]
@@ -757,6 +757,19 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "ibis-framework", extra = ["duckdb", "mysql", "polars", "postgres", "sqlite"] },
+    { name = "pdoc" },
+    { name = "polars" },
+    { name = "pre-commit" },
+    { name = "psycopg-binary" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+    { name = "tomlkit" },
+]
+polars-1-36-1 = [
+    { name = "ibis-framework", extra = ["duckdb", "mysql", "polars", "postgres", "sqlite"] },
     { name = "opendp", extra = ["polars"] },
     { name = "pdoc" },
     { name = "polars" },
@@ -779,8 +792,22 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "ibis-framework", extras = ["duckdb", "mysql", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
-    { name = "opendp", extras = ["polars"], specifier = "==0.15.1" },
     { name = "pdoc", specifier = ">=16.0.0" },
+    { name = "polars", specifier = ">=1.32.0" },
+    { name = "pre-commit", specifier = ">=4.6.0" },
+    { name = "psycopg-binary", specifier = ">=3.3.4" },
+    { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "ruff", specifier = ">=0.16.9" },
+    { name = "tomlkit", specifier = ">=0.15.0" },
+]
+polars-1-36-1 = [
+    { name = "ibis-framework", extras = ["duckdb", "mysql", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
+    { name = "opendp", extras = ["polars"], specifier = "==0.16.0" },
+    { name = "pdoc", specifier = ">=16.0.0" },
+    { name = "polars", specifier = "==1.36.1" },
     { name = "polars", specifier = ">=1.32.0" },
     { name = "pre-commit", specifier = ">=4.6.0" },
     { name = "psycopg-binary", specifier = ">=3.3.4" },
@@ -1310,7 +1337,7 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/97/5a3609c4f8d58b039179648e62dd220f89864f56f7357f5d4f45c29eb2cc/scipy-1.17.1.tar.gz", hash = "sha256:95d8e012d8cb8816c226aef832200b1d45109ed4464303e997c5b13122b297c0", size = 30573822, upload-time = "2026-02-23T00:26:24.851Z" }
 wheels = [
@@ -1389,7 +1416,7 @@ resolution-markers = [
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.5.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "numpy", version = "2.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a7/25/c2700dfaf6442b4effaa91af24ebce5dc9d31bb4a69706313aae70d72cd0/scipy-1.18.0.tar.gz", hash = "sha256:67b2ad2ad54c72ca6d04975a9b2df8c3638c34ddd5b28738e94fc2b57929d378", size = 30774447, upload-time = "2026-06-19T15:01:43.456Z" }
 wheels = [
