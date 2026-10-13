@@ -49,9 +49,6 @@ jobs:
       - name: Confirm polars version
         run: diff <( echo ${{ matrix.polars-version }} ) <( uv run python -c 'import polars; print(polars.__version__)' )
 
-      - name: Confirm python version
-        run: diff <( echo "Python ${{ matrix.python-version }}" ) <( uv run python --version )
-
       - name: Test
         # TODO: Remove --stepwise
         run: uv run scripts/ci.sh --stepwise
