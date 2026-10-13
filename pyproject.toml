@@ -41,6 +41,7 @@ polars-to-ibis = { workspace = true, editable = true }
 
 [dependency-groups]
 dev = [
+    # TODO: Restore mysql.
     "ibis-framework[duckdb,polars,postgres,sqlite]>=12.0.0",
     "pdoc>=16.0.0",
     "pre-commit>=4.6.0",
@@ -51,6 +52,9 @@ dev = [
     "pyyaml>=6.0.3",
     "ruff>=0.16.9",
     "tomlkit>=0.15.0",
+    # TODO: Remove pin after next ibis release
+    # See https://github.com/ibis-project/ibis/issues/12124
+    "sqlglot<30.18",
 ]
 
 "polars-1.36.1" = [
