@@ -85,7 +85,7 @@ def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
 
 split_scenarios = [
     SplitScenario(
-        "context.query().select(dp.len())",
+        "context.query().select(dp.len(signed=True))",
         f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
         {"len": [4]},
         get_expected_parameters([(1.0, "Integer")]),
@@ -155,7 +155,7 @@ split_scenarios = [
         },
     ),
     SplitScenario(
-        "context.query().select(dp.len(),pl.col.ints.dp.sum((0,10)))",
+        "context.query().select(dp.len(signed=True),pl.col.ints.dp.sum((0,10)))",
         f"SELECT COUNT(*) AS len, {get_select_int_sum('t0').replace('SELECT', '')} "
         f"FROM default_table AS t0",
         {
