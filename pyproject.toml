@@ -56,14 +56,31 @@ dev = [
     "sqlglot<30.18",
 ]
 
-"polars-1.32.0" = [
-    # opendp pins polars version, so skip opendp to test other polars versions.
-    "polars==1.36.1",
-    {include-group = "dev"},
-]
-
 "polars-1.36.1" = [
     "opendp[polars]==0.16.0",
     "polars==1.36.1",
     {include-group = "dev"},
+]
+
+# opendp pins polars version, so it is not included in all cases.
+
+"polars-1.32.0" = [
+    "polars==1.32.0",
+    {include-group = "dev"},
+]
+
+# TODO: Add to matrix!
+
+"polars-1.41.2" = [
+    "polars==1.41.2",
+    {include-group = "dev"},
+]
+
+[tool.uv]
+conflicts = [
+    [
+        { group = "polars-1.36.1" },
+        { group = "polars-1.32.0" },
+        { group = "polars-1.41.2" },
+    ]
 ]

@@ -19,7 +19,7 @@ jobs:
           - '1.32.0'
           - '1.36.1' # OpenDP v0.15.1
 
-          # Next higher
+          # Next:
           # - '1.41.2'
           # NOTE: Update README ("Limitations") if there are changes.
 
