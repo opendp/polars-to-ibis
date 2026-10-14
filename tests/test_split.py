@@ -14,9 +14,9 @@ from .utils import backend_names, get_connection
 opendp = pytest.importorskip("opendp")
 # ... but we still end up here.
 if pl.__version__ == opendp.mod._EXPECTED_POLARS_VERSION:
-    import opendp.prelude as dp
+    import opendp.prelude as dp  # pragma: no cover
 else:
-    pytest.skip(allow_module_level=True)
+    pytest.skip(allow_module_level=True)  # pragma: no cover
 
 
 def norm_sql(sql: str):
