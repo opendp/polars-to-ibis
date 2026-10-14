@@ -36,9 +36,10 @@ On MacOS we recommend:
 $ uv run scripts/setup.sh
 ```
 
-At this point, tests should pass, and code coverage should be complete (except blocks we explicitly ignore):
+At this point, tests should pass for any supported dependency version, and code coverage should be complete (except blocks we explicitly ignore):
 ```shell
-$ uv run scripts/ci.sh
+$ uv run --group polars-1.36.1 scripts/ci.sh
+$ uv run --group polars-1.37.0 scripts/ci.sh
 ```
 
 The `debug.sh` script may also be helpful: It runs tests step-wise with debug logging. Both `debug.sh` and `ci.sh` pass extra parameters through to pytest.

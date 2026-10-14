@@ -2,7 +2,6 @@ import re
 from copy import deepcopy
 
 import ibis
-import opendp.prelude as dp
 import polars as pl
 import pytest
 
@@ -10,6 +9,14 @@ from polars_to_ibis import scan_database, split_polars_on_ffi
 
 from .config_split import TABLE_NAME, SplitScenario, split_scenarios
 from .utils import backend_names, get_connection
+
+# I thought this would be sufficient...
+opendp = pytest.importorskip("opendp")
+# ... but we still end up here.
+if pl.__version__ == opendp.mod._EXPECTED_POLARS_VERSION:
+    import opendp.prelude as dp  # pragma: no cover
+else:
+    pytest.skip(allow_module_level=True)  # pragma: no cover
 
 
 def norm_sql(sql: str):

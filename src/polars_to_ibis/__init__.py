@@ -103,9 +103,9 @@ and the [tests](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_
 
 ## Limitations
 
-- Python versions: Tested against Python 3.11 and 3.13.
-- Polars versions: Tested against Polars 1.32.0, 1.36.1, and 1.41.2.
-- Ibis version: Tested against Ibis 11.0.0.
+- Tested against python versions: 3.11, 3.12, 3.13
+- Tested against polars versions: 1.36.1, 1.37.0
+- Tested against ibis versions: 12.0.0
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
 
@@ -118,7 +118,7 @@ and the [tests](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_
 # Third-level headings are not added to the sidebar.
 
 from importlib.metadata import version
-from typing import Any, Final
+from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
@@ -130,36 +130,11 @@ from ._utils import PluginReplacer
 
 __version__ = version("polars_to_ibis")
 
-_MIN_POLARS: Final = "1.32.0"
-_MAX_POLARS: Final = "1.41.2"
-
 __all__ = ["convert_polars_to_ibis", "scan_database", "split_polars_on_ffi"]
 
 
 class PolarsToIbisWarning(Warning):
     pass
-
-
-def _warn(message: str):  # pragma: no cover
-    # It's hard to remember to use the wrapping class,
-    # so do it by default,
-    # and keep "warn" out of the global namespace.
-    from warnings import warn
-
-    warn(PolarsToIbisWarning(message))
-
-
-def _check_version():
-    if not (
-        _MIN_POLARS.split(".")  # Oldest supported
-        <= pl.__version__.split(".")  # Installed
-        <= _MAX_POLARS.split(".")  # Newest supported
-    ):
-        _warn(  # pragma: no cover
-            f"Polars {pl.__version__} has not been tested! "
-            f"Use {_MIN_POLARS} to {_MAX_POLARS}, "
-            f"or submit a PR to expand test coverage."
-        )
 
 
 def scan_database(connection: Any, table_name: str) -> pl.LazyFrame:
@@ -184,9 +159,6 @@ def convert_polars_to_ibis(
     Ibis translates dataframe syntax to idiomatic SQL,
     so it needs to have a table name to include in the SQL.
     """
-
-    _check_version()
-
     polars_plan = serialize(lf)  # type: ignore
     input_schema = _get_input_schema(polars_plan)
     ibis_table = ibis.table(input_schema, name=table_name)  # type: ignore
