@@ -40,11 +40,11 @@ members = [
 polars-to-ibis = { workspace = true, editable = true }
 
 [dependency-groups]
-dev = [
+shared = [
     "ibis-framework[duckdb,polars,postgres,sqlite]>=12.0.0",
     "pdoc>=16.0.0",
     "pre-commit>=4.6.0",
-    "psycopg-binary>=3.3.4",
+    "psycopg-binary>=3.3.4", # for postgres
     "pyright>=1.1.411",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
@@ -59,14 +59,14 @@ dev = [
 "polars-1.36.1" = [
     "opendp[polars]==0.16.0",
     "polars==1.36.1",
-    {include-group = "dev"},
+    {include-group = "shared"},
 ]
 
-# opendp pins polars version, so it is not included in all cases.
+# opendp pins polars version, so it is not included in the groups below:
 
 "polars-1.37.0" = [
     "polars==1.37.0",
-    {include-group = "dev"},
+    {include-group = "shared"},
 ]
 
 [tool.uv]

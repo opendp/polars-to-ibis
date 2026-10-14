@@ -87,11 +87,9 @@ parser_scenarios = [
         "sorting",
         "FROM lf",
         {},
-        polars_errors={
-            # This minimal syntax is given in the polars docs,
-            # so I'm not sure why it doesn't work here. Low priority!
-            # https://docs.pola.rs/api/python/stable/reference/sql/clauses.html#from
-            "*": "this `SELECT` flavor is not supported"
+        polars_errors={"polars==1.36.1": "this `SELECT` flavor is not supported"},
+        alt_xfail={
+            "polars==1.37.0": {"ints": [9, 9, 1, 1], "strs": ["Z", "A", "B", "C"]}
         },
     ),
     SQLParserScenario(

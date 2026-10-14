@@ -4,7 +4,6 @@ from copy import deepcopy
 import ibis
 import polars as pl
 import pytest
-from opendp.mod import _EXPECTED_POLARS_VERSION
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
@@ -12,9 +11,11 @@ from .config_split import TABLE_NAME, SplitScenario, split_scenarios
 from .utils import backend_names, get_connection
 
 # I thought this would be sufficient...
-dp = pytest.importorskip("opendp.prelude")
+opendp = pytest.importorskip("opendp")
 # ... but we still end up here.
-if pl.__version__ != _EXPECTED_POLARS_VERSION:
+if pl.__version__ == opendp.mod._EXPECTED_POLARS_VERSION:
+    import opendp.prelude as dp
+else:
     pytest.skip(allow_module_level=True)
 
 
