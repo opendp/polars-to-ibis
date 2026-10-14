@@ -103,9 +103,9 @@ and the [tests](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_
 
 ## Limitations
 
-- Python versions: Tested against Python 3.11 and 3.13.
-- Polars versions: Tested against Polars 1.32.0, 1.36.1, and 1.41.2.
-- Ibis version: Tested against Ibis 11.0.0.
+- Tested against python versions: 3.11, 3.12, 3.13
+- Tested against polars versions: 1.36.1, 1.37.0
+- Tested against ibis versions: 12.0.0
 - Feature coverage, and database quirks: We only cover a fraction of the Polars API,
   and even within that range there are often quirks in how a query is handled by a given database.
 
