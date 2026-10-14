@@ -33,9 +33,10 @@ def get_test_versions(target: str):
     if test_version is not None:
         return test_version
     # If there's just one version, it won't be in the test matrix.
-    import ibis  # noqa
+    assert target == "ibis"
+    import ibis
 
-    return [eval(f"{target}.__version__")]
+    return [ibis.__version__]
 
 
 def get_doc_versions(target: str):
