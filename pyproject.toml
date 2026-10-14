@@ -64,15 +64,8 @@ dev = [
 
 # opendp pins polars version, so it is not included in all cases.
 
-"polars-1.32.0" = [
-    "polars==1.32.0",
-    {include-group = "dev"},
-]
-
-# TODO: Add to matrix!
-
-"polars-1.41.2" = [
-    "polars==1.41.2",
+"polars-1.37.0" = [
+    "polars==1.37.0",
     {include-group = "dev"},
 ]
 
@@ -80,7 +73,6 @@ dev = [
 conflicts = [
     [
         { group = "polars-1.36.1" },
-        { group = "polars-1.32.0" },
-        { group = "polars-1.41.2" },
+        { group = "polars-1.37.0" },
     ]
 ]

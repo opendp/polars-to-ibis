@@ -13,9 +13,8 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 conflicts = [[
-    { package = "polars-to-ibis", group = "polars-1-32-0" },
     { package = "polars-to-ibis", group = "polars-1-36-1" },
-    { package = "polars-to-ibis", group = "polars-1-41-2" },
+    { package = "polars-to-ibis", group = "polars-1-37-0" },
 ]]
 
 [[package]]
@@ -170,7 +169,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version <= '3.11' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "tomli", marker = "python_full_version <= '3.11' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 
 [[package]]
@@ -285,8 +284,8 @@ wheels = [
 [package.optional-dependencies]
 duckdb = [
     { name = "duckdb" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -294,19 +293,19 @@ duckdb = [
     { name = "rich" },
 ]
 polars = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "pandas" },
-    { name = "polars", version = "1.32.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-32-0' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "polars", version = "1.41.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-41-2' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra != 'group-14-polars-to-ibis-polars-1-32-0' and extra != 'group-14-polars-to-ibis-polars-1-36-1')" },
+    { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1'" },
+    { name = "polars", version = "1.37.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-37-0'" },
+    { name = "polars", version = "1.41.2", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0') or (extra != 'group-14-polars-to-ibis-polars-1-36-1' and extra != 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "pyarrow" },
     { name = "pyarrow-hotfix" },
     { name = "rich" },
 ]
 postgres = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "pandas" },
     { name = "psycopg" },
     { name = "pyarrow" },
@@ -314,8 +313,8 @@ postgres = [
     { name = "rich" },
 ]
 sqlite = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -712,8 +711,8 @@ name = "opendp"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "deprecated", version = "1.3.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "deprecated", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "deprecated", version = "1.3.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "deprecated", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6b/d8/82c8bb1ccdb6d45587e4bb320631738e5e8373ddb07fccd8014d210ac6b5/opendp-0.16.0.tar.gz", hash = "sha256:eff7bbb7e896a8461d06dd8fc28c3c67c798267c4487b284f4917cb3fbe0caaf", size = 769499, upload-time = "2026-10-06T17:50:50.283Z" }
 wheels = [
@@ -728,8 +727,8 @@ wheels = [
 
 [package.optional-dependencies]
 polars = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" } },
     { name = "pyarrow" },
     { name = "randomgen" },
@@ -750,10 +749,10 @@ name = "pandas"
 version = "3.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "python-dateutil" },
-    { name = "tzdata", marker = "sys_platform == 'emscripten' or sys_platform == 'win32' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "tzdata", marker = "sys_platform == 'emscripten' or sys_platform == 'win32' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e2/17/d7b106e05bfa642e8694451e7d3d759c6a241c5386a5d962e4f66c047e06/pandas-3.0.6.tar.gz", hash = "sha256:66b07ef7315a31bfe1089cd3d71a7de781c9dca986762d0b4fe7c0ef17465d10", size = 4667686, upload-time = "2026-09-17T23:23:18.345Z" }
 wheels = [
@@ -860,31 +859,6 @@ wheels = [
 
 [[package]]
 name = "polars"
-version = "1.32.0"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'win32'",
-    "python_full_version < '3.12' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-sdist = { url = "https://files.pythonhosted.org/packages/67/23/6a5f151981f3ac409bed6dc48a3eaecd0592a03eb382693d4c7e749eda8b/polars-1.32.0.tar.gz", hash = "sha256:b01045981c0f23eeccfbfc870b782f93e73b74b29212fdfc8aae0be9024bc1fb", size = 4761045, upload-time = "2025-08-01T01:43:22.413Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/40/5b27067d10b5a77ab4094932118e16629ffb20ea9ae5f7d1178e04087891/polars-1.32.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:94f7c6a3b30bc99bc6b682ea42bb1ae983e33a302ca21aacbac50ae19e34fcf2", size = 37479518, upload-time = "2025-08-01T01:42:18.603Z" },
-    { url = "https://files.pythonhosted.org/packages/08/b7/ca28ac10d340fb91bffb2751efd52aebc9799ae161b867214c6299c8f75b/polars-1.32.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:8bf14c16164839e62c741a863942a94a9a463db21e797452fca996c8afaf8827", size = 34214196, upload-time = "2025-08-01T01:42:22.667Z" },
-    { url = "https://files.pythonhosted.org/packages/61/97/fe3797e8e1d4f9eadab32ffe218a841b8874585b6c9bd0f1a26469fb2992/polars-1.32.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f4c15adb97d44766d30c759f5cebbdb64d361e8349ef10b5afc7413f71bf4b72", size = 37985353, upload-time = "2025-08-01T01:42:26.033Z" },
-    { url = "https://files.pythonhosted.org/packages/a0/7e/2baa2858556e970cc6a35c0d8ad34b2f9d982f1766c0a1fec20ca529a947/polars-1.32.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:13af55890734f89b76016a395fb2e7460e7d9feecf50ed2f55cf0f05a1c0c991", size = 35183912, upload-time = "2025-08-01T01:42:30.446Z" },
-    { url = "https://files.pythonhosted.org/packages/ef/41/0e6821dccc5871186a9b95af3990404aa283318263918d33ac974b35cb37/polars-1.32.0-cp39-abi3-win_amd64.whl", hash = "sha256:0397fc2501a5d5f1bb3fe8d27e0c26c7a5349b4110157c0fb7833cd3f5921c9e", size = 37747905, upload-time = "2025-08-01T01:42:33.975Z" },
-    { url = "https://files.pythonhosted.org/packages/c2/93/d06df0817da93f922a67e27e9e0f407856991374daa62687e2a45a18935c/polars-1.32.0-cp39-abi3-win_arm64.whl", hash = "sha256:dd84e24422509e1ec9be46f67f758d0bd9944d1ae4eacecee4f53adaa8ecd822", size = 33978543, upload-time = "2025-08-01T01:42:36.779Z" },
-]
-
-[[package]]
-name = "polars"
 version = "1.36.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
@@ -899,11 +873,34 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "polars-runtime-32", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "polars-runtime-32", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9f/dc/56f2a90c79a2cb13f9e956eab6385effe54216ae7a2068b3a6406bae4345/polars-1.36.1.tar.gz", hash = "sha256:12c7616a2305559144711ab73eaa18814f7aa898c522e7645014b68f1432d54c", size = 711993, upload-time = "2025-12-10T01:14:53.033Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f6/c6/36a1b874036b49893ecae0ac44a2f63d1a76e6212631a5b2f50a86e0e8af/polars-1.36.1-py3-none-any.whl", hash = "sha256:853c1bbb237add6a5f6d133c15094a9b727d66dd6a4eb91dbb07cdb056b2b8ef", size = 802429, upload-time = "2025-12-10T01:13:53.838Z" },
+]
+
+[[package]]
+name = "polars"
+version = "1.37.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.14' and sys_platform == 'win32'",
+    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+]
+dependencies = [
+    { name = "polars-runtime-32", version = "1.37.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-37-0'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6c/b5/ce40267c54b66f93572d84f7ba1c216b72a71cb2235e3724fab0911541fe/polars-1.37.0.tar.gz", hash = "sha256:6bbbeefb6f02f848d46ad4f4e922a92573986fd38611801c696bae98b02be4c8", size = 715429, upload-time = "2026-01-10T12:28:06.741Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/31/07/d890382bbfdeb25db039ef4a8c8f93b3faf0016e18130513274204954203/polars-1.37.0-py3-none-any.whl", hash = "sha256:fcc549b9923ef1bd6fd99b5fd0a00dfedf85406f4758ae018a69bcd18a91f113", size = 805614, upload-time = "2026-01-10T12:26:47.897Z" },
 ]
 
 [[package]]
@@ -922,7 +919,7 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "polars-runtime-32", version = "1.41.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-41-2' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra != 'group-14-polars-to-ibis-polars-1-32-0' and extra != 'group-14-polars-to-ibis-polars-1-36-1')" },
+    { name = "polars-runtime-32", version = "1.41.2", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0') or (extra != 'group-14-polars-to-ibis-polars-1-36-1' and extra != 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ff/f9/aeda46259b0669247a160315d2d51269de9504b9dd2f70acadbcb22f46b7/polars-1.41.2.tar.gz", hash = "sha256:256d6731162371b77f3f29a55eacb8c0fc740ddb1a293a01d2ef5b5393c5c708", size = 737996, upload-time = "2026-05-29T17:39:15.604Z" }
 wheels = [
@@ -952,6 +949,33 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/11/b2/3fede95feee441be64b4bcb32444679a8fbb7a453a10251583053f6efe52/polars_runtime_32-1.36.1-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:d9d077bb9df711bc635a86540df48242bb91975b353e53ef261c6fae6cb0948f", size = 40688448, upload-time = "2025-12-10T01:14:05.131Z" },
     { url = "https://files.pythonhosted.org/packages/05/0f/e629713a72999939b7b4bfdbf030a32794db588b04fdf3dc977dd8ea6c53/polars_runtime_32-1.36.1-cp39-abi3-win_amd64.whl", hash = "sha256:cc17101f28c9a169ff8b5b8d4977a3683cd403621841623825525f440b564cf0", size = 44464898, upload-time = "2025-12-10T01:14:08.296Z" },
     { url = "https://files.pythonhosted.org/packages/d1/d8/a12e6aa14f63784cead437083319ec7cece0d5bb9a5bfe7678cc6578b52a/polars_runtime_32-1.36.1-cp39-abi3-win_arm64.whl", hash = "sha256:809e73857be71250141225ddd5d2b30c97e6340aeaa0d445f930e01bef6888dc", size = 39798896, upload-time = "2025-12-10T01:14:11.568Z" },
+]
+
+[[package]]
+name = "polars-runtime-32"
+version = "1.37.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.14' and sys_platform == 'win32'",
+    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.12' and sys_platform == 'win32'",
+    "python_full_version < '3.12' and sys_platform == 'emscripten'",
+    "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/30/92/b818590a5ebcc55657f5483f26133174bd2b9ca88457b60c93669a9d0c75/polars_runtime_32-1.37.0.tar.gz", hash = "sha256:954ddb056e3a2db2cbcaae501225ac5604d1599b6debd9c6dbdf8efbac0e6511", size = 2820371, upload-time = "2026-01-10T12:28:08.195Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f0/67/76162c9fcc71b917bdfd2804eaf0ab7cdb264a89b89af4f195a918f9f97d/polars_runtime_32-1.37.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:3591f4b8e734126d713a12869d3727360acbbcd1d440b45d830497a317a5a8b3", size = 43518436, upload-time = "2026-01-10T12:26:51.442Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/ec/56f328e8fa4ebea453f5bc10c579774dff774a873ff224b3108d53c514f9/polars_runtime_32-1.37.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:47849420859159681e94589daad3a04ff66a2379c116ccd812d043f7ffe0094c", size = 39663939, upload-time = "2026-01-10T12:26:54.664Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/b2/f1ea0edba327a92ce0158b7a0e4abe21f541e44c9fb8ec932cc47592ca5c/polars_runtime_32-1.37.0-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4648ea1e821b9a841b2a562f27bcf54ff1ad21f9c217adcf0f7d0b3c33dc6400", size = 41481348, upload-time = "2026-01-10T12:26:57.598Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/21/788a3dd724bb21cf42e2f4daa6510a47787e8b30dd535aa6cae20ea968d0/polars_runtime_32-1.37.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5272b6f1680a3e0d77c9f07cb5a54f307079eb5d519c71aa3c37b9af0ee03a9e", size = 45168069, upload-time = "2026-01-10T12:27:00.98Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/73/823d6534a20ebdcec4b7706ab2b3f2cfb8e07571305f4e7381cc22d83e31/polars_runtime_32-1.37.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:73301ef4fe80d8d748085259a4063ac52ff058088daa702e2a75e7d1ab7f14fc", size = 41675645, upload-time = "2026-01-10T12:27:04.334Z" },
+    { url = "https://files.pythonhosted.org/packages/30/54/1bacad96dc2b67d33b886a45b249777212782561493718785cb27c7c362a/polars_runtime_32-1.37.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:c60d523d738a7b3660d9abdfaff798f7602488f469d427865965b0bd2e40473a", size = 44737715, upload-time = "2026-01-10T12:27:08.152Z" },
+    { url = "https://files.pythonhosted.org/packages/38/e3/aad525d8d89b903fcfa2bd0b4cb66b8a6e83e80b3d1348c5a428092d2983/polars_runtime_32-1.37.0-cp310-abi3-win_amd64.whl", hash = "sha256:f87f76f16e8030d277ecca0c0976aca62ec2b6ba2099ee9c6f75dfc97e7dc1b1", size = 45018403, upload-time = "2026-01-10T12:27:11.292Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/4d/ddcaa5f2e18763e02e66d0fd2efca049a42fe96fbeda188e89aeb38dd6fa/polars_runtime_32-1.37.0-cp310-abi3-win_arm64.whl", hash = "sha256:7ffbd9487e3668b0a57519f7ab5ab53ab656086db9f62dceaab41393a07be721", size = 41026243, upload-time = "2026-01-10T12:27:14.563Z" },
 ]
 
 [[package]]
@@ -987,9 +1011,9 @@ version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "ibis-framework" },
-    { name = "polars", version = "1.32.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-32-0' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "polars", version = "1.41.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-41-2' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra != 'group-14-polars-to-ibis-polars-1-32-0' and extra != 'group-14-polars-to-ibis-polars-1-36-1')" },
+    { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1'" },
+    { name = "polars", version = "1.37.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-14-polars-to-ibis-polars-1-37-0'" },
+    { name = "polars", version = "1.41.2", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0') or (extra != 'group-14-polars-to-ibis-polars-1-36-1' and extra != 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 
 [package.dev-dependencies]
@@ -1006,23 +1030,9 @@ dev = [
     { name = "sqlglot" },
     { name = "tomlkit" },
 ]
-polars-1-32-0 = [
-    { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"], marker = "extra == 'group-14-polars-to-ibis-polars-1-32-0' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "pdoc" },
-    { name = "polars", version = "1.32.0", source = { registry = "https://pypi.org/simple" } },
-    { name = "pre-commit" },
-    { name = "psycopg-binary" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pyyaml" },
-    { name = "ruff" },
-    { name = "sqlglot" },
-    { name = "tomlkit" },
-]
 polars-1-36-1 = [
-    { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"], marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "opendp", extra = ["polars"], marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"], marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1'" },
+    { name = "opendp", extra = ["polars"], marker = "extra == 'group-14-polars-to-ibis-polars-1-36-1'" },
     { name = "pdoc" },
     { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" } },
     { name = "pre-commit" },
@@ -1035,10 +1045,10 @@ polars-1-36-1 = [
     { name = "sqlglot" },
     { name = "tomlkit" },
 ]
-polars-1-41-2 = [
-    { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"], marker = "(extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra != 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra != 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+polars-1-37-0 = [
+    { name = "ibis-framework", extra = ["duckdb", "polars", "postgres", "sqlite"], marker = "extra == 'group-14-polars-to-ibis-polars-1-37-0'" },
     { name = "pdoc" },
-    { name = "polars", version = "1.41.2", source = { registry = "https://pypi.org/simple" } },
+    { name = "polars", version = "1.37.0", source = { registry = "https://pypi.org/simple" } },
     { name = "pre-commit" },
     { name = "psycopg-binary" },
     { name = "pyright" },
@@ -1070,20 +1080,6 @@ dev = [
     { name = "sqlglot", specifier = "<30.18" },
     { name = "tomlkit", specifier = ">=0.15.0" },
 ]
-polars-1-32-0 = [
-    { name = "ibis-framework", extras = ["duckdb", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
-    { name = "pdoc", specifier = ">=16.0.0" },
-    { name = "polars", specifier = "==1.32.0" },
-    { name = "pre-commit", specifier = ">=4.6.0" },
-    { name = "psycopg-binary", specifier = ">=3.3.4" },
-    { name = "pyright", specifier = ">=1.1.411" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "ruff", specifier = ">=0.16.9" },
-    { name = "sqlglot", specifier = "<30.18" },
-    { name = "tomlkit", specifier = ">=0.15.0" },
-]
 polars-1-36-1 = [
     { name = "ibis-framework", extras = ["duckdb", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
     { name = "opendp", extras = ["polars"], specifier = "==0.16.0" },
@@ -1099,10 +1095,10 @@ polars-1-36-1 = [
     { name = "sqlglot", specifier = "<30.18" },
     { name = "tomlkit", specifier = ">=0.15.0" },
 ]
-polars-1-41-2 = [
+polars-1-37-0 = [
     { name = "ibis-framework", extras = ["duckdb", "polars", "postgres", "sqlite"], specifier = ">=12.0.0" },
     { name = "pdoc", specifier = ">=16.0.0" },
-    { name = "polars", specifier = "==1.41.2" },
+    { name = "polars", specifier = "==1.37.0" },
     { name = "pre-commit", specifier = ">=4.6.0" },
     { name = "psycopg-binary", specifier = ">=3.3.4" },
     { name = "pyright", specifier = ">=1.1.411" },
@@ -1135,8 +1131,8 @@ name = "psycopg"
 version = "3.3.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/76/26/3ea4ca5eaea1c0debcdf7ee7c1613fbe721dc27a03c461c0817ffd8a0601/psycopg-3.3.6.tar.gz", hash = "sha256:c081f2250df751a943036e42db6df4571c66cd0aabe8291a7a506512b12007d2", size = 168171, upload-time = "2026-09-18T13:22:55.152Z" }
 wheels = [
@@ -1298,7 +1294,7 @@ name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -1407,8 +1403,8 @@ name = "randomgen"
 version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/67/6f/18e8db0f28b1a8fd5e8e4f34b0766a3181f72e5982963303b765e9eb456f/randomgen-2.3.0.tar.gz", hash = "sha256:e0de65d79e1346ac406b51df49a79b9e3d8b41a8a1a8e5de088c2fb49b8c89cc", size = 1571005, upload-time = "2025-10-22T16:05:26.742Z" }
 wheels = [
@@ -1615,10 +1611,10 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "joblib" },
     { name = "narwhals" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-41-2') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-32-0' and extra == 'group-14-polars-to-ibis-polars-1-41-2')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-14-polars-to-ibis-polars-1-36-1') or (extra == 'group-14-polars-to-ibis-polars-1-36-1' and extra == 'group-14-polars-to-ibis-polars-1-37-0')" },
     { name = "threadpoolctl" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d2/eb/eaf5e07fcc0da7149b0e084f24e54edd7441b9a89ce7e034032ae97fe3a0/scikit_learn-1.9.1.tar.gz", hash = "sha256:629cada3e33e2b9bf376cdc7614a47a4140b8aedc1d836579e359736fbd82977", size = 7786908, upload-time = "2026-09-10T18:34:04.679Z" }
