@@ -36,7 +36,7 @@ On MacOS we recommend:
 $ uv run scripts/setup.sh
 ```
 
-At this point, tests should pass, and code coverage should be complete (except blocks we explicitly ignore):
+At this point, tests should pass for any supported dependency version, and code coverage should be complete (except blocks we explicitly ignore):
 ```shell
 $ uv run --group polars-1.36.1 scripts/ci.sh
 $ uv run --group polars-1.37.0 scripts/ci.sh

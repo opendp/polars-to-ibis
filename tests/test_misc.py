@@ -90,6 +90,7 @@ def test_versions_consistent(target: str):
 )
 def test_polars_version_consistent(function):
     target = "polars"
+    # Only comparing against README because it is the simplest.
     readme_versions = get_readme_versions(target)
     other_versions = function(target)
     assert readme_versions == other_versions
