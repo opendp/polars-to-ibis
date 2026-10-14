@@ -7,9 +7,6 @@ import yaml
 
 import polars_to_ibis
 
-# from polars_to_ibis import _MAX_POLARS as MAX_POLARS
-# from polars_to_ibis import _MIN_POLARS as MIN_POLARS
-
 tests = {
     "pyright type checking": "pyright",
 }
@@ -33,6 +30,7 @@ def get_test_versions(target: str):
     test_version = matrix.get(f"{target}-version")
     if test_version is not None:
         return test_version
+    # If there's just one version, it won't be in the test matrix.
     return [eval(f"{target}.__version__")]
 
 
