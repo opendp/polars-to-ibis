@@ -84,7 +84,8 @@ def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
 
 
 split_scenarios = [
-    # TODO: Restore
+    # TODO: Fix "Can't infer column name from 'Len'"
+    # https://github.com/opendp/polars-to-ibis/issues/191
     # SplitScenario(
     #     "context.query().select(dp.len(signed=True))",
     #     f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
@@ -155,7 +156,8 @@ split_scenarios = [
             "mysql": "FUNCTION runner.IS_NAN does not exist",
         },
     ),
-    # TODO: Restore
+    # TODO: Fix "Can't infer column name from 'Len'"
+    # https://github.com/opendp/polars-to-ibis/issues/191
     # SplitScenario(
     #     "context.query().select(dp.len(signed=True),pl.col.ints.dp.sum((0,10)))",
     #     f"SELECT COUNT(*) AS len, {get_select_int_sum('t0').replace('SELECT', '')} "
