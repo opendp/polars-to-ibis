@@ -10,7 +10,7 @@ import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
-from polars_to_ibis._utils import abbreviate, find
+from polars_to_ibis._utils import abbreviate
 
 from . import tags
 from .utils import assert_no_extras, indent, outdent, split_tag_payload
@@ -81,6 +81,8 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 def infer_name(expr):
     match expr:  # pragma: no cover
+        case "Len":
+            return "len"
         case {tags.value.LITERAL: _, **extras}:
             assert_no_extras(extras)
             return "literal"
@@ -100,6 +102,27 @@ def infer_name(expr):
     raise NotImplementedError(f"Can't infer column name from {expr!r}")
 
 
+def is_aggregation(expr):
+    tag, payload = split_tag_payload(expr)
+    match tag:
+        case "Len" | tags.value.AGG:
+            return True
+        case tags.value.CAST | tags.value.RENAME_ALIAS:
+            return is_aggregation(payload["expr"])
+        case tags.value.ALIAS:
+            return is_aggregation(payload[0])
+        case tags.value.BINARY_EXPR:
+            return is_aggregation(payload["left"]) or is_aggregation(payload["right"])
+        case tags.value.FUNCTION:
+            return any(is_aggregation(child) for child in payload["input"])
+        case tags.value.TERNARY:
+            return any(
+                is_aggregation(payload[key]) for key in ("predicate", "truthy", "falsy")
+            )
+        case _:
+            return False
+
+
 def apply_select_expr(col_list: list[dict[str, Any]], input_table):
     """
     Given col_list (the polars serialization for a select),
@@ -117,12 +140,13 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 agg_kwargs["len"] = input_table.count()
             case (tags.value.CAST, _):
                 name = infer_name(payload)
-                select_kwargs[name] = handle_cast(payload)
+                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
+                target_kwargs[name] = handle_cast(payload)
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case (tags.value.ALIAS, [expr, new_name]):
                 ibis_value = polars_expr_to_ibis_value(expr)
-                if find(expr, tags.value.AGG):
+                if is_aggregation(expr):
                     agg_kwargs[new_name] = ibis_value
                 else:
                     select_kwargs[new_name] = ibis_value
@@ -143,7 +167,8 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 drop_args += names
             case (tags.value.FUNCTION, _):
                 name = infer_name(col)
-                select_kwargs[name] = handle_function(payload)
+                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
+                target_kwargs[name] = handle_function(payload)
             case (tags.value.AGG, _):
                 match payload:
                     case {
@@ -184,7 +209,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
             case (tags.value.BINARY_EXPR, _):
                 target_name = infer_name(payload)
                 ibis_value = handle_binary_expr(payload)
-                if find(payload, tags.value.AGG):
+                if is_aggregation(col):
                     agg_kwargs[target_name] = ibis_value
                 else:
                     select_kwargs[target_name] = ibis_value
@@ -236,7 +261,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                     polars_expr_to_ibis_value(truthy_expr),
                     polars_expr_to_ibis_value(falsy_expr),
                 )
-                if find(predicate_expr, tags.value.AGG):
+                if is_aggregation(predicate_expr):
                     agg_kwargs[column_name] = ibis_value
                 else:
                     select_kwargs[column_name] = ibis_value
