@@ -1,3 +1,4 @@
+LEN = "Len"
 LITERAL = "Literal"
 COLUMN = "Column"
 CAST = "Cast"

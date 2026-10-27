@@ -81,7 +81,7 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 def infer_name(expr):
     match expr:  # pragma: no cover
-        case "Len":
+        case tags.value.LEN:
             return "len"
         case {tags.value.LITERAL: _, **extras}:
             assert_no_extras(extras)
@@ -105,7 +105,7 @@ def infer_name(expr):
 def is_aggregation(expr):
     tag, payload = split_tag_payload(expr)
     match tag:
-        case "Len" | tags.value.AGG:
+        case tags.value.LEN | tags.value.AGG:
             return True
         case tags.value.CAST | tags.value.RENAME_ALIAS:
             return is_aggregation(payload["expr"])
@@ -136,7 +136,7 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
     for col in col_list:
         tag, payload = split_tag_payload(col)
         match (tag, payload):
-            case ("Len", None):
+            case (tags.value.LEN, None):
                 agg_kwargs["len"] = input_table.count()
             case (tags.value.CAST, _):
                 name = infer_name(payload)
