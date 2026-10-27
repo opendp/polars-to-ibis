@@ -143,3 +143,29 @@ def assert_approx_equal(
 def test_unexpected_payloads(polars_plan, expected_error):
     with pytest.raises(Exception, match=re.escape(expected_error)):
         update_polars_to_ibis(polars_plan, None, ibis.backends.sqlite)
+
+
+@pytest.mark.parametrize("backend_name", backend_names)
+@pytest.mark.parametrize("values", [[1, None, 3], []], ids=["nonempty", "empty"])
+@pytest.mark.parametrize(
+    "expr",
+    [
+        pl.len().cast(pl.Int64),
+        pl.len().cast(pl.Int64, strict=False),
+        pl.len().cast(pl.Int64).alias("n"),
+    ],
+    ids=["cast", "nonstrict_cast", "aliased_cast"],
+)
+def test_cast_len(backend_name, values, expr):
+    frame = pl.DataFrame({"ints": pl.Series(values, dtype=pl.Int64)})
+    expected = frame.select(expr)
+    backend = getattr(ibis, backend_name)
+    connection = get_connection(frame, table_name="cast_len", backend=backend)
+    try:
+        lf = scan_database(connection, "cast_len").select(expr)
+        table = convert_polars_to_ibis(lf, "cast_len", backend=backend)
+        actual = connection.to_polars(table)
+        assert actual.to_dict(as_series=False) == expected.to_dict(as_series=False)
+        assert actual.schema == expected.schema
+    finally:
+        connection.disconnect()
