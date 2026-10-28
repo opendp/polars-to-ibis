@@ -40,6 +40,7 @@ def get_select_int_sum(table: str) -> str:
 
 
 def get_select_float_sum() -> str:
+    # The Ibis generated SQL uses addition to convert to a wider type.
     hack = "CAST(0 AS DOUBLE) +"
     case_when_not = f"""
     CASE WHEN NOT ( ISNAN(COALESCE(t0.floats, {hack} 0.5)) )
