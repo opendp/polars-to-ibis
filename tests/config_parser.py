@@ -682,6 +682,11 @@ parser_scenarios = [
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints < 10 AND NOT ints < 5 OR ints == 1",
+        {"ints": [1, 5, 6, 7, 8, 9]},
+    ),
     EvalParserScenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
