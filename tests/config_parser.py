@@ -101,10 +101,14 @@ parser_scenarios = [
         "sorting",
         "SELECT DISTINCT ON (ints) * FROM lf ORDER BY strs",
         {"ints": [9, 1], "strs": ["A", "B"]},
-        convert_errors={
-            # TODO: Support "DISTINCT ON"
-            # https://github.com/opendp/polars-to-ibis/issues/156
-            "*": "Unsupported Distinct"
+        alt_xfail={
+            # DISTINCT rather than SORT is the top of the serialization,
+            # and the sort seems to be repeated.
+            # https://github.com/opendp/polars-to-ibis/issues/201
+            "*": {"ints": [1, 9], "strs": ["B", "A"]}
+        },
+        backend_errors={
+            "postgres": "function first(character varying) does not exist",
         },
     ),
     SQLParserScenario(
