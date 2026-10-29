@@ -81,7 +81,7 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
 
 def infer_name(expr):
     match expr:  # pragma: no cover
-        case "Len":
+        case tags.value.LEN:
             return "len"
         case {tags.value.LITERAL: _, **extras}:
             assert_no_extras(extras)
@@ -105,7 +105,7 @@ def infer_name(expr):
 def is_aggregation(expr):
     tag, payload = split_tag_payload(expr)
     match tag:
-        case "Len" | tags.value.AGG:
+        case tags.value.LEN | tags.value.AGG:
             return True
         case tags.value.CAST | tags.value.RENAME_ALIAS:
             return is_aggregation(payload["expr"])
@@ -136,20 +136,16 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
     for col in col_list:
         tag, payload = split_tag_payload(col)
         match (tag, payload):
-            case ("Len", None):
+            case (tags.value.LEN, None):
                 agg_kwargs["len"] = input_table.count()
             case (tags.value.CAST, _):
-                name = infer_name(payload)
                 target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
-                target_kwargs[name] = handle_cast(payload)
+                target_kwargs[infer_name(payload)] = handle_cast(payload)
             case (tags.value.COLUMN, _):
                 select_kwargs[payload] = payload
             case (tags.value.ALIAS, [expr, new_name]):
-                ibis_value = polars_expr_to_ibis_value(expr)
-                if is_aggregation(expr):
-                    agg_kwargs[new_name] = ibis_value
-                else:
-                    select_kwargs[new_name] = ibis_value
+                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
+                target_kwargs[new_name] = polars_expr_to_ibis_value(expr)
             case (
                 tags.value.SELECTOR,
                 {
@@ -166,9 +162,8 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 assert_no_extras(extras_1, extras_2, extras_3)
                 drop_args += names
             case (tags.value.FUNCTION, _):
-                name = infer_name(col)
                 target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
-                target_kwargs[name] = handle_function(payload)
+                target_kwargs[infer_name(col)] = handle_function(payload)
             case (tags.value.AGG, _):
                 match payload:
                     case {
@@ -207,12 +202,8 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                         name = infer_name(payload)
                         agg_kwargs[name] = polars_expr_to_ibis_value(payload)
             case (tags.value.BINARY_EXPR, _):
-                target_name = infer_name(payload)
-                ibis_value = handle_binary_expr(payload)
-                if is_aggregation(col):
-                    agg_kwargs[target_name] = ibis_value
-                else:
-                    select_kwargs[target_name] = ibis_value
+                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
+                target_kwargs[infer_name(col)] = handle_binary_expr(payload)
             case (
                 tags.value.RENAME_ALIAS,
                 {
@@ -256,15 +247,14 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 },
             ):
                 assert_no_extras(extras_1)
-                column_name = infer_name(truthy_expr)
                 ibis_value = polars_expr_to_ibis_value(predicate_expr).ifelse(
                     polars_expr_to_ibis_value(truthy_expr),
                     polars_expr_to_ibis_value(falsy_expr),
                 )
-                if is_aggregation(predicate_expr):
-                    agg_kwargs[column_name] = ibis_value
-                else:
-                    select_kwargs[column_name] = ibis_value
+                target_kwargs = (
+                    agg_kwargs if is_aggregation(predicate_expr) else select_kwargs
+                )
+                target_kwargs[infer_name(truthy_expr)] = ibis_value
             case _:
                 raise NotImplementedError(f"Unsupported select expr {tag}")
 

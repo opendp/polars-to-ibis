@@ -23,7 +23,7 @@ If you have an idea that goes beyond just expanding coverage, please file an iss
 $ git clone https://github.com/opendp/polars-to-ibis.git
 $ cd polars-to-ibis
 $ pip install uv
-$ uv sync
+$ uv sync --group polars-1.36.1
 $ uv run pre-commit install
 ```
 

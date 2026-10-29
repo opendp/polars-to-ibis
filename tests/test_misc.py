@@ -31,12 +31,12 @@ def get_test_versions(target: str):
     matrix = test_workflow["jobs"]["test"]["strategy"]["matrix"]
     test_version = matrix.get(f"{target}-version")
     if test_version is not None:
-        return test_version
+        return set(test_version)
     # If there's just one version, it won't be in the test matrix.
     assert target == "ibis"
     import ibis
 
-    return [ibis.__version__]
+    return {ibis.__version__}
 
 
 def get_doc_versions(target: str):
@@ -44,20 +44,20 @@ def get_doc_versions(target: str):
     lines = [line for line in docs.splitlines() if f"{target} versions:" in line]
     assert len(lines) == 1
     joined_versions = lines[0].split(":")[1]
-    return [v.strip() for v in joined_versions.split(", ")]
+    return {v.strip() for v in joined_versions.split(", ")}
 
 
 def get_readme_versions(target: str):
     assert target == "polars"
     readme = (ROOT / "README.md").read_text()
-    return re.findall(rf"--group {target}-(\S+)", readme)
+    return set(re.findall(rf"--group {target}-(\S+)", readme))
 
 
 def get_group_name_versions(target: str):
     assert target == "polars"
     pyproject = tomlkit.loads((ROOT / "pyproject.toml").read_text())
     names = [name for name in pyproject["dependency-groups"] if target in name]
-    return [name.split("-")[1] for name in names]
+    return {name.split("-")[1] for name in names}
 
 
 def get_group_pin_versions(target: str):
@@ -71,7 +71,7 @@ def get_group_pin_versions(target: str):
         ]
         for v in get_group_name_versions(target)
     ]
-    return [pin[0].split("==")[1] for pin in pins]
+    return {pin[0].split("==")[1] for pin in pins}
 
 
 @pytest.mark.parametrize(

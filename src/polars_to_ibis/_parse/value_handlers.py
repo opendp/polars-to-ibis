@@ -64,7 +64,7 @@ def value_handler(tag: str) -> Callable[..., ReturnsValue]:
 # Value Handlers:
 
 
-@value_handler("Len")
+@value_handler(tags.value.LEN)
 def handle_len(_payload):
     return defer.count()
 

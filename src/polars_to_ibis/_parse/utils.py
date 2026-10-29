@@ -7,6 +7,8 @@ from typing import Any
 
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
+from polars_to_ibis._utils import tags
+
 PolarsPlan = dict[str, Any] | str
 NamedValue = tuple[str, ir.Value]
 ReturnsTable = Callable[..., ir.Table]
@@ -30,8 +32,8 @@ def outdent():  # pragma: no cover
 
 
 def split_tag_payload(polars_plan: PolarsPlan) -> tuple[str, Any]:
-    if polars_plan == "Len":
-        return ("Len", None)
+    if polars_plan == tags.value.LEN:
+        return (tags.value.LEN, None)
     if isinstance(polars_plan, str):
         raise TypeError(f"Unexpected string as plan: {polars_plan}")  # pragma: no cover
     match list(polars_plan.items()):
