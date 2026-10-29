@@ -29,6 +29,8 @@ def simple_plugin_path():
             "CARGO_TARGET_DIR": str(target),
         },
     )
+    # Rust's cdylib names use platform-specific prefixes and suffixes:
+    # https://doc.rust-lang.org/reference/linkage.html#link.cdylib
     prefix, suffix = (
         ("", "dll")
         if sys.platform == "win32"
@@ -42,7 +44,7 @@ def simple_plugin_path():
     return library
 
 
-def add_offset(expression, plugin_path, amount=7):
+def add_offset(expression, plugin_path, amount):
     return register_plugin_function(
         plugin_path=plugin_path,
         function_name="add_offset",
@@ -56,15 +58,17 @@ def add_offset(expression, plugin_path, amount=7):
 def test_split_native_plugin(simple_plugin_path, backend_name):
     table_name = "simple_plugin_test"
     values = pl.DataFrame({"value": [1, 2, 3, 4]}, schema={"value": pl.Int64})
-    expected = (
+    expected = pl.DataFrame({"value": [17]}, schema={"value": pl.Int64})
+    assert (
         values.lazy()
-        .select(add_offset(pl.col("value").sum(), simple_plugin_path))
+        .select(add_offset(pl.col("value").sum(), simple_plugin_path, 7))
         .collect()
+        .equals(expected)
     )
     connection = get_connection(values, table_name, getattr(ibis, backend_name))
     try:
         query = scan_database(connection, table_name).select(
-            add_offset(pl.col("value").sum(), simple_plugin_path)
+            add_offset(pl.col("value").sum(), simple_plugin_path, 7)
         )
         original_parameters = serialize(query)["Select"]["expr"][0]["Function"][
             "function"
@@ -93,5 +97,4 @@ def test_split_native_plugin(simple_plugin_path, backend_name):
         assert actual.equals(expected)
         assert actual.to_dict(as_series=False) == {"value": [17]}
     finally:
-        connection.drop_table(table_name)
         connection.disconnect()

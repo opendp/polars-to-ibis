@@ -19,6 +19,9 @@ If you have an idea that goes beyond just expanding coverage, please file an iss
 
 ### Getting Started
 
+Install [Rust and Cargo](https://rust-lang.org/tools/install/) for the native
+plugin test, and make sure `cargo` is on your `PATH`.
+
 ```shell
 $ git clone https://github.com/opendp/polars-to-ibis.git
 $ cd polars-to-ibis
