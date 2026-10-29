@@ -14,13 +14,16 @@ logger = logging.getLogger(__name__)
 class BaseScenario:
     def get_with_keys(self, errors_dict_name, backend_name, exporter_key):
         errors_dict = getattr(self, errors_dict_name)
-        return (
-            errors_dict.get("*")
-            or errors_dict.get(f"polars=={pl.__version__}")
-            or errors_dict.get(backend_name)
-            or errors_dict.get(f"{backend_name}+{exporter_key}")
-            or errors_dict.get(exporter_key)
-        )
+        for key in [
+            "*",
+            f"polars=={pl.__version__}",
+            backend_name,
+            f"{backend_name}+{exporter_key}",
+            exporter_key,
+        ]:
+            to_return = errors_dict.get(key)
+            if to_return is not None:
+                return to_return
 
     def assert_error_or_return_value(
         self, errors_dict_name, backend_name, exporter_key, func: Callable[[], Any]

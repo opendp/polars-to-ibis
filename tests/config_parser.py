@@ -41,6 +41,10 @@ input_data = {
         "null": [0.0, None],
         "inf": [0.0, float("inf")],
     },
+    "weird_numbers": {
+        "str": ["zero", "none", "inf", "nan"],
+        "num": [0.0, None, float("inf"), float("nan")],
+    },
 }
 
 Results = dict[str, list[Any]]
@@ -347,6 +351,11 @@ parser_scenarios = [
         "numeric",
         "lf.select(pl.len().cast(pl.Int64).alias('n'), pl.col.ints.sum())",
         {"n": [4], "ints": [10]},
+    ),
+    EvalParserScenario(
+        "weird",
+        "SELECT weird FROM lf",
+        {},
     ),
     EvalParserScenario(
         "nan_null_inf",
@@ -678,6 +687,28 @@ parser_scenarios = [
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints < 10 AND NOT ints <= 5",
+        {"ints": [6, 7, 8, 9]},
+    ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints = 1 OR ints == 2 OR NOT ints != 3 OR NOT ints <> 4",
+        {"ints": [1, 2, 3, 4]},
+    ),
+    # SQLParserScenario(
+    #     "weird_numbers",
+    #     "SELECT * FROM lf WHERE num IS NULL",
+    #     {"str": ["none"], "num": [None]},
+    #     alt_xfail={
+    #         "sqlite+to_polars": {},
+    #         "sqlite+to_pandas": {},
+    #         "sqlite+to_pyarrow": {},
+    #         "duckdb+to_pandas": {},
+    #         "postgres+to_pandas": {},
+    #     },
+    # ),
     EvalParserScenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",

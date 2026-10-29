@@ -82,9 +82,9 @@ def test_parser_scenarios(
 
     # alt_pass and alt_xfail dicts can both be given for a scenario,
     # but only one should apply for a given set of parameters.
-    assert sum(int(bool(field)) for field in [tolerance, alt_pass, alt_xfail]) <= 1, (
-        f"{TOLERANCE}, {ALT_PASS}, and {ALT_XFAIL} are mutually exclusive"
-    )
+    assert (
+        sum(int(field is not None) for field in [tolerance, alt_pass, alt_xfail]) <= 1
+    ), f"{TOLERANCE}, {ALT_PASS}, and {ALT_XFAIL} are mutually exclusive"
 
     # Check if result is what we expect:
     if tolerance:
