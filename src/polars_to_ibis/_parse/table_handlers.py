@@ -287,9 +287,9 @@ def handle_ir(
     backend: ibis.BaseBackend,
 ) -> ir.Table:
     match payload:
-        case {"dsl": _, "version": _, **extras_1}:
+        case {"dsl": dsl, "version": _version, **extras_1}:
             assert_no_extras(extras_1)
-            return table
+            return update_polars_to_ibis(dsl, table=table, backend=backend)
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.IR}")
 
@@ -472,11 +472,14 @@ def handle_hstack(
         }:
             pass
         case _:
-            raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
+            raise NotImplementedError(f"Unsupported {tags.table.H_STACK} payload")
 
     updated_table = update_polars_to_ibis(input, table=table, backend=backend)
     for expr in exprs:
         match expr:
+            case {tags.value.COLUMN: column, **extras}:
+                assert_no_extras(extras)
+                updated_table = updated_table.mutate(**{column: column})
             case {
                 tags.value.CAST: {
                     "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
@@ -550,7 +553,7 @@ def handle_hstack(
                             f"Unsupported {tags.table.H_STACK} function: {function}"
                         )
             case _:
-                raise NotImplementedError(f"Unsupported {tags.table.H_STACK}")
+                raise NotImplementedError(f"Unsupported {tags.table.H_STACK} expr")
 
     return updated_table
 
