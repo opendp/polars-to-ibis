@@ -1,0 +1,21 @@
+[package]
+name = "polars-to-ibis-test-plugin"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "polars_to_ibis_test_plugin"
+crate-type = ["cdylib"]
+
+[dependencies]
+polars = { version = "=0.52.0", default-features = false }
+pyo3 = { version = "=0.26.0", features = ["extension-module"] }
+pyo3-polars = { version = "=0.25.0", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+
+[profile.dev]
+debug = 0
+
+[build-dependencies]
+pyo3-build-config = "=0.26.0"
