@@ -704,6 +704,11 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "hundred",
+        "SELECT ints FROM lf WHERE ints BETWEEN 40 AND 60 AND ints NOT BETWEEN 45 AND 55",
+        {"ints": [40, 41, 42, 43, 44, 56, 57, 58, 59, 60]},
+    ),
+    SQLParserScenario(
+        "hundred",
         "SELECT ints FROM lf WHERE ints = 1 OR ints == 2 OR NOT ints != 3 OR NOT ints <> 4",
         {"ints": [1, 2, 3, 4]},
     ),
@@ -712,7 +717,7 @@ parser_scenarios = [
         "SELECT * FROM lf WHERE num IS NULL",
         {"str": ["none"], "num": [None]},
         alt_xfail={
-            # The "nan ± ???" is there for downstream string-based assertions.
+            # The "nan ± ???" is here for downstream string-based assertions.
             "sqlite": {"num": [None, None], "str": ["none", "nan ± ???"]},
             "to_pandas": {"num": [nan, nan], "str": ["none", "nan ± ???"]},
             "duckdb+to_pandas": {"num": [nan], "str": ["none"]},
@@ -746,7 +751,28 @@ parser_scenarios = [
                 "not_null": [True, True, False],
             }
         },
-        # convert_errors={"*": "Unsupported Boolean"},
+    ),
+    SQLParserScenario(
+        "weird_booleans",
+        "SELECT str, "
+        "bool IS DISTINCT FROM TRUE AS  distinct_from_true,   bool is NOT DISTINCT FROM TRUE AS  not_distinct_from_true, "
+        "bool IS DISTINCT FROM FALSE AS distinct_from_false,  bool is NOT DISTINCT FROM FALSE AS not_distinct_from_false, "
+        "bool IS DISTINCT FROM NULL AS  distinct_from_null,   bool is NOT DISTINCT FROM NULL AS  not_distinct_from_null "
+        "FROM lf",
+        {
+            "str": ["true", "false", "none"],
+            "distinct_from_true": [False, True, True],
+            "not_distinct_from_true": [True, False, False],
+            "distinct_from_false": [True, False, True],
+            "not_distinct_from_false": [False, True, False],
+            "distinct_from_null": [True, True, False],
+            "not_distinct_from_null": [False, False, True],
+        },
+        convert_errors={
+            # TODO: We could mask the problem by adding to the
+            # handle_binary_expr dict, but that won't handle nulls correctly.
+            "*": "NotEqValidity"
+        },
     ),
     EvalParserScenario(
         "nan_null_inf",

@@ -17,11 +17,11 @@ class BaseScenario:
         # There seem to be errors common to exporters across backends,
         # so check exporter_key before backend_name.
         for key in [
-            "*",
             f"polars=={pl.__version__}",
             f"{backend_name}+{exporter_key}",
             exporter_key,
             backend_name,
+            "*",
         ]:
             try:
                 return errors_dict[key]
