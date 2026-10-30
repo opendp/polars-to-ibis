@@ -166,6 +166,11 @@ parser_scenarios = [
         },
     ),
     SQLParserScenario(
+        "grouping",
+        "SELECT values FROM lf WHERE values > ALL( keys )",
+        {"values": [2, 3, 4]},
+    ),
+    SQLParserScenario(
         "sorting",
         "SELECT ints FROM lf WHERE strs > 'X'",
         {"ints": [9]},
@@ -706,6 +711,12 @@ parser_scenarios = [
         "hundred",
         "SELECT ints FROM lf WHERE ints BETWEEN 40 AND 60 AND ints NOT BETWEEN 45 AND 55",
         {"ints": [40, 41, 42, 43, 44, 56, 57, 58, 59, 60]},
+    ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints IN (1, 2, 3)",
+        {"ints": [1, 2, 3]},
+        convert_errors={"*": "Unsupported Function"},
     ),
     SQLParserScenario(
         "hundred",

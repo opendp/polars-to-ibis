@@ -22,3 +22,5 @@ ALIAS = "Alias"
 VAR = "Var"
 STD = "Std"
 QUANTILE = "Quantile"
+
+SERIES = "Series"
