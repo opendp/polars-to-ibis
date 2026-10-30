@@ -105,7 +105,7 @@ def test_parser_scenarios(
         expected_output = alt_pass or alt_xfail or scenario.expected_output
 
         assert sort_keys(actual_output) == sort_keys(expected_output), (
-            f"Via ibis, {backend_name} does not produce expected output"
+            f"Via ibis, {backend_name}+{exporter_key} does not produce expected output"
         )
 
         if alt_xfail:

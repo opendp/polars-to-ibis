@@ -13,6 +13,10 @@ from pytest import approx
 
 from .utils import BaseScenario
 
+# Lower-case so we can just paste test output back into tests.
+nan = approx(math.nan, nan_ok=True)
+inf = math.inf
+
 input_data = {
     "numeric": {
         "ints": [1, 2, 3, 4],
@@ -43,7 +47,8 @@ input_data = {
     },
     "weird_numbers": {
         "str": ["zero", "none", "inf", "nan"],
-        "num": [0.0, None, float("inf"), float("nan")],
+        "num": [0.0, None, inf, math.nan],
+        # The "nan" global is only for test assertions.
     },
 }
 
@@ -77,10 +82,6 @@ class SQLParserScenario(BaseParserScenario):
     def run(self, named_frames):
         return pl.SQLContext(**named_frames).execute(self.expression)
 
-
-# Lower-case so we can just paste test output back into tests.
-nan = approx(math.nan, nan_ok=True)
-inf = math.inf
 
 # Error messages generated upstream: We don't control wording.
 MYSQL_INF = "inf can not be used with MySQL"
@@ -702,18 +703,17 @@ parser_scenarios = [
         "SELECT ints FROM lf WHERE ints = 1 OR ints == 2 OR NOT ints != 3 OR NOT ints <> 4",
         {"ints": [1, 2, 3, 4]},
     ),
-    # SQLParserScenario(
-    #     "weird_numbers",
-    #     "SELECT * FROM lf WHERE num IS NULL",
-    #     {"str": ["none"], "num": [None]},
-    #     alt_xfail={
-    #         "sqlite+to_polars": {},
-    #         "sqlite+to_pandas": {},
-    #         "sqlite+to_pyarrow": {},
-    #         "duckdb+to_pandas": {},
-    #         "postgres+to_pandas": {},
-    #     },
-    # ),
+    SQLParserScenario(
+        "weird_numbers",
+        "SELECT * FROM lf WHERE num IS NULL",
+        {"str": ["none"], "num": [None]},
+        alt_xfail={
+            "sqlite": {"num": [None, None], "str": ["none", "nan ± ???"]},
+            "to_pandas": {"num": [nan, nan], "str": ["none", "nan ± ???"]},
+            "duckdb+to_pandas": {"num": [nan], "str": ["none"]},
+            "postgres+to_pandas": {"num": [nan], "str": ["none"]},
+        },
+    ),
     EvalParserScenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",

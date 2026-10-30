@@ -19,8 +19,8 @@ class BaseScenario:
         for key in [
             "*",
             f"polars=={pl.__version__}",
-            exporter_key,
             f"{backend_name}+{exporter_key}",
+            exporter_key,
             backend_name,
         ]:
             try:
