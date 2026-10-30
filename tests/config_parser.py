@@ -13,6 +13,10 @@ from pytest import approx
 
 from .utils import BaseScenario
 
+# Lower-case so we can just paste test output back into tests.
+nan = approx(math.nan, nan_ok=True)
+inf = math.inf
+
 input_data = {
     "numeric": {
         "ints": [1, 2, 3, 4],
@@ -40,6 +44,15 @@ input_data = {
         "nan": [0.0, float("nan")],
         "null": [0.0, None],
         "inf": [0.0, float("inf")],
+    },
+    "weird_numbers": {
+        "str": ["zero", "none", "inf", "nan"],
+        "num": [0.0, None, inf, math.nan],
+        # The "nan" global is only for test assertions.
+    },
+    "weird_booleans": {
+        "str": ["true", "false", "none"],
+        "bool": [True, False, None],
     },
 }
 
@@ -73,10 +86,6 @@ class SQLParserScenario(BaseParserScenario):
     def run(self, named_frames):
         return pl.SQLContext(**named_frames).execute(self.expression)
 
-
-# Using this constant in an expected value lets us test against NaN in results.
-# (Normally, nan != nan.)
-NAN = approx(float("nan"), nan_ok=True)
 
 # Error messages generated upstream: We don't control wording.
 MYSQL_INF = "inf can not be used with MySQL"
@@ -157,6 +166,11 @@ parser_scenarios = [
         },
     ),
     SQLParserScenario(
+        "grouping",
+        "SELECT values FROM lf WHERE values > ALL( keys )",
+        {"values": [2, 3, 4]},
+    ),
+    SQLParserScenario(
         "sorting",
         "SELECT ints FROM lf WHERE strs > 'X'",
         {"ints": [9]},
@@ -177,7 +191,7 @@ parser_scenarios = [
         {"literal": [-1, -1, -1, None]},
         alt_xfail={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1.0, -1.0, -1.0, NAN]},
+            "to_pandas": {"literal": [-1.0, -1.0, -1.0, nan]},
         },
     ),
     SQLParserScenario(
@@ -191,7 +205,7 @@ parser_scenarios = [
         {"literal": [-1, None, None, None]},
         alt_xfail={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1.0, NAN, NAN, NAN]},
+            "to_pandas": {"literal": [-1.0, nan, nan, nan]},
         },
     ),
     SQLParserScenario(
@@ -347,6 +361,21 @@ parser_scenarios = [
         "numeric",
         "lf.select(pl.len().cast(pl.Int64).alias('n'), pl.col.ints.sum())",
         {"n": [4], "ints": [10]},
+    ),
+    SQLParserScenario(
+        "weird_numbers",
+        "SELECT * FROM lf",
+        {"num": [0.0, None, inf, nan], "str": ["zero", "none", "inf", "nan"]},
+        alt_xfail={
+            "sqlite": {
+                "num": [0.0, None, inf, None],
+                "str": ["zero", "none", "inf", "nan"],
+            },
+            "to_pandas": {
+                "num": [0.0, nan, inf, nan],
+                "str": ["zero", "none", "inf", "nan"],
+            },
+        },
     ),
     EvalParserScenario(
         "nan_null_inf",
@@ -678,6 +707,84 @@ parser_scenarios = [
         "lf.filter(~(pl.col('ints') > 1) | ~(pl.col('ints') < 99))",
         {"ints": [0, 1, 99, 100]},
     ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints BETWEEN 40 AND 60 AND ints NOT BETWEEN 45 AND 55",
+        {"ints": [40, 41, 42, 43, 44, 56, 57, 58, 59, 60]},
+    ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints IN (1, 2, 3)",
+        {"ints": [1, 2, 3]},
+        convert_errors={"*": "Unsupported Function"},
+    ),
+    SQLParserScenario(
+        "hundred",
+        "SELECT ints FROM lf WHERE ints = 1 OR ints == 2 OR NOT ints != 3 OR NOT ints <> 4",
+        {"ints": [1, 2, 3, 4]},
+    ),
+    SQLParserScenario(
+        "weird_numbers",
+        "SELECT * FROM lf WHERE num IS NULL",
+        {"str": ["none"], "num": [None]},
+        alt_xfail={
+            # The "nan ± ???" is here for downstream string-based assertions.
+            "sqlite": {"num": [None, None], "str": ["none", "nan ± ???"]},
+            "to_pandas": {"num": [nan, nan], "str": ["none", "nan ± ???"]},
+            "duckdb+to_pandas": {"num": [nan], "str": ["none"]},
+            "postgres+to_pandas": {"num": [nan], "str": ["none"]},
+        },
+    ),
+    SQLParserScenario(
+        "weird_booleans",
+        "SELECT str, "
+        "bool IS TRUE AS  true,   bool is NOT TRUE AS  not_true, "
+        "bool IS FALSE AS false,  bool is NOT FALSE AS not_false, "
+        "bool IS NULL AS  null,   bool is NOT NULL AS  not_null "
+        "FROM lf",
+        {
+            "str": ["true", "false", "none"],
+            "true": [True, False, None],
+            "not_true": [False, True, None],
+            "false": [False, True, None],
+            "not_false": [True, False, None],
+            "null": [False, False, True],
+            "not_null": [True, True, False],
+        },
+        alt_xfail={
+            "sqlite+to_pandas": {
+                "str": ["true", "false", "none"],
+                "true": [True, False, nan],
+                "not_true": [False, True, nan],
+                "false": [False, True, nan],
+                "not_false": [True, False, nan],
+                "null": [False, False, True],
+                "not_null": [True, True, False],
+            }
+        },
+    ),
+    SQLParserScenario(
+        "weird_booleans",
+        "SELECT str, "
+        "bool IS DISTINCT FROM TRUE AS  distinct_from_true,   bool is NOT DISTINCT FROM TRUE AS  not_distinct_from_true, "
+        "bool IS DISTINCT FROM FALSE AS distinct_from_false,  bool is NOT DISTINCT FROM FALSE AS not_distinct_from_false, "
+        "bool IS DISTINCT FROM NULL AS  distinct_from_null,   bool is NOT DISTINCT FROM NULL AS  not_distinct_from_null "
+        "FROM lf",
+        {
+            "str": ["true", "false", "none"],
+            "distinct_from_true": [False, True, True],
+            "not_distinct_from_true": [True, False, False],
+            "distinct_from_false": [True, False, True],
+            "not_distinct_from_false": [False, True, False],
+            "distinct_from_null": [True, True, False],
+            "not_distinct_from_null": [False, False, True],
+        },
+        convert_errors={
+            # TODO: We could mask the problem by adding to the
+            # handle_binary_expr dict, but that won't handle nulls correctly.
+            "*": "NotEqValidity"
+        },
+    ),
     EvalParserScenario(
         "nan_null_inf",
         "lf.select('null').fill_null(111)",
@@ -691,7 +798,7 @@ parser_scenarios = [
         connection_errors={"mysql": MYSQL_INF},
         alt_xfail={
             "sqlite+to_polars": {"nan": [0.0, None]},
-            "sqlite+to_pandas": {"nan": [0.0, NAN]},
+            "sqlite+to_pandas": {"nan": [0.0, nan]},
             "sqlite+to_pyarrow": {"nan": [0.0, None]},
         },
     ),

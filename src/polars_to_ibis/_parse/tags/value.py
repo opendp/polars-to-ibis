@@ -7,6 +7,7 @@ AGG = "Agg"
 FUNCTION = "Function"
 BINARY_EXPR = "BinaryExpr"
 TERNARY = "Ternary"
+BOOLEAN = "Boolean"
 
 MEAN = "Mean"
 MEDIAN = "Median"
@@ -21,3 +22,5 @@ ALIAS = "Alias"
 VAR = "Var"
 STD = "Std"
 QUANTILE = "Quantile"
+
+SERIES = "Series"

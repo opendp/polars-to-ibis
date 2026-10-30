@@ -14,13 +14,19 @@ logger = logging.getLogger(__name__)
 class BaseScenario:
     def get_with_keys(self, errors_dict_name, backend_name, exporter_key):
         errors_dict = getattr(self, errors_dict_name)
-        return (
-            errors_dict.get("*")
-            or errors_dict.get(f"polars=={pl.__version__}")
-            or errors_dict.get(backend_name)
-            or errors_dict.get(f"{backend_name}+{exporter_key}")
-            or errors_dict.get(exporter_key)
-        )
+        # There seem to be errors common to exporters across backends,
+        # so check exporter_key before backend_name.
+        for key in [
+            f"polars=={pl.__version__}",
+            f"{backend_name}+{exporter_key}",
+            exporter_key,
+            backend_name,
+            "*",
+        ]:
+            try:
+                return errors_dict[key]
+            except KeyError:
+                pass
 
     def assert_error_or_return_value(
         self, errors_dict_name, backend_name, exporter_key, func: Callable[[], Any]

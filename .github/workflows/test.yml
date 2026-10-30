@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: macos-14 # So DB startup works the same in CI as locally.
+    runs-on: macos-15 # So DB startup works the same in CI as locally.
     strategy:
       matrix:
         python-version:

@@ -259,13 +259,6 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             right = polars_expr_to_ibis_value(right_expr)
             return left**right  # type: ignore
         case {
-            "function": {"Boolean": "Not", **extras_1},
-            "input": [input_expr],
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
-        case {
             "function": "Negate",
             "input": [input_expr],
             **extras,
@@ -306,19 +299,25 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             fill_value = polars_expr_to_ibis_value(fill_expr)
             return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
         case {
-            "function": {"Boolean": "IsNotNan", **extras_1},
+            "function": {tags.value.BOOLEAN: boolean, **extras_1},
             "input": [input_expr],
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
-            return ~(polars_expr_to_ibis_value(input_expr).isnan())
-        case {
-            "function": {"Boolean": "IsNull", **extras_1},
-            "input": [input_expr],
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return polars_expr_to_ibis_value(input_expr).isnull()
+            ibis_value = polars_expr_to_ibis_value(input_expr)
+            match boolean:
+                case "Not":
+                    return ~ibis_value  # type: ignore
+                case "IsNotNan":
+                    return ~(ibis_value.isnan())
+                case "IsNull":
+                    return ibis_value.isnull()
+                case "IsNotNull":
+                    return ~(ibis_value.isnull())
+                case _:
+                    raise NotImplementedError(
+                        f"Unsupported {tags.value.BOOLEAN} {boolean}"
+                    )
         case _:
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 
