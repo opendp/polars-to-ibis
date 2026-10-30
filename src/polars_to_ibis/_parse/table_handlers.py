@@ -365,8 +365,20 @@ def handle_distinct(
             match subset:
                 case None:
                     names = None
-                case [{"Selector": {"ByName": {"names": names, "strict": True}}}]:
-                    pass
+                case [
+                    {
+                        "Selector": {
+                            "ByName": {
+                                "names": names,
+                                "strict": True,
+                                **extras_1,
+                            },
+                            **extras_2,
+                        },
+                        **extras_3,
+                    }
+                ]:
+                    assert_no_extras(extras_1, extras_2, extras_3)
                 case _:
                     raise NotImplementedError(f"Unsupported {subset=}")
             input_table = update_polars_to_ibis(
