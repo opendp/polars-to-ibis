@@ -7,6 +7,7 @@ AGG = "Agg"
 FUNCTION = "Function"
 BINARY_EXPR = "BinaryExpr"
 TERNARY = "Ternary"
+BOOLEAN = "Boolean"
 
 MEAN = "Mean"
 MEDIAN = "Median"

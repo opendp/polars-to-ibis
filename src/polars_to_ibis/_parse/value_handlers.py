@@ -299,26 +299,20 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             fill_value = polars_expr_to_ibis_value(fill_expr)
             return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
         case {
-            "function": {"Boolean": "Not", **extras_1},
+            "function": {tags.value.BOOLEAN: boolean, **extras_1},
             "input": [input_expr],
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
-            return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
-        case {
-            "function": {"Boolean": "IsNotNan", **extras_1},
-            "input": [input_expr],
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return ~(polars_expr_to_ibis_value(input_expr).isnan())
-        case {
-            "function": {"Boolean": "IsNull", **extras_1},
-            "input": [input_expr],
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return polars_expr_to_ibis_value(input_expr).isnull()
+            match boolean:
+                case "Not":
+                    return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
+                case "IsNotNan":
+                    return ~(polars_expr_to_ibis_value(input_expr).isnan())
+                case "IsNull":
+                    return polars_expr_to_ibis_value(input_expr).isnull()
+                case _:
+                    raise NotImplementedError(f"Unsupported {tags.value.BOOLEAN}")
         case _:
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 

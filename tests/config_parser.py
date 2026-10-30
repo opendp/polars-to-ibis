@@ -735,7 +735,7 @@ parser_scenarios = [
             "null": [False, False, True],
             "not_null": [True, True, False],
         },
-        convert_errors={"*": "Unsupported Function"},
+        convert_errors={"*": "Unsupported Boolean"},
     ),
     EvalParserScenario(
         "nan_null_inf",
