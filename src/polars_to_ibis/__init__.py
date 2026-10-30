@@ -126,11 +126,19 @@ import polars as pl
 from ._parse import tags
 from ._parse.table_handlers import update_polars_to_ibis
 from ._serialize import serialize
+from ._split import FfiPlugin, FfiSplitPlan, split_polars_on_ffi_plan
 from ._utils import PluginReplacer
 
 __version__ = version("polars_to_ibis")
 
-__all__ = ["convert_polars_to_ibis", "scan_database", "split_polars_on_ffi"]
+__all__ = [
+    "FfiPlugin",
+    "FfiSplitPlan",
+    "convert_polars_to_ibis",
+    "scan_database",
+    "split_polars_on_ffi",
+    "split_polars_on_ffi_plan",
+]
 
 
 class PolarsToIbisWarning(Warning):
