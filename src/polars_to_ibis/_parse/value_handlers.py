@@ -304,15 +304,20 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
+            ibis_value = polars_expr_to_ibis_value(input_expr)
             match boolean:
                 case "Not":
-                    return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
+                    return ~ibis_value  # type: ignore
                 case "IsNotNan":
-                    return ~(polars_expr_to_ibis_value(input_expr).isnan())
+                    return ~(ibis_value.isnan())
                 case "IsNull":
-                    return polars_expr_to_ibis_value(input_expr).isnull()
+                    return ibis_value.isnull()
+                case "IsNotNull":
+                    return ~(ibis_value.isnull())
                 case _:
-                    raise NotImplementedError(f"Unsupported {tags.value.BOOLEAN}")
+                    raise NotImplementedError(
+                        f"Unsupported {tags.value.BOOLEAN} {boolean}"
+                    )
         case _:
             raise NotImplementedError(f"Unsupported {tags.value.FUNCTION}")
 

@@ -735,7 +735,18 @@ parser_scenarios = [
             "null": [False, False, True],
             "not_null": [True, True, False],
         },
-        convert_errors={"*": "Unsupported Boolean"},
+        alt_xfail={
+            "sqlite+to_pandas": {
+                "str": ["true", "false", "none"],
+                "true": [True, False, nan],
+                "not_true": [False, True, nan],
+                "false": [False, True, nan],
+                "not_false": [True, False, nan],
+                "null": [False, False, True],
+                "not_null": [True, True, False],
+            }
+        },
+        # convert_errors={"*": "Unsupported Boolean"},
     ),
     EvalParserScenario(
         "nan_null_inf",
