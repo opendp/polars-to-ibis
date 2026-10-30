@@ -36,11 +36,14 @@ jobs:
       - name: Install the project
         run: uv sync --group polars-${{ matrix.polars-version }}
 
+      - name: Activate venv
+        run: source .venv/bin/activate
+
       - name: Confirm polars version
-        run: diff <( echo ${{ matrix.polars-version }} ) <( uv run --group polars-${{ matrix.polars-version }} python -c 'import polars; print(polars.__version__)' )
+        run: diff <( echo ${{ matrix.polars-version }} ) <( python -c 'import polars; print(polars.__version__)' )
 
       - name: Run pre-commit checks
-        run: uv run --group polars-${{ matrix.polars-version }} pre-commit run --all-files
+        run: pre-commit run --all-files
 
       - name: Test
-        run: uv run scripts/ci.sh
+        run: scripts/ci.sh
