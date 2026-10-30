@@ -50,6 +50,10 @@ input_data = {
         "num": [0.0, None, inf, math.nan],
         # The "nan" global is only for test assertions.
     },
+    "weird_booleans": {
+        "str": ["true", "false", "none"],
+        "bool": [True, False, None],
+    },
 }
 
 Results = dict[str, list[Any]]
@@ -708,11 +712,30 @@ parser_scenarios = [
         "SELECT * FROM lf WHERE num IS NULL",
         {"str": ["none"], "num": [None]},
         alt_xfail={
+            # The "nan ± ???" is there for downstream string-based assertions.
             "sqlite": {"num": [None, None], "str": ["none", "nan ± ???"]},
             "to_pandas": {"num": [nan, nan], "str": ["none", "nan ± ???"]},
             "duckdb+to_pandas": {"num": [nan], "str": ["none"]},
             "postgres+to_pandas": {"num": [nan], "str": ["none"]},
         },
+    ),
+    SQLParserScenario(
+        "weird_booleans",
+        "SELECT str, "
+        "bool IS TRUE AS  true,   bool is NOT TRUE AS  not_true, "
+        "bool IS FALSE AS false,  bool is NOT FALSE AS not_false, "
+        "bool IS NULL AS  null,   bool is NOT NULL AS  not_null "
+        "FROM lf",
+        {
+            "str": ["true", "false", "none"],
+            "true": [True, False, None],
+            "not_true": [False, True, None],
+            "false": [False, True, None],
+            "not_false": [True, False, None],
+            "null": [False, False, True],
+            "not_null": [True, True, False],
+        },
+        convert_errors={"*": "Unsupported Function"},
     ),
     EvalParserScenario(
         "nan_null_inf",

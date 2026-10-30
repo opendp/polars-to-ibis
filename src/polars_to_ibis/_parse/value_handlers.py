@@ -259,13 +259,6 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             right = polars_expr_to_ibis_value(right_expr)
             return left**right  # type: ignore
         case {
-            "function": {"Boolean": "Not", **extras_1},
-            "input": [input_expr],
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-            return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
-        case {
             "function": "Negate",
             "input": [input_expr],
             **extras,
@@ -305,6 +298,13 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             assert_no_extras(extras_1)
             fill_value = polars_expr_to_ibis_value(fill_expr)
             return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
+        case {
+            "function": {"Boolean": "Not", **extras_1},
+            "input": [input_expr],
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return ~polars_expr_to_ibis_value(input_expr)  # type: ignore
         case {
             "function": {"Boolean": "IsNotNan", **extras_1},
             "input": [input_expr],
