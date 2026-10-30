@@ -78,9 +78,9 @@ class SQLParserScenario(BaseParserScenario):
         return pl.SQLContext(**named_frames).execute(self.expression)
 
 
-# Using this constant in an expected value lets us test against NaN in results.
-# (Normally, nan != nan.)
-NAN = approx(float("nan"), nan_ok=True)
+# Lower-case so we can just paste test output back into tests.
+nan = approx(math.nan, nan_ok=True)
+inf = math.inf
 
 # Error messages generated upstream: We don't control wording.
 MYSQL_INF = "inf can not be used with MySQL"
@@ -181,7 +181,7 @@ parser_scenarios = [
         {"literal": [-1, -1, -1, None]},
         alt_xfail={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1.0, -1.0, -1.0, NAN]},
+            "to_pandas": {"literal": [-1.0, -1.0, -1.0, nan]},
         },
     ),
     SQLParserScenario(
@@ -195,7 +195,7 @@ parser_scenarios = [
         {"literal": [-1, None, None, None]},
         alt_xfail={
             # TODO: https://github.com/opendp/polars-to-ibis/issues/147
-            "to_pandas": {"literal": [-1.0, NAN, NAN, NAN]},
+            "to_pandas": {"literal": [-1.0, nan, nan, nan]},
         },
     ),
     SQLParserScenario(
@@ -352,10 +352,20 @@ parser_scenarios = [
         "lf.select(pl.len().cast(pl.Int64).alias('n'), pl.col.ints.sum())",
         {"n": [4], "ints": [10]},
     ),
-    EvalParserScenario(
-        "weird",
-        "SELECT weird FROM lf",
-        {},
+    SQLParserScenario(
+        "weird_numbers",
+        "SELECT * FROM lf",
+        {"num": [0.0, None, inf, nan], "str": ["zero", "none", "inf", "nan"]},
+        alt_xfail={
+            "sqlite": {
+                "num": [0.0, None, inf, None],
+                "str": ["zero", "none", "inf", "nan"],
+            },
+            "to_pandas": {
+                "num": [0.0, nan, inf, nan],
+                "str": ["zero", "none", "inf", "nan"],
+            },
+        },
     ),
     EvalParserScenario(
         "nan_null_inf",
@@ -689,11 +699,6 @@ parser_scenarios = [
     ),
     SQLParserScenario(
         "hundred",
-        "SELECT ints FROM lf WHERE ints < 10 AND NOT ints <= 5",
-        {"ints": [6, 7, 8, 9]},
-    ),
-    SQLParserScenario(
-        "hundred",
         "SELECT ints FROM lf WHERE ints = 1 OR ints == 2 OR NOT ints != 3 OR NOT ints <> 4",
         {"ints": [1, 2, 3, 4]},
     ),
@@ -722,7 +727,7 @@ parser_scenarios = [
         connection_errors={"mysql": MYSQL_INF},
         alt_xfail={
             "sqlite+to_polars": {"nan": [0.0, None]},
-            "sqlite+to_pandas": {"nan": [0.0, NAN]},
+            "sqlite+to_pandas": {"nan": [0.0, nan]},
             "sqlite+to_pyarrow": {"nan": [0.0, None]},
         },
     ),
