@@ -14,6 +14,9 @@ class SplitScenario(BaseScenario):
     expected_parameters: dict[str, Any]
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     opendp_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
+    privacy_loss: dict[str, float] = dataclasses.field(
+        default_factory=lambda: {"epsilon": 1.0}
+    )
 
 
 def get_case_clause(table: str) -> str:
@@ -65,7 +68,11 @@ def get_select_float_sum() -> str:
     """
 
 
-def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
+def get_expected_parameters(
+    scale_support_pairs: list[tuple[int | float, str]],
+    *,
+    distribution: str = "Laplace",
+):
     return [
         {
             "flags": {
@@ -75,7 +82,7 @@ def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
             "lib": ".../opendp.abi3.so",
             "symbol": "noise_plugin",
             "unpickled_kwargs": {
-                "distribution": "Laplace",
+                "distribution": distribution,
                 "scale": scale,
                 "support": support,
             },
@@ -85,6 +92,24 @@ def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
 
 
 split_scenarios = [
+    SplitScenario(
+        "context.query().select(pl.col.ints.dp.sum((0,10)))",
+        f"{get_select_int_sum('t0')} FROM {TABLE_NAME} AS t0",
+        {"ints": [10]},
+        get_expected_parameters([(20.0, "Integer")], distribution="Gaussian"),
+        privacy_loss={"rho": 0.125},
+    ),
+    SplitScenario(
+        "context.query().select(pl.col.floats.dp.sum((0,1)))",
+        f"{get_select_float_sum()} FROM {TABLE_NAME} AS t0",
+        {"floats": [1.0]},
+        get_expected_parameters([(2.0008881784197, "Float")], distribution="Gaussian"),
+        backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined",
+            "mysql": "FUNCTION runner.IS_NAN does not exist",
+        },
+        privacy_loss={"rho": 0.125},
+    ),
     SplitScenario(
         "context.query().select(dp.len(signed=True))",
         f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
