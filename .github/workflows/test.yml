@@ -36,8 +36,8 @@ jobs:
       - name: Install the project
         run: uv sync --group polars-${{ matrix.polars-version }}
 
-      - name: Activate venv
-        run: source .venv/bin/activate
+      - name: Add venv to PATH
+        run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Confirm polars version
         run: diff <( echo ${{ matrix.polars-version }} ) <( python -c 'import polars; print(polars.__version__)' )
