@@ -4,6 +4,9 @@ from typing import Any
 from .utils import BaseScenario
 
 TABLE_NAME = "default_table"
+MAX_LENGTH = 1_000_000
+# For bounds [0, 1], add twice the sequential sum error n**2 / 2**52.
+FLOAT_SUM_SENSITIVITY = 1 + 2 * MAX_LENGTH**2 / 2**52
 
 
 @dataclasses.dataclass
@@ -12,6 +15,7 @@ class SplitScenario(BaseScenario):
     expected_sql: str
     expected_result: dict[str, Any]
     expected_parameters: dict[str, Any]
+    expected_privacy_loss: dict[str, float]
     backend_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
     opendp_errors: dict[str, str] = dataclasses.field(default_factory=dict)  # type: ignore
 
@@ -65,7 +69,10 @@ def get_select_float_sum() -> str:
     """
 
 
-def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
+def get_expected_parameters(
+    scale_support_pairs: list[tuple[int | float, str]],
+    distribution: str,
+):
     return [
         {
             "flags": {
@@ -75,7 +82,7 @@ def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
             "lib": ".../opendp.abi3.so",
             "symbol": "noise_plugin",
             "unpickled_kwargs": {
-                "distribution": "Laplace",
+                "distribution": distribution,
                 "scale": scale,
                 "support": support,
             },
@@ -86,16 +93,39 @@ def get_expected_parameters(scale_support_pairs: list[tuple[int | float, str]]):
 
 split_scenarios = [
     SplitScenario(
+        "context.query().select(pl.col.ints.dp.sum((0,10)))",
+        f"{get_select_int_sum('t0')} FROM {TABLE_NAME} AS t0",
+        {"ints": [10]},
+        get_expected_parameters([(20.0, "Integer")], distribution="Gaussian"),
+        expected_privacy_loss={"rho": 0.125},
+    ),
+    SplitScenario(
+        "context.query().select(pl.col.floats.dp.sum((0,1)))",
+        f"{get_select_float_sum()} FROM {TABLE_NAME} AS t0",
+        {"floats": [1.0]},
+        # Gaussian scale = sensitivity / sqrt(2 * rho) = 2 * sensitivity.
+        get_expected_parameters(
+            [(2 * FLOAT_SUM_SENSITIVITY, "Float")], distribution="Gaussian"
+        ),
+        expected_privacy_loss={"rho": 0.125},
+        backend_errors={
+            "sqlite": "Compilation rule for 'IsNan' operation is not defined",
+            "mysql": "FUNCTION runner.IS_NAN does not exist",
+        },
+    ),
+    SplitScenario(
         "context.query().select(dp.len(signed=True))",
         f"SELECT COUNT(*) AS len FROM {TABLE_NAME} AS t0",
         {"len": [4]},
-        get_expected_parameters([(1.0, "Integer")]),
+        get_expected_parameters([(1.0, "Integer")], distribution="Laplace"),
+        expected_privacy_loss={"epsilon": 1.0},
     ),
     SplitScenario(
         "context.query().select(pl.col.ints.dp.sum((0,10)))",
         f"{get_select_int_sum('t0')} FROM {TABLE_NAME} AS t0",
         {"ints": [10]},
-        get_expected_parameters([(10.0, "Integer")]),
+        get_expected_parameters([(10.0, "Integer")], distribution="Laplace"),
+        expected_privacy_loss={"epsilon": 1.0},
     ),
     SplitScenario(
         "context.query().filter(pl.col.ints!=1).select(pl.col.ints.dp.sum((0,10)))",
@@ -105,13 +135,17 @@ split_scenarios = [
         ) AS t1
         """,
         {"ints": [9]},
-        get_expected_parameters([(10.0, "Integer")]),
+        get_expected_parameters([(10.0, "Integer")], distribution="Laplace"),
+        expected_privacy_loss={"epsilon": 1.0},
     ),
     SplitScenario(
         "context.query().select(pl.col.floats.dp.sum((0,1)))",
         f"{get_select_float_sum()} FROM {TABLE_NAME} AS t0",
         {"floats": [1]},
-        get_expected_parameters([(1.00044408920985, "Float")]),
+        get_expected_parameters(
+            [(FLOAT_SUM_SENSITIVITY, "Float")], distribution="Laplace"
+        ),
+        expected_privacy_loss={"epsilon": 1.0},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined",
             "mysql": "FUNCTION runner.IS_NAN does not exist",
@@ -130,7 +164,11 @@ split_scenarios = [
                 10,
             ],
         },
-        get_expected_parameters([(2.0008881784197, "Float"), (20, "Integer")]),
+        get_expected_parameters(
+            [(2 * FLOAT_SUM_SENSITIVITY, "Float"), (20, "Integer")],
+            distribution="Laplace",
+        ),
+        expected_privacy_loss={"epsilon": 1.0},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined",
             "mysql": "FUNCTION runner.IS_NAN does not exist",
@@ -149,7 +187,11 @@ split_scenarios = [
                 10,
             ],
         },
-        get_expected_parameters([(2.0008881784197, "Float"), (20, "Integer")]),
+        get_expected_parameters(
+            [(2 * FLOAT_SUM_SENSITIVITY, "Float"), (20, "Integer")],
+            distribution="Laplace",
+        ),
+        expected_privacy_loss={"epsilon": 1.0},
         backend_errors={
             "sqlite": "Compilation rule for 'IsNan' operation is not defined",
             "mysql": "FUNCTION runner.IS_NAN does not exist",
@@ -167,7 +209,10 @@ split_scenarios = [
                 10,
             ],
         },
-        get_expected_parameters([(2.0, "Integer"), (20.0, "Integer")]),
+        get_expected_parameters(
+            [(2.0, "Integer"), (20.0, "Integer")], distribution="Laplace"
+        ),
+        expected_privacy_loss={"epsilon": 1.0},
     ),
     SplitScenario(
         "context.query().select(pl.col.ints.dp.mean((0,10)))",
@@ -178,7 +223,10 @@ split_scenarios = [
         # to go with our two parameter dicts.
         # https://github.com/opendp/polars-to-ibis/issues/145
         {"ints": [2.5]},
-        get_expected_parameters([(20.0, "Integer"), (2.0, "Integer")]),
+        get_expected_parameters(
+            [(20.0, "Integer"), (2.0, "Integer")], distribution="Laplace"
+        ),
+        expected_privacy_loss={"epsilon": 1.0},
         # TODO: Once we get the right number of results, worry about types.
         # (Right now, the second param dict isn't even being used.)
         opendp_errors={"*": "inferred type is f64, expected i32."},
