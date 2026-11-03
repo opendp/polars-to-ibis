@@ -7,7 +7,7 @@ import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
-from .config_split import TABLE_NAME, SplitScenario, split_scenarios
+from .config_split import MAX_LENGTH, TABLE_NAME, SplitScenario, split_scenarios
 from .utils import backend_names, get_connection
 
 # I thought this would be sufficient...
@@ -50,10 +50,10 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
     context = dp.Context.compositor(
         data=schema_lf,
         privacy_unit=dp.unit_of(contributions=1),
-        privacy_loss=dp.loss_of(**scenario.privacy_loss),
+        privacy_loss=dp.loss_of(**scenario.expected_privacy_loss),
         split_evenly_over=1,
         margins=[
-            dp.polars.Margin(max_length=1_000_000),
+            dp.polars.Margin(max_length=MAX_LENGTH),
         ],
     )
     globals = {
