@@ -351,18 +351,40 @@ def handle_distinct(
         case {
             "input": input_expr,
             "options": {
-                "keep_strategy": "Any",
+                "keep_strategy": keep_strategy,
                 "maintain_order": True,
-                "subset": None,
+                "subset": subset,
                 **extras_1,
             },
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
+            if keep_strategy not in {"Any", "First"}:
+                # Some Ibis backends do not support 'keep="last"'.
+                raise NotImplementedError(f"Unsupported {keep_strategy=}")
+            match subset:
+                case None:
+                    names = None
+                case [
+                    {
+                        "Selector": {
+                            "ByName": {
+                                "names": names,
+                                "strict": True,
+                                **extras_1,
+                            },
+                            **extras_2,
+                        },
+                        **extras_3,
+                    }
+                ]:
+                    assert_no_extras(extras_1, extras_2, extras_3)
+                case _:
+                    raise NotImplementedError(f"Unsupported {subset=}")
             input_table = update_polars_to_ibis(
                 input_expr, table=table, backend=backend
             )
-            return input_table.distinct()
+            return input_table.distinct(on=names, keep="first")
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.DISTINCT}")
 
