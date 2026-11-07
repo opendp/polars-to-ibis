@@ -8,7 +8,6 @@ from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
-from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
 from polars_to_ibis._utils import abbreviate
 
@@ -37,6 +36,13 @@ def update_polars_to_ibis(
     table: ir.Table,
     backend: ibis.BaseBackend,
 ) -> ir.Table:
+    from .opendp_histogram import try_histogram_relation
+
+    histogram = try_histogram_relation(
+        polars_plan, table, backend, update_polars_to_ibis
+    )
+    if histogram is not None:
+        return histogram
     tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
@@ -242,15 +248,12 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 {
                     "predicate": predicate_expr,
                     "truthy": truthy_expr,
-                    "falsy": falsy_expr,
+                    "falsy": _,
                     **extras_1,
                 },
             ):
                 assert_no_extras(extras_1)
-                ibis_value = polars_expr_to_ibis_value(predicate_expr).ifelse(
-                    polars_expr_to_ibis_value(truthy_expr),
-                    polars_expr_to_ibis_value(falsy_expr),
-                )
+                ibis_value = polars_expr_to_ibis_value(col)
                 target_kwargs = (
                     agg_kwargs if is_aggregation(predicate_expr) else select_kwargs
                 )
@@ -556,59 +559,32 @@ def handle_group_by(
 ) -> ir.Table:
     input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
 
-    # Different serializations from different polars versions.
-    # Not all branches will be covered.
-    match payload:  # pragma: no cover
-        case {
-            "keys": keys,
-            "aggs": [agg],
-            "maintain_order": False,
-            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
-            "apply": None,
-            "predicates": [],
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-        case {
-            "keys": keys,
-            "aggs": [agg],
-            "maintain_order": False,
-            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
-
-    group_by_keys = parse_sort_by_column(keys)
-    grouped_table = input_table.group_by(group_by_keys)
-
-    match agg:
-        case {tags.value.AGG: agg_payload, **extras_1}:
-            assert_no_extras(extras_1)
-            agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg")
-
-    match agg_payload_payload:
-        case {tags.value.COLUMN: column, **extras}:
-            assert_no_extras(extras)
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
-
-    match agg_payload_tag:
-        case (
-            tags.value.SUM
-            | tags.value.MEAN
-            | tags.value.MEDIAN
-            | tags.value.MAX
-            | tags.value.MIN
-        ):
-            return grouped_table.aggregate(  # type: ignore
-                **{column: getattr(defer[column], agg_payload_tag.lower())()}
-            )
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg stat")
+    if (
+        payload.get("apply") is not None
+        or payload.get("maintain_order", False)
+        or payload.get("predicates")
+        or any(value is not None for value in payload.get("options", {}).values())
+    ):
+        raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} options")
+    keys = {}
+    for key in payload["keys"]:
+        match key:
+            case {tags.value.ALIAS: [expr, name], **extras}:
+                assert_no_extras(extras)
+                keys[name] = polars_expr_to_ibis_value(expr)
+            case _:
+                keys[infer_name(key)] = polars_expr_to_ibis_value(key)
+    metrics = {}
+    for agg in payload["aggs"]:
+        match agg:
+            case {tags.value.ALIAS: [expr, name], **extras}:
+                assert_no_extras(extras)
+                metrics[name] = polars_expr_to_ibis_value(expr)
+            case _:
+                metrics[infer_name(agg)] = polars_expr_to_ibis_value(agg)
+    if not metrics:
+        return input_table.select(**keys).distinct()
+    return input_table.group_by(**keys).aggregate(**metrics)
 
 
 @table_handler(tags.table.MAP_FUNCTION)
