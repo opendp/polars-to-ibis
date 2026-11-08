@@ -118,7 +118,7 @@ and the [tests](https://github.com/opendp/polars-to-ibis/blob/main/tests/config_
 # Third-level headings are not added to the sidebar.
 
 from importlib.metadata import version
-from typing import Any
+from typing import Any, cast
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import polars as pl
@@ -149,25 +149,84 @@ def scan_database(connection: Any, table_name: str) -> pl.LazyFrame:
 
 def convert_polars_to_ibis(
     lf: pl.LazyFrame,
-    table_name: str,
-    backend: ibis.BaseBackend,
+    table_name: str | None = None,
+    backend: ibis.BaseBackend | None = None,
+    *,
+    table: ibis.Table | None = None,
 ) -> ibis.Table:
     """
-    Convert a Polars LazyFrame to an Ibis unbound table.
+    Convert a Polars LazyFrame to an Ibis table without executing a query.
 
-    The name of the table in the target database is also required:
-    Ibis translates dataframe syntax to idiomatic SQL,
-    so it needs to have a table name to include in the SQL.
+    Pass ``table_name`` and ``backend`` to construct an unbound table, as before.
+    Alternatively, pass a bound ``table`` to preserve that exact relation,
+    including its filters and projections. Its backend is inferred; an explicit
+    ``backend`` must be that same backend instance, and ``table_name`` is forbidden.
+
+    Bound conversion supports exactly one DataFrameScan. Its full input schema
+    must match the supplied relation's column names, order, and supported types
+    exactly (including integer signedness/width and floating-point width).
+    Nullability is not compared: Polars schemas do not encode nullability.
+    Callers must ensure the relation satisfies any additional analysis assumptions
+    (such as null absence, value bounds, or margins); this is not a data check.
+    Only expression/backend metadata is inspected, never private SQL results.
     """
+    if table is None:
+        if table_name is None or backend is None:
+            raise TypeError("Provide table_name and backend, or a bound table")
+    else:
+        if not isinstance(table, ibis.Table):  # pyright: ignore [reportUnnecessaryIsInstance]
+            raise TypeError("table must be a bound ibis.Table")
+        if table_name is not None:
+            raise ValueError("table and table_name cannot be supplied together")
+        # _find_backend does not reject a mixture of bound and unbound sources.
+        if table._find_backends()[1]:  # pyright: ignore [reportPrivateUsage]
+            raise ValueError("table must not contain unbound sources")
+        table_backend = table._find_backend()  # pyright: ignore [reportPrivateUsage]
+        if backend is not None and backend is not table_backend:
+            raise ValueError("backend must be the supplied table's backend instance")
+        backend = table_backend
+
     polars_plan = serialize(lf)  # type: ignore
-    input_schema = _get_input_schema(polars_plan)
-    ibis_table = ibis.table(input_schema, name=table_name)  # type: ignore
+    if table is None:
+        input_schema = _get_input_schema(polars_plan)
+        table = ibis.table(input_schema, name=table_name)  # type: ignore
+    else:
+        _validate_bound_schema(polars_plan, table)
 
     return update_polars_to_ibis(
         polars_plan=polars_plan,
-        table=ibis_table,
+        table=table,
         backend=backend,
     )
+
+
+def _validate_bound_schema(polars_plan: dict[str, Any], table: ibis.Table) -> None:
+    scans: list[dict[str, Any]] = []
+
+    def find_scans(node: Any) -> None:
+        if isinstance(node, dict):
+            node = cast(dict[str, Any], node)
+            if tags.table.DATA_FRAME_SCAN in node:
+                scans.append(node)
+                return
+            for value in node.values():
+                find_scans(value)
+        elif isinstance(node, list):
+            for value in cast(list[Any], node):
+                find_scans(value)
+
+    find_scans(polars_plan)
+    if len(scans) != 1:
+        raise ValueError("Bound conversion requires exactly one DataFrameScan source")
+    expected = _get_input_schema(scans[0])
+    actual = ibis.schema(
+        {name: dtype.copy(nullable=True) for name, dtype in table.schema().items()}
+    )
+    if not expected.equals(actual):
+        raise ValueError(
+            "Bound table schema must match the full Polars input schema "
+            "(column names, order, and exact supported types)"
+        )
 
 
 def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
