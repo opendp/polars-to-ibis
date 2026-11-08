@@ -242,15 +242,12 @@ def apply_select_expr(col_list: list[dict[str, Any]], input_table):
                 {
                     "predicate": predicate_expr,
                     "truthy": truthy_expr,
-                    "falsy": falsy_expr,
+                    "falsy": _,
                     **extras_1,
                 },
             ):
                 assert_no_extras(extras_1)
-                ibis_value = polars_expr_to_ibis_value(predicate_expr).ifelse(
-                    polars_expr_to_ibis_value(truthy_expr),
-                    polars_expr_to_ibis_value(falsy_expr),
-                )
+                ibis_value = polars_expr_to_ibis_value(col)
                 target_kwargs = (
                     agg_kwargs if is_aggregation(predicate_expr) else select_kwargs
                 )
