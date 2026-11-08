@@ -2,15 +2,12 @@
 This is a private module: The API may change.
 """
 
-import io
-import json
 import logging
 from collections.abc import Callable
 from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
-import polars as pl
 from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 from ibis.common.deferred import Deferred, deferrable
 
@@ -111,6 +108,10 @@ def handle_literal(payload: PolarsPlan):
         ):
             assert_no_extras(extras)
             dtype, value = next(iter(scalar.items()))
+            # Force SQL REAL rounding: a same-type Float32 literal cast is
+            # optimized away by Ibis, leaving a wider SQL decimal constant.
+            if dtype == "Float32":
+                return ibis.literal(value, type="float64").cast("float32")
             return ibis.literal(value, type=dtype.lower())
         case {"Dyn": {"Float": value, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
@@ -118,8 +119,7 @@ def handle_literal(payload: PolarsPlan):
             # Hack suggested by https://github.com/ibis-project/ibis/issues/11947
             return ibis.literal(0).cast("float64") + value
         case {"Dyn": {"Int": value, **extras_1}, **extras_2}:
-            # Keep a value expression, including for literal-only preprocessing
-            # such as FillNull; plain Python ints have no expression methods.
+            # Keep a value expression; Python ints have no expression methods.
             dtype = "int32" if -(2**31) <= value < 2**31 else "int64"
             return ibis.literal(value, type=dtype)
         case {"Scalar": {"String": value, **extras_1}, **extras_2}:
@@ -326,7 +326,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             assert_no_extras(extras_1, extras_2)
             left = polars_expr_to_ibis_value(left_expr)
             right = polars_expr_to_ibis_value(right_expr)
-            return _apply_binary(pow, left, right, [left_expr, right_expr])
+            return deferrable(pow)(left, right)
         case {
             "function": {"Boolean": "Not", **extras_1},
             "input": [input_expr],
@@ -350,8 +350,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
             **extras_3,
         }:
             assert_no_extras(extras_1, extras_2, extras_3)
-            return _clip(
-                polars_expr_to_ibis_value(input_expr),
+            return polars_expr_to_ibis_value(input_expr).clip(
                 polars_expr_to_ibis_value(lower_expr),
                 polars_expr_to_ibis_value(upper_expr),
             )
@@ -375,11 +374,7 @@ def handle_function(payload: PolarsPlan) -> ir.Value:
         }:
             assert_no_extras(extras_1)
             fill_value = polars_expr_to_ibis_value(fill_expr)
-            return _fill_null(
-                polars_expr_to_ibis_value(input_expr),
-                fill_value,
-                [input_expr, fill_expr],
-            )
+            return polars_expr_to_ibis_value(input_expr).fill_null(fill_value)
         case {
             "function": {"Boolean": "IsNotNan" | "IsNan" as op, **extras_1},
             "input": [input_expr],
@@ -410,70 +405,12 @@ def handle_ternary(payload: PolarsPlan):
             **extras,
         }:
             assert_no_extras(extras)
-            return _if_else(
-                polars_expr_to_ibis_value(predicate_expr),
+            return polars_expr_to_ibis_value(predicate_expr).ifelse(
                 polars_expr_to_ibis_value(truthy_expr),
                 polars_expr_to_ibis_value(falsy_expr),
-                [truthy_expr, falsy_expr],
             )
         case _:
             raise NotImplementedError(f"Unsupported {tags.value.TERNARY}")
-
-
-def _argument_context(values, expressions):
-    schema, children = {}, []
-    for index, (value, expression) in enumerate(zip(values, expressions)):
-        child = pl.Expr.deserialize(io.StringIO(json.dumps(expression)), format="json")
-        if child.meta.root_names():
-            name = f"arg_{index}"
-            schema[name] = value.type().to_polars()
-            child = pl.col(name)
-        children.append(child)
-    return pl.LazyFrame(schema=schema), children
-
-
-def _coerce_arguments(values, expressions):
-    """Ask Polars for contextual literal coercion, without evaluating any data.
-
-    Ibis literals have strong dtypes; Polars' dynamic literals adopt their
-    context. Resolve that distinction at each operation, before arithmetic or
-    comparisons, rather than casting the final result after precision is lost.
-    """
-    frame, children = _argument_context(values, expressions)
-    dtype = frame.select(pl.coalesce(children).alias("value")).collect_schema()["value"]
-    target = str(dtype).lower()
-    if dtype.is_numeric() or dtype == pl.Boolean:
-        return [value.cast(target) for value in values]
-    return values
-
-
-@deferrable
-def _fill_null(value, replacement, expressions):
-    value, replacement = _coerce_arguments([value, replacement], expressions)
-    return value.fill_null(replacement)
-
-
-@deferrable
-def _if_else(predicate, truthy, falsy, expressions):
-    truthy, falsy = _coerce_arguments([truthy, falsy], expressions)
-    return predicate.ifelse(truthy, falsy)
-
-
-@deferrable
-def _clip(value, lower, upper):
-    # Unlike fill/arithmetic, Polars casts clip bounds to the input dtype.
-    return value.clip(lower.cast(value.type()), upper.cast(value.type()))
-
-
-@deferrable
-def _apply_binary(func, left, right, expressions):
-    frame, children = _argument_context([left, right], expressions)
-    dtype = frame.select(func(*children).alias("value")).collect_schema()["value"]
-    left, right = _coerce_arguments([left, right], expressions)
-    result = func(left, right)
-    # SQL operations such as POWER may widen Float32 despite Ibis' inferred
-    # dtype. Force a real SQL cast (a same-type Ibis cast would be optimized out).
-    return result.cast("float64").cast("float32") if dtype == pl.Float32 else result
 
 
 @value_handler(tags.value.BINARY_EXPR)
@@ -518,11 +455,9 @@ def handle_binary_expr(payload: PolarsPlan):
                 "And": __and__,
                 "Or": __or__,
             }[op]
-            return _apply_binary(
-                func,
+            return deferrable(func)(
                 polars_expr_to_ibis_value(left),
                 polars_expr_to_ibis_value(right),
-                [left, right],
             )
         case _:
             raise NotImplementedError(f"Unsupported {tags.value.BINARY_EXPR}")

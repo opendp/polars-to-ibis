@@ -6,43 +6,6 @@ Convert [Polars LazyFrames](https://docs.pola.rs/api/python/stable/reference/laz
 
 Polars and Ibis have similar APIs, but while Polars supports computation in-memory and on [Polars Cloud](https://cloud.pola.rs/), Ibis by itself does not handle computation: Instead it translates the dataframe expression into idiomatic SQL for a particular database.
 
-## OpenDP sparse histogram heads
-
-`convert_polars_to_ibis` recognizes OpenDP's internal
-`discrete_quantile_histogram_plugin` aggregate and its native sparse-struct
-flattening. It lowers that logical relation directly to typed bucket assignment
-and `COUNT(*) GROUP BY` the original keys and bucket ID. Binning is a converter
-implementation choice; the current implementation uses balanced Ibis CASE
-expressions. SQL does not build lists, collect rows into arrays, or UNNEST them.
-
-Expression-local filtering, `drop_nulls`, `drop_nans`, replacement and casts apply
-only to the histogram's contributing values. A null-safe join with the original
-private observed-key domain retains groups with no contributions as a zero-count
-histogram. Empty global input still has one aggregate result. Literal input is
-one observation per group (or one globally), unless a row-dependent filter
-broadcasts that literal. Public-key imputation remains in OpenDP's shared
-continuation, not this SQL lowering.
-
-The converter leaves exact score reconstruction, noisy max, candidate lookup,
-other noise and cross-head postprocessing in Polars. The existing
-`split_polars_on_ffi` scalar-plugin eraser is **not** this protocol: convert each
-deterministic head relation with `convert_polars_to_ibis` instead. Protected IPC,
-snapshots, one-shot release and cleanup remain the trusted executor's job.
-
-This route is tested with real OpenDP-generated heads, Polars 1.36.1 and
-Ibis/DuckDB. Other backends must support the required exact numeric types,
-null-safe joins, TRUNC for float-to-integer conversion, and TRY_CAST for non-strict
-narrowing casts; no floating-point
-substitution is made for large integers. Polars schema inference (without
-executing input data) preserves contextual dynamic-literal coercion at each
-operation, including Float32 fills and intermediate arithmetic. Strong typed
-literals retain their explicit dtype.
-Independent positional selections inside one expression are explicitly
-unsupported rather than silently translated as an AND of row predicates. The
-plugin metadata decoder accepts primitive pickle data only, not executable
-pickle objects. Plugin names and library provenance follow OpenDP's existing
-resolved-plan convention, not cryptographic authentication.
-
 ## Contributions
 
 There are several ways to contribute. First, if you find `polars_to_ibis` useful, please [let us know](mailto:contact@opendp.org) and we'll spend more time on this project. If `polars_to_ibis` doesn't work for you, we also want to know that! Please [file an issue](https://github.com/opendp/polars-to-ibis/issues/new/choose).

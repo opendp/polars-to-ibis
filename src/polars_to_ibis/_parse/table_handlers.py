@@ -36,13 +36,6 @@ def update_polars_to_ibis(
     table: ir.Table,
     backend: ibis.BaseBackend,
 ) -> ir.Table:
-    from .opendp_histogram import try_histogram_relation
-
-    histogram = try_histogram_relation(
-        polars_plan, table, backend, update_polars_to_ibis
-    )
-    if histogram is not None:
-        return histogram
     tag, payload = split_tag_payload(polars_plan)
     try:
         func = TABLE_REGISTRY[tag]
@@ -477,8 +470,8 @@ def handle_hstack(
                 tags.value.CAST: {
                     "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
                     "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
-                    # TODO: "NonStrict" can cause downstream errors in the DB,
-                    # which we definitely don't want, particularly for OpenDP.
+                    # TODO: "NonStrict" wildcard casts can cause downstream
+                    # errors in the DB.
                     # https://github.com/opendp/polars-to-ibis/issues/182
                     "options": "Strict" | "NonStrict",
                     **extras_3,
