@@ -64,7 +64,7 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
             to_return = func(*args, **kwargs)
             if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 logger.debug(f"{outdent()}<-- ibis table:\n{to_return}")
-            return func(*args, **kwargs)
+            return to_return
 
         TABLE_REGISTRY[tag] = wrapped_func
         return func
