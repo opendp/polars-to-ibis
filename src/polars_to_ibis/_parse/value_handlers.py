@@ -18,7 +18,6 @@ from .utils import assert_no_extras, indent, outdent, split_tag_payload
 logger = logging.getLogger(__name__)
 
 PolarsPlan = dict[str, Any]
-ReturnsTable = Callable[..., ir.Table]
 ReturnsValue = Callable[..., ir.Value]
 
 
@@ -35,6 +34,63 @@ def polars_expr_to_ibis_value(polars_expr: PolarsPlan) -> ir.Value:
         return func(payload)
     except NotImplementedError as e:  # pragma: no cover
         raise NotImplementedError(f"{e}\nin {abbreviate(polars_expr)}")
+
+
+def _renamed_name(name: str, function: Any) -> str:
+    match function:
+        case "ToUppercase":
+            return name.upper()
+        case {"Prefix": prefix, **extras}:
+            assert_no_extras(extras)
+            return prefix + name
+        case {"Suffix": suffix, **extras}:
+            assert_no_extras(extras)
+            return name + suffix
+        case _:
+            raise NotImplementedError(f"Unsupported rename function: {function!r}")
+
+
+def infer_name(expr: Any) -> str:
+    """Infer the Polars expression's output column name, without translating it."""
+    match expr:
+        case tags.value.LEN:
+            return "len"
+        case {tags.value.ALIAS: [_, name], **extras}:
+            assert_no_extras(extras)
+            return name
+        case {
+            tags.value.RENAME_ALIAS: {
+                "expr": inner,
+                "function": function,
+                **extras_1,
+            },
+            **extras_2,
+        }:
+            assert_no_extras(extras_1, extras_2)
+            return _renamed_name(infer_name(inner), function)
+        case {tags.value.CAST: {"expr": inner, **extras_1}, **extras_2}:
+            return infer_name(inner)
+        case {tags.value.TERNARY: {"truthy": truthy, **extras_1}, **extras_2}:
+            return infer_name(truthy)
+        case {tags.value.LITERAL: _, **extras}:
+            assert_no_extras(extras)
+            return "literal"
+        case {tags.value.COLUMN: name, **extras}:
+            assert_no_extras(extras)
+            return name
+        case list():
+            children = expr
+        case dict():
+            children = expr.values()
+        case _:
+            raise NotImplementedError(f"Can't infer column name from {expr!r}")
+
+    for child in children:
+        try:
+            return infer_name(child)
+        except NotImplementedError:
+            continue
+    raise NotImplementedError(f"Can't infer column name from {expr!r}")
 
 
 # Registry:
@@ -114,6 +170,26 @@ def handle_literal(payload: PolarsPlan):
 @value_handler(tags.value.COLUMN)
 def handle_column(payload: PolarsPlan):
     return defer[payload]  # pyright: ignore[reportArgumentType]
+
+
+@value_handler(tags.value.ALIAS)
+def handle_alias(payload: PolarsPlan):
+    match payload:
+        case [expr, _name]:
+            return polars_expr_to_ibis_value(expr)
+        case _:
+            raise NotImplementedError(f"Unsupported {tags.value.ALIAS}")
+
+
+@value_handler(tags.value.RENAME_ALIAS)
+def handle_rename_alias(payload: PolarsPlan):
+    match payload:
+        case {"expr": expr, "function": function, **extras}:
+            assert_no_extras(extras)
+            _renamed_name(infer_name(expr), function)
+            return polars_expr_to_ibis_value(expr)
+        case _:
+            raise NotImplementedError(f"Unsupported {tags.value.RENAME_ALIAS}")
 
 
 @value_handler(tags.value.CAST)

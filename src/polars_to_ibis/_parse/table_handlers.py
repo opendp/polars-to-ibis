@@ -8,25 +8,18 @@ from typing import Any
 
 import ibis  # pyright: ignore [reportMissingTypeStubs]
 import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
-from ibis import _ as defer  # pyright: ignore[reportMissingTypeStubs]
 
 from polars_to_ibis._utils import abbreviate
 
 from . import tags
+from .selectors import expand_expr
 from .utils import assert_no_extras, indent, outdent, split_tag_payload
-from .value_handlers import (
-    handle_binary_expr,
-    handle_cast,
-    handle_function,
-    polars_expr_to_ibis_value,
-)
+from .value_handlers import infer_name, polars_expr_to_ibis_value
 
 logger = logging.getLogger(__name__)
 
 PolarsPlan = dict[str, Any]
-NamedValue = tuple[str, ir.Value]
 ReturnsTable = Callable[..., ir.Table]
-ReturnsValue = Callable[..., NamedValue]
 
 
 # Main:
@@ -64,7 +57,7 @@ def table_handler(tag: str) -> Callable[..., ReturnsTable]:
             to_return = func(*args, **kwargs)
             if logger.isEnabledFor(logging.DEBUG):  # pragma: no cover
                 logger.debug(f"{outdent()}<-- ibis table:\n{to_return}")
-            return func(*args, **kwargs)
+            return to_return
 
         TABLE_REGISTRY[tag] = wrapped_func
         return func
@@ -79,192 +72,23 @@ def parse_sort_by_column(col_list: list[dict[str, str]]) -> list[str]:
     return [next(iter(col.values())) for col in col_list]
 
 
-def infer_name(expr):
-    match expr:  # pragma: no cover
-        case tags.value.LEN:
-            return "len"
-        case {tags.value.LITERAL: _, **extras}:
-            assert_no_extras(extras)
-            return "literal"
-        case {tags.value.COLUMN: name, **extras}:
-            assert_no_extras(extras)
-            return name
-        case list():
-            iter_over = range(len(expr))
-        case dict():
-            iter_over = expr.keys()
-        case _:
-            raise NotImplementedError(f"Can't infer column name from {expr!r}")
-
-    for i_k in iter_over:  # pragma: no cover
-        if name := infer_name(expr[i_k]):
-            return name
-    raise NotImplementedError(f"Can't infer column name from {expr!r}")
+def translate_named_exprs(exprs: list[PolarsPlan], table: ir.Table) -> dict[str, Any]:
+    values = {}
+    for expr in exprs:
+        for expanded in expand_expr(expr, table):
+            name = infer_name(expanded)
+            if name in values:
+                raise ValueError(f"Duplicate output column: {name}")
+            values[name] = polars_expr_to_ibis_value(expanded)
+    return values
 
 
-def is_aggregation(expr):
-    tag, payload = split_tag_payload(expr)
-    match tag:
-        case tags.value.LEN | tags.value.AGG:
-            return True
-        case tags.value.CAST | tags.value.RENAME_ALIAS:
-            return is_aggregation(payload["expr"])
-        case tags.value.ALIAS:
-            return is_aggregation(payload[0])
-        case tags.value.BINARY_EXPR:
-            return is_aggregation(payload["left"]) or is_aggregation(payload["right"])
-        case tags.value.FUNCTION:
-            return any(is_aggregation(child) for child in payload["input"])
-        case tags.value.TERNARY:
-            return any(
-                is_aggregation(payload[key]) for key in ("predicate", "truthy", "falsy")
-            )
-        case _:
-            return False
-
-
-def apply_select_expr(col_list: list[dict[str, Any]], input_table):
-    """
-    Given col_list (the polars serialization for a select),
-    and an ibis input_table
-    apply the approriate ibis selects, aggregates, and drops to the input_table,
-    and return the modified table.
-    """
-    select_kwargs: dict[str, ir.Value] = {}
-    agg_kwargs: dict[str, ir.Value] = {}
-    drop_args: list[str] = []
-    for col in col_list:
-        tag, payload = split_tag_payload(col)
-        match (tag, payload):
-            case (tags.value.LEN, None):
-                agg_kwargs["len"] = input_table.count()
-            case (tags.value.CAST, _):
-                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
-                target_kwargs[infer_name(payload)] = handle_cast(payload)
-            case (tags.value.COLUMN, _):
-                select_kwargs[payload] = payload
-            case (tags.value.ALIAS, [expr, new_name]):
-                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
-                target_kwargs[new_name] = polars_expr_to_ibis_value(expr)
-            case (
-                tags.value.SELECTOR,
-                {
-                    "Difference": [
-                        "Wildcard",
-                        {
-                            "ByName": {"names": names, "strict": True, **extras_1},
-                            **extras_2,
-                        },
-                    ],
-                    **extras_3,
-                },
-            ):
-                assert_no_extras(extras_1, extras_2, extras_3)
-                drop_args += names
-            case (tags.value.FUNCTION, _):
-                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
-                target_kwargs[infer_name(col)] = handle_function(payload)
-            case (tags.value.AGG, _):
-                match payload:
-                    case {
-                        "Count": {
-                            "input": {
-                                "Selector": {
-                                    "ByName": {
-                                        "names": names,
-                                        "strict": True,
-                                        **extras_1,
-                                    },
-                                    **extras_2,
-                                },
-                                **extras_3,
-                            },
-                            "include_nulls": False,
-                            **extras_4,
-                        },
-                        **extras_5,
-                    }:
-                        assert_no_extras(
-                            extras_1, extras_2, extras_3, extras_4, extras_5
-                        )
-                        # Pull names from deep in the polars expr,
-                        # and make each a high-level agg in ibis.
-                        for name in names:  # pragma: no cover
-                            agg_kwargs[name] = polars_expr_to_ibis_value(
-                                {
-                                    "Count": {
-                                        "input": {"Column": name},
-                                        "include_nulls": False,
-                                    }
-                                }
-                            )
-                    case _:
-                        name = infer_name(payload)
-                        agg_kwargs[name] = polars_expr_to_ibis_value(payload)
-            case (tags.value.BINARY_EXPR, _):
-                target_kwargs = agg_kwargs if is_aggregation(col) else select_kwargs
-                target_kwargs[infer_name(col)] = handle_binary_expr(payload)
-            case (
-                tags.value.RENAME_ALIAS,
-                {
-                    "expr": expr,
-                    "function": "ToUppercase",
-                    **extras_1,
-                },
-            ):
-                assert_no_extras(extras_1)
-                column_name = infer_name(expr)
-                agg_kwargs[column_name.upper()] = polars_expr_to_ibis_value(expr)
-            case (
-                tags.value.RENAME_ALIAS,
-                {
-                    "expr": expr,
-                    "function": {"Suffix": suffix, **extras_1},
-                    **extras_2,
-                },
-            ):
-                assert_no_extras(extras_1, extras_2)
-                column_name = infer_name(expr)
-                agg_kwargs[column_name + suffix] = polars_expr_to_ibis_value(expr)
-            case (
-                tags.value.RENAME_ALIAS,
-                {
-                    "expr": expr,
-                    "function": {"Prefix": prefix, **extras_1},
-                    **extras_2,
-                },
-            ):
-                assert_no_extras(extras_1, extras_2)
-                column_name = infer_name(expr)
-                agg_kwargs[prefix + column_name] = polars_expr_to_ibis_value(expr)
-            case (
-                tags.value.TERNARY,
-                {
-                    "predicate": predicate_expr,
-                    "truthy": truthy_expr,
-                    "falsy": falsy_expr,
-                    **extras_1,
-                },
-            ):
-                assert_no_extras(extras_1)
-                ibis_value = polars_expr_to_ibis_value(predicate_expr).ifelse(
-                    polars_expr_to_ibis_value(truthy_expr),
-                    polars_expr_to_ibis_value(falsy_expr),
-                )
-                target_kwargs = (
-                    agg_kwargs if is_aggregation(predicate_expr) else select_kwargs
-                )
-                target_kwargs[infer_name(truthy_expr)] = ibis_value
-            case _:
-                raise NotImplementedError(f"Unsupported select expr {tag}")
-
-    if select_kwargs:
-        input_table = input_table.select(**select_kwargs)
-    if agg_kwargs:
-        input_table = input_table.aggregate(**agg_kwargs)  # type: ignore
-    if drop_args:
-        input_table = input_table.drop(*drop_args)
-    return input_table
+def apply_select_expr(exprs: list[PolarsPlan], table: ir.Table) -> ir.Table:
+    values = table.bind(**translate_named_exprs(exprs, table))
+    scalars = tuple(value for value in values if isinstance(value, ir.Scalar))
+    if len(scalars) == len(values):
+        return table.aggregate(scalars)
+    return table.select(*values)
 
 
 # Table handlers:
@@ -337,8 +161,7 @@ def handle_select(
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.SELECT}")
 
-    input_table = apply_select_expr(expr, input_table)
-    return input_table
+    return apply_select_expr(expr, input_table)
 
 
 @table_handler(tags.table.DISTINCT)
@@ -422,7 +245,7 @@ def handle_sort(
                 **extras_1,
             },
             "slice": None,
-            "input": input_expr,
+            "input": _,
             **extras_2,
         }:
             assert_no_extras(extras_1, extras_2)
@@ -431,13 +254,7 @@ def handle_sort(
                 ibis.desc(key) if desc else key
                 for key, desc in zip(undirected_sort_keys, descending)
             ]
-            return update_polars_to_ibis(
-                input_expr,
-                input_table,
-                backend=backend,
-            ).order_by(
-                *directed_sort_keys  # type: ignore
-            )
+            return input_table.order_by(*directed_sort_keys)  # type: ignore
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.SORT}")
 
@@ -451,7 +268,7 @@ def handle_hstack(
     match payload:
         case {
             "exprs": exprs,
-            "input": input,
+            "input": source,
             "options": {
                 "duplicate_check": True,
                 "run_parallel": True,
@@ -460,92 +277,13 @@ def handle_hstack(
             },
             **extras_2,
         }:
-            pass
+            assert_no_extras(extras_1, extras_2)
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.H_STACK} payload")
 
-    updated_table = update_polars_to_ibis(input, table=table, backend=backend)
-    for expr in exprs:
-        match expr:
-            case {tags.value.COLUMN: column, **extras}:
-                assert_no_extras(extras)
-                updated_table = updated_table.mutate(**{column: column})
-            case {
-                tags.value.CAST: {
-                    "dtype": {tags.value.LITERAL: dtype_literal, **extras_1},
-                    "expr": {tags.value.SELECTOR: "Wildcard", **extras_2},
-                    # TODO: "NonStrict" can cause downstream errors in the DB,
-                    # which we definitely don't want, particularly for OpenDP.
-                    # https://github.com/opendp/polars-to-ibis/issues/182
-                    "options": "Strict" | "NonStrict",
-                    **extras_3,
-                },
-                **extras_4,
-            }:
-                assert_no_extras(extras_1, extras_2, extras_3, extras_4)
-                all_columns = input[tags.table.MAP_FUNCTION]["input"][
-                    tags.table.DATA_FRAME_SCAN
-                ]["schema"]["fields"].keys()
-                updated_table = updated_table.cast(  # type: ignore
-                    {col: dtype_literal.lower() for col in all_columns}
-                )
-            case {tags.value.ALIAS: [expr, name], **extras_1}:
-                assert_no_extras(extras_1)
-                updated_table = updated_table.mutate(
-                    **{name: polars_expr_to_ibis_value(expr)}
-                )
-            case {tags.value.LITERAL: expr, **extras_1}:
-                assert_no_extras(extras_1)
-                updated_table = updated_table.mutate(
-                    literal=polars_expr_to_ibis_value({"Literal": expr})
-                )
-            case {
-                tags.value.FUNCTION: {
-                    "function": function,
-                    "input": [
-                        {
-                            tags.value.SELECTOR: {
-                                "Union": [
-                                    {
-                                        "ByDType": {
-                                            "AnyOf": _,  # Numeric types
-                                            **extras_1,
-                                        },
-                                        **extras_2,
-                                    },
-                                    {"ByDType": "Decimal", **extras_3},
-                                ],
-                                **extras_4,
-                            },
-                            **extras_5,
-                        },
-                        fill_expr,
-                    ],
-                    **extras_6,
-                },
-                **extras_7,
-            }:
-                assert_no_extras(
-                    extras_1,
-                    extras_2,
-                    extras_3,
-                    extras_4,
-                    extras_5,
-                    extras_6,
-                    extras_7,
-                )
-                value = polars_expr_to_ibis_value(fill_expr)
-                match function:
-                    case "FillNull":
-                        updated_table = updated_table.fill_null(value)  # type: ignore
-                    case _:
-                        raise NotImplementedError(
-                            f"Unsupported {tags.table.H_STACK} function: {function}"
-                        )
-            case _:
-                raise NotImplementedError(f"Unsupported {tags.table.H_STACK} expr")
-
-    return updated_table
+    input_table = update_polars_to_ibis(source, table=table, backend=backend)
+    # All with_columns expressions evaluate against the same input relation.
+    return input_table.mutate(**translate_named_exprs(exprs, input_table))
 
 
 @table_handler(tags.table.GROUP_BY)
@@ -554,61 +292,55 @@ def handle_group_by(
     table: ir.Table,
     backend: ibis.BaseBackend,
 ) -> ir.Table:
-    input_table = update_polars_to_ibis(payload["input"], table=table, backend=backend)
-
-    # Different serializations from different polars versions.
-    # Not all branches will be covered.
-    match payload:  # pragma: no cover
+    match payload:
         case {
+            "input": source,
             "keys": keys,
-            "aggs": [agg],
+            "aggs": aggs,
             "maintain_order": False,
             "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
-            "apply": None,
-            "predicates": [],
-            **extras_2,
+            **extras,
         }:
-            assert_no_extras(extras_1, extras_2)
-        case {
-            "keys": keys,
-            "aggs": [agg],
-            "maintain_order": False,
-            "options": {"dynamic": None, "rolling": None, "slice": None, **extras_1},
-            **extras_2,
-        }:
-            assert_no_extras(extras_1, extras_2)
+            assert_no_extras(extras_1)
+            if extras.get("apply") is not None or extras.get("predicates"):
+                raise NotImplementedError("Unsupported GroupBy options")
+            assert_no_extras(
+                {
+                    key: value
+                    for key, value in extras.items()
+                    if key not in ("apply", "predicates")
+                }
+            )
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY}")
 
-    group_by_keys = parse_sort_by_column(keys)
-    grouped_table = input_table.group_by(group_by_keys)
+    input_table = update_polars_to_ibis(source, table=table, backend=backend)
+    by = translate_named_exprs(keys, input_table)
+    metrics = translate_named_exprs(aggs, input_table)
+    if not metrics:
+        return input_table.select(**by).distinct()
+    return input_table.group_by(**by).aggregate(**metrics)
 
-    match agg:
-        case {tags.value.AGG: agg_payload, **extras_1}:
-            assert_no_extras(extras_1)
-            agg_payload_tag, agg_payload_payload = split_tag_payload(agg_payload)
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg")
 
-    match agg_payload_payload:
-        case {tags.value.COLUMN: column, **extras}:
-            assert_no_extras(extras)
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg payload")
+def _stats_expr(stats: Any, column: str) -> PolarsPlan:
+    """Convert a whole-table statistic to an ordinary aggregate expression."""
+    tag, options = (
+        split_tag_payload(stats) if isinstance(stats, dict) else (stats, None)
+    )
+    source = {tags.value.COLUMN: column}
 
-    match agg_payload_tag:
-        case (
-            tags.value.SUM
-            | tags.value.MEAN
-            | tags.value.MEDIAN
-            | tags.value.MAX
-            | tags.value.MIN
-        ):
-            return grouped_table.aggregate(  # type: ignore
-                **{column: getattr(defer[column], agg_payload_tag.lower())()}
-            )
-        case _:
-            raise NotImplementedError(f"Unsupported {tags.table.GROUP_BY} agg stat")
+    if tag in (tags.value.SUM, tags.value.MEAN, tags.value.MEDIAN):
+        payload = source
+    elif tag in (tags.value.MIN, tags.value.MAX):
+        payload = {"input": source, "propagate_nans": False}
+    elif tag in (tags.value.VAR, tags.value.STD) and options == {"ddof": 1}:
+        payload = [source, 1]
+    elif tag == tags.value.QUANTILE and isinstance(options, dict):
+        payload = {"expr": source, **options}
+    else:
+        raise NotImplementedError(f"Unsupported Stats: {stats!r}")
+
+    return {tags.value.AGG: {tag: payload}}
 
 
 @table_handler(tags.table.MAP_FUNCTION)
@@ -621,6 +353,12 @@ def handle_map_function(
     match payload:
         case {"function": {"Stats": stats, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
+            return input_table.aggregate(
+                **{
+                    name: polars_expr_to_ibis_value(_stats_expr(stats, name))
+                    for name in input_table.columns
+                }
+            )
         case {"function": {"FillNan": fill_nan_expr, **extras_1}, **extras_2}:
             assert_no_extras(extras_1, extras_2)
             fill_nan_value = polars_expr_to_ibis_value(fill_nan_expr)
@@ -638,64 +376,3 @@ def handle_map_function(
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.MAP_FUNCTION}")
 
-    match stats:
-        case tags.value.MEAN:
-            return table.aggregate(
-                **{
-                    col: getattr(getattr(input_table, col), stats.lower())().cast(
-                        "float32"
-                    )
-                    for col in table.columns
-                }
-            )
-
-        case tags.value.SUM | tags.value.MEDIAN | tags.value.MAX | tags.value.MIN:
-            return table.aggregate(
-                **{
-                    col: getattr(getattr(input_table, col), stats.lower())()
-                    for col in table.columns
-                }
-            )
-
-        case {tags.value.VAR: {"ddof": 1, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return table.aggregate(
-                **{
-                    col: getattr(input_table, col).var().cast("float32")
-                    for col in table.columns
-                }
-            )
-
-        case {tags.value.STD: {"ddof": 1, **extras_1}, **extras_2}:
-            assert_no_extras(extras_1, extras_2)
-            return table.aggregate(
-                **{
-                    col: getattr(input_table, col).std().cast("float32")
-                    for col in table.columns
-                }
-            )
-
-        case {
-            tags.value.QUANTILE: {
-                "quantile": {
-                    tags.value.LITERAL: {
-                        "Dyn": {"Float": quantile, **extras_1},
-                        **extras_2,
-                    },
-                    **extras_3,
-                },
-                "method": "Nearest",
-                **extras_4,
-            },
-            **extras_5,
-        }:
-            assert_no_extras(extras_1, extras_2, extras_3, extras_4, extras_5)
-            return table.aggregate(
-                **{
-                    col: getattr(input_table, col).quantile(quantile)
-                    for col in table.columns
-                }
-            )
-
-        case _:
-            raise ValueError(f"unsupported stats type: {stats}")
