@@ -85,8 +85,13 @@ def translate_named_exprs(exprs: list[PolarsPlan], table: ir.Table) -> dict[str,
 
 def apply_select_expr(exprs: list[PolarsPlan], table: ir.Table) -> ir.Table:
     values = table.bind(**translate_named_exprs(exprs, table))
+    if not values:
+        raise NotImplementedError("Zero-column selections are unsupported")
     scalars = tuple(value for value in values if isinstance(value, ir.Scalar))
     if len(scalars) == len(values):
+        if all(not value.op().relations for value in scalars):
+            # SQL aggregates containing only constants do not collapse input rows.
+            return scalars[0].as_table().select(*scalars)
         return table.aggregate(scalars)
     return table.select(*values)
 
@@ -316,10 +321,14 @@ def handle_group_by(
 
     input_table = update_polars_to_ibis(source, table=table, backend=backend)
     by = translate_named_exprs(keys, input_table)
-    metrics = translate_named_exprs(aggs, input_table)
+    metrics = input_table.bind(**translate_named_exprs(aggs, input_table))
     if not metrics:
         return input_table.select(**by).distinct()
-    return input_table.group_by(**by).aggregate(**metrics)
+    if any(not isinstance(metric, ir.Scalar) for metric in metrics):
+        raise NotImplementedError(
+            "GroupBy list aggregation expressions are unsupported"
+        )
+    return input_table.group_by(**by).aggregate(*metrics)
 
 
 def _stats_expr(stats: Any, column: str) -> PolarsPlan:
@@ -375,4 +384,3 @@ def handle_map_function(
             )
         case _:
             raise NotImplementedError(f"Unsupported {tags.table.MAP_FUNCTION}")
-

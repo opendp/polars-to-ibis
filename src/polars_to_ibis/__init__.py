@@ -58,7 +58,7 @@ Next, make a query starting with that LazyFrame:
 ... )
 >>> print(ibis_unbound_table.to_sql())
 SELECT
-  SUM("t0"."ints") AS "ints"
+  COALESCE(SUM("t0"."ints"), 0) AS "ints"
 FROM "readme_example" AS "t0"
 
 ```

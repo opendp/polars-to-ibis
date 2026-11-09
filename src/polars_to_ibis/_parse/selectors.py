@@ -21,18 +21,38 @@ def _columns(selector: Any, table: ir.Table) -> list[str]:
         case {
             "Difference": [
                 "Wildcard",
-                {"ByName": {"names": excluded, "strict": True, **extra_1}, **extra_2},
+                {"ByName": {"names": excluded, "strict": strict, **extra_1}, **extra_2},
             ],
             **extra_3,
         }:
             assert_no_extras(extra_1, extra_2, extra_3)
+            missing = set(excluded) - set(table.columns)
+            if strict and missing:
+                raise ValueError(f"Columns not found: {sorted(missing)}")
             return [name for name in table.columns if name not in excluded]
+        case {"ByDType": "Numeric", **extras}:
+            assert_no_extras(extras)
+            return [
+                name for name, dtype in table.schema().items() if dtype.is_numeric()
+            ]
         case {
             "Union": [
-                {"ByDType": {"AnyOf": _, **extra_1}, **extra_2},
+                {"ByDType": {"AnyOf": dtypes, **extra_1}, **extra_2},
                 {"ByDType": "Decimal", **extra_3},
             ],
             **extra_4,
+        } if set(dtypes) == {
+            "Int8",
+            "Int16",
+            "Int32",
+            "Int64",
+            "Int128",
+            "UInt8",
+            "UInt16",
+            "UInt32",
+            "UInt64",
+            "Float32",
+            "Float64",
         }:
             assert_no_extras(extra_1, extra_2, extra_3, extra_4)
             return [

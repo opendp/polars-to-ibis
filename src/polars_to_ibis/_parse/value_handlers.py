@@ -214,7 +214,7 @@ def handle_cast(payload: PolarsPlan) -> ir.Value:
 
 @value_handler(tags.value.SUM)
 def handle_sum(payload: PolarsPlan):
-    return polars_expr_to_ibis_value(payload).sum()
+    return polars_expr_to_ibis_value(payload).sum().fill_null(0)
 
 
 @value_handler(tags.value.MEAN)

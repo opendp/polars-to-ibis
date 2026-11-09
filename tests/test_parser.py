@@ -171,9 +171,10 @@ def test_cast_len(backend_name, values, expr):
         connection.disconnect()
 
 
-def test_select_broadcast_empty():
+@pytest.mark.parametrize("backend_name", backend_names)
+def test_select_broadcast_empty(backend_name):
     frame = pl.DataFrame({"ints": pl.Series([], dtype=pl.Int64)})
-    backend = ibis.duckdb
+    backend = getattr(ibis, backend_name)
     connection = get_connection(frame, table_name="empty_select", backend=backend)
     try:
         lf = scan_database(connection, "empty_select").select(
@@ -188,7 +189,8 @@ def test_select_broadcast_empty():
         connection.disconnect()
 
 
-def test_table_handler_called_once_with_debug_logging(caplog):
+@pytest.mark.parametrize("level", ["DEBUG", "INFO"])
+def test_table_handler_called_once_with_debug_logging(caplog, level):
     import logging
 
     from polars_to_ibis._parse.table_handlers import TABLE_REGISTRY, table_handler
@@ -202,9 +204,102 @@ def test_table_handler_called_once_with_debug_logging(caplog):
 
     try:
         with caplog.at_level(
-            logging.DEBUG, logger="polars_to_ibis._parse.table_handlers"
+            getattr(logging, level), logger="polars_to_ibis._parse.table_handlers"
         ):
             TABLE_REGISTRY["test_debug_call"]({}, table=None, backend=None)
         assert calls == [{}]
     finally:
         del TABLE_REGISTRY["test_debug_call"]
+
+
+@pytest.mark.parametrize("backend_name", backend_names)
+@pytest.mark.parametrize("stat", ["mean", "var", "std"])
+@pytest.mark.parametrize("whole_table", [True, False], ids=["whole", "expression"])
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        pl.Int64,
+        pl.Float64,
+        pytest.param(
+            pl.Float32,
+            marks=pytest.mark.xfail(
+                strict=True,
+                raises=AssertionError,
+                reason="Reducers force Float64 instead of preserving Polars Float32",
+            ),
+        ),
+    ],
+)
+def test_statistic_dtype(backend_name, stat, whole_table, dtype):
+    from polars.testing import assert_frame_equal
+
+    frame = pl.DataFrame({"x": pl.Series([1, 2, 4], dtype=dtype)})
+
+    def query(lf):
+        if whole_table:
+            return getattr(lf, stat)()
+        return lf.select(getattr(pl.col("x"), stat)())
+
+    expected = query(frame.lazy()).collect()
+    backend = getattr(ibis, backend_name)
+    connection = get_connection(frame, table_name="statistic_dtype", backend=backend)
+    try:
+        lf = query(scan_database(connection, "statistic_dtype"))
+        table = convert_polars_to_ibis(lf, "statistic_dtype", backend=backend)
+        assert_frame_equal(connection.to_polars(table), expected)
+    finally:
+        connection.disconnect()
+
+
+def test_named_expression_order_and_duplicates():
+    from polars_to_ibis._parse.table_handlers import translate_named_exprs
+    from polars_to_ibis._serialize import serialize
+
+    frame = pl.LazyFrame({"x": [1], "y": [2]})
+    table = ibis.table({"x": "int64", "y": "int64"})
+    expressions = serialize(frame.select("y", pl.col("x").alias("z")))["Select"]["expr"]
+    assert list(translate_named_exprs(expressions, table)) == ["y", "z"]
+    with pytest.raises(ValueError, match="Duplicate output column: y"):
+        translate_named_exprs(expressions + [expressions[0]], table)
+
+
+def test_sort_translates_input_once(monkeypatch):
+    from polars_to_ibis._parse import table_handlers
+    from polars_to_ibis._serialize import serialize
+
+    plan = serialize(pl.LazyFrame({"x": [1, 2]}).filter(pl.col("x") > 1).sort("x"))
+    table = ibis.table({"x": "int64"})
+    original = table_handlers.update_polars_to_ibis
+    calls = []
+
+    def counted(plan, **kwargs):
+        calls.append(plan)
+        return original(plan, **kwargs)
+
+    monkeypatch.setattr(table_handlers, "update_polars_to_ibis", counted)
+    table_handlers.handle_sort(plan["Sort"], table, ibis.duckdb)
+    assert calls.count(plan["Sort"]["input"]) == 1
+
+
+@pytest.mark.parametrize(
+    "query,expected_error",
+    [
+        (lambda lf: lf.select(pl.col(["missing"])), "Column 'missing' is not found"),
+        (lambda lf: lf.drop("missing"), "Columns not found: ['missing']"),
+    ],
+    ids=["explicit", "strict_exclusion"],
+)
+def test_missing_selector_columns(query, expected_error):
+    lf = pl.LazyFrame({"x": [1]})
+    with pytest.raises(pl.exceptions.ColumnNotFoundError):
+        query(lf).collect()
+    with pytest.raises(Exception, match=re.escape(expected_error)):
+        convert_polars_to_ibis(query(lf), "missing_columns", backend=ibis.duckdb)
+
+
+def test_infer_name_skips_metadata():
+    from polars_to_ibis._parse.value_handlers import infer_name
+
+    # Metadata may precede expression children; naming must not depend on dict order.
+    expression = {"Function": {"function": "Negate", "input": [{"Column": "x"}]}}
+    assert infer_name(expression) == (-pl.col("x")).meta.output_name()

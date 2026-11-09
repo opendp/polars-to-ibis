@@ -33,13 +33,13 @@ def get_case_clause(table: str) -> str:
 def get_select_int_sum(table: str) -> str:
     case_clause = get_case_clause(table)
     return f"""
-    SELECT SUM(
+    SELECT COALESCE( SUM(
         CASE
             WHEN {case_clause} IS NULL
             THEN {case_clause}
             ELSE GREATEST( 0, {case_clause} )
         END
-    ) AS ints
+    ), 0 ) AS ints
     """
 
 
@@ -60,12 +60,12 @@ def get_select_float_sum() -> str:
     END
     """
     return f"""
-    SELECT SUM(
+    SELECT COALESCE( SUM(
         CASE WHEN {case_when_nested} IS NULL
             THEN {case_when_nested}
             ELSE GREATEST( {hack} 0.0, {case_when_nested} )
         END
-    ) AS floats
+    ), 0 ) AS floats
     """
 
 

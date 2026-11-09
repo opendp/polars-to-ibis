@@ -83,14 +83,109 @@ MYSQL_INF = "inf can not be used with MySQL"
 MYSQL_SYNTAX = "You have an error in your SQL syntax"
 
 parser_scenarios = [
+    EvalParserScenario(
+        "numeric",
+        "lf.select(pl.all().exclude('missing'))",
+        input_data["numeric"],
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.filter(pl.col('ints') > 9).sum()",
+        {"ints": [0], "floats": [0.0]},
+    ),
+    EvalParserScenario(
+        "nan_null_inf",
+        "lf.filter(pl.col('null').is_null()).select(pl.col('null').sum())",
+        {"null": [0.0]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.filter(pl.col('ints') > 9).select(pl.lit(10).alias('constant'))",
+        {"constant": [10]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select([])",
+        {},
+        convert_errors={"*": "Zero-column selections are unsupported"},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select(pl.col('ints').alias('x')).with_columns(pl.all().cast(pl.Float64))",
+        {"x": [1.0, 2.0, 3.0, 4.0]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.with_columns(pl.col('ints').cast(pl.String)).select(pl.selectors.numeric())",
+        {"floats": [0.1, 0.2, 0.3, 0.4]},
+    ),
+    EvalParserScenario(
+        "select",
+        "lf.select(pl.all().exclude('strs', 'bools', 'bytes').name.prefix('p_'))",
+        {"p_ints": [1, 2, 3]},
+    ),
+    EvalParserScenario(
+        "select",
+        "lf.select(pl.selectors.by_dtype([pl.Int64, pl.String]) | pl.selectors.decimal())",
+        {"ints": [1, 2, 3], "strs": ["A", "B", "C"]},
+        convert_errors={"*": "Unsupported selector"},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select(pl.all() + pl.all())",
+        {"ints": [2, 4, 6, 8], "floats": [0.2, 0.4, 0.6, 0.8]},
+        convert_errors={"*": "Expressions with multiple selectors"},
+    ),
+    EvalParserScenario(
+        "nan_null_inf",
+        "lf.select(pl.col('null'), pl.lit('s').alias('s'))"
+        ".with_columns(pl.selectors.numeric().fill_null(9))",
+        {"null": [0.0, 9.0], "s": ["s", "s"]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.filter(pl.col('ints') > 2).sum()",
+        {"ints": [7], "floats": [0.7]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select((pl.col('ints') + 1).alias('x')).sum()",
+        {"x": [14]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.filter(pl.col('ints') > 2).select((pl.col('ints') + 1).alias('x')).sort('x')",
+        {"x": [4, 5]},
+    ),
+    EvalParserScenario(
+        "grouping",
+        "lf.group_by('keys').agg(pl.col('values') + 1).sort('keys')",
+        {"keys": [0, 1], "values": [[2, 3], [4, 5]]},
+        convert_errors={"*": "GroupBy list aggregation expressions are unsupported"},
+    ),
+    EvalParserScenario(
+        "grouping",
+        "lf.group_by('keys').agg(pl.all().sum()).sort('keys')",
+        {"keys": [0, 1], "values": [3, 7]},
+        convert_errors={"*": "already in the groupby"},
+    ),
+    EvalParserScenario(
+        "grouping",
+        "lf.group_by('keys').agg().sort('keys')",
+        {"keys": [0, 1]},
+    ),
+    EvalParserScenario(
+        "grouping",
+        "lf.group_by((pl.col('values') % 2).alias('values'))"
+        ".agg(pl.col('values').sum().alias('total')).sort('values')",
+        {"values": [0, 1], "total": [6, 4]},
+    ),
     SQLParserScenario(
         "sorting",
         "FROM lf",
         {},
         polars_errors={"polars==1.36.1": "this `SELECT` flavor is not supported"},
-        alt_xfail={
-            "polars==1.37.0": {"ints": [9, 9, 1, 1], "strs": ["Z", "A", "B", "C"]}
-        },
+        convert_errors={"polars==1.37.0": "Zero-column selections are unsupported"},
     ),
     SQLParserScenario(
         "sorting",
@@ -254,7 +349,7 @@ parser_scenarios = [
     SQLParserScenario(
         "numeric",
         "SELECT SUM(floats) AS agg, ints AS not_agg FROM lf",
-        {"agg": [1, 1, 1, 1], "not_agg": [1, 2, 3, 4]},
+        {"agg": [1.0, 1.0, 1.0, 1.0], "not_agg": [1, 2, 3, 4]},
     ),
     SQLParserScenario(
         "numeric",
@@ -483,13 +578,11 @@ parser_scenarios = [
         "numeric",
         "lf.var()",
         {"floats": [5 / 3 / 100], "ints": [5 / 3]},
-        tolerance=10e-6,
     ),
     EvalParserScenario(
         "numeric",
         "lf.std()",
         {"floats": [math.sqrt(5 / 3 / 100)], "ints": [math.sqrt(5 / 3)]},
-        tolerance=10e-6,
     ),
     EvalParserScenario(
         "numeric",
