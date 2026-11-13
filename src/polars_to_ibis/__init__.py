@@ -216,11 +216,20 @@ def _get_input_schema(polars_plan: dict[str, Any]) -> ibis.expr.schema.Schema:
             return maybe_schema
 
 
-def _get_type(polars_type_name: str) -> type:
-    if polars_type_name.startswith("Int"):
-        return int
-    if polars_type_name.startswith("Float"):
-        return float
+def _get_type(polars_type_name: str):
+    if polars_type_name in {
+        "Int8",
+        "Int16",
+        "Int32",
+        "Int64",
+        "UInt8",
+        "UInt16",
+        "UInt32",
+        "UInt64",
+        "Float32",
+        "Float64",
+    }:
+        return polars_type_name.lower()
     if polars_type_name == "String":
         return str
     if polars_type_name == "Boolean":
