@@ -169,3 +169,42 @@ def test_cast_len(backend_name, values, expr):
         assert actual.schema == expected.schema
     finally:
         connection.disconnect()
+
+
+def test_select_broadcast_empty():
+    frame = pl.DataFrame({"ints": pl.Series([], dtype=pl.Int64)})
+    backend = ibis.duckdb
+    connection = get_connection(frame, table_name="empty_select", backend=backend)
+    try:
+        lf = scan_database(connection, "empty_select").select(
+            pl.col("ints"), pl.col("ints").sum().alias("total")
+        )
+        result = convert_polars_to_ibis(lf, "empty_select", backend=backend)
+        assert connection.to_polars(result).to_dict(as_series=False) == {
+            "ints": [],
+            "total": [],
+        }
+    finally:
+        connection.disconnect()
+
+
+def test_table_handler_called_once_with_debug_logging(caplog):
+    import logging
+
+    from polars_to_ibis._parse.table_handlers import TABLE_REGISTRY, table_handler
+
+    calls = []
+
+    @table_handler("test_debug_call")
+    def counting_handler(payload, table, backend):
+        calls.append(payload)
+        return table
+
+    try:
+        with caplog.at_level(
+            logging.DEBUG, logger="polars_to_ibis._parse.table_handlers"
+        ):
+            TABLE_REGISTRY["test_debug_call"]({}, table=None, backend=None)
+        assert calls == [{}]
+    finally:
+        del TABLE_REGISTRY["test_debug_call"]

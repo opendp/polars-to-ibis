@@ -259,8 +259,6 @@ parser_scenarios = [
         "numeric",
         "SELECT SUM(floats) AS agg, ints AS not_agg FROM lf",
         {"agg": [1, 1, 1, 1], "not_agg": [1, 2, 3, 4]},
-        # TODO: https://github.com/opendp/polars-to-ibis/issues/148
-        convert_errors={"*": "Column 'floats' is not found in table."},
     ),
     SQLParserScenario(
         "numeric",
@@ -341,6 +339,11 @@ parser_scenarios = [
         "numeric",
         "lf.select(pl.len())",
         {"len": [4]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.select(pl.lit(10).alias('constant'))",
+        {"constant": [10]},
     ),
     EvalParserScenario(
         "numeric",
@@ -542,6 +545,23 @@ parser_scenarios = [
     ),
     EvalParserScenario(
         "numeric",
+        "lf.with_columns(pl.all().cast(pl.Int32))",
+        {"ints": [1, 2, 3, 4], "floats": [0, 0, 0, 0]},
+    ),
+    EvalParserScenario(
+        "numeric",
+        "lf.with_columns("
+        "    (pl.col('ints') + 1).alias('ints'),"
+        "    (pl.col('ints') + 2).alias('plus_two')"
+        ")",
+        {
+            "ints": [2, 3, 4, 5],
+            "floats": [0.1, 0.2, 0.3, 0.4],
+            "plus_two": [3, 4, 5, 6],
+        },
+    ),
+    EvalParserScenario(
+        "numeric",
         "lf.sort(by='ints').head(1)",
         {
             "ints": [1],
@@ -636,6 +656,13 @@ parser_scenarios = [
         "grouping",
         "lf.group_by('keys').agg(pl.col('values').sum()).sort(by='keys').select('values').head(1)",
         {"values": [3]},
+    ),
+    EvalParserScenario(
+        "grouping",
+        "lf.group_by((pl.col('keys') + 1).alias('bucket'))"
+        ".agg(pl.col('values').sum().alias('total'), pl.len().alias('n'))"
+        ".sort('bucket')",
+        {"bucket": [1, 2], "total": [3, 7], "n": [2, 2]},
     ),
     EvalParserScenario(
         "grouping",
