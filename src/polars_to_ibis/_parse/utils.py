@@ -2,17 +2,11 @@
 This is a private module: The API may change.
 """
 
-from collections.abc import Callable
 from typing import Any
-
-import ibis.expr.types as ir  # pyright: ignore [reportMissingTypeStubs]
 
 from polars_to_ibis._utils import tags
 
 PolarsPlan = dict[str, Any] | str
-NamedValue = tuple[str, ir.Value]
-ReturnsTable = Callable[..., ir.Table]
-ReturnsValue = Callable[..., NamedValue]
 
 
 _logger_depth = 0
