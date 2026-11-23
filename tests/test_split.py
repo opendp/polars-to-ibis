@@ -7,7 +7,7 @@ import pytest
 
 from polars_to_ibis import scan_database, split_polars_on_ffi
 
-from .config_split import TABLE_NAME, SplitScenario, split_scenarios
+from .config_split import MAX_LENGTH, TABLE_NAME, SplitScenario, split_scenarios
 from .utils import backend_names, get_connection
 
 # I thought this would be sufficient...
@@ -50,10 +50,10 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
     context = dp.Context.compositor(
         data=schema_lf,
         privacy_unit=dp.unit_of(contributions=1),
-        privacy_loss=dp.loss_of(epsilon=1.0),
+        privacy_loss=dp.loss_of(**scenario.expected_privacy_loss),
         split_evenly_over=1,
         margins=[
-            dp.polars.Margin(max_length=1_000_000),
+            dp.polars.Margin(max_length=MAX_LENGTH),
         ],
     )
     globals = {
@@ -119,9 +119,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
             match kwargs["support"]:
                 case "Integer":
                     support = int
-                case "Float":  # pragma: no cover
-                    # TODO: Add a test case with float support.
-                    # https://github.com/opendp/polars-to-ibis/issues/166
+                case "Float":
                     support = float
                 case _:
                     raise ValueError(
@@ -135,10 +133,11 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
             match kwargs["distribution"]:
                 case "Laplace":
                     make = dp.m.make_laplace
-                case "Gaussian":  # pragma: no cover
-                    # TODO: Add a test case that uses gaussian.
-                    # https://github.com/opendp/polars-to-ibis/issues/166
+                    output_measure = dp.max_divergence()
+                case "Gaussian":
                     make = dp.m.make_gaussian
+                    output_measure = dp.zero_concentrated_divergence()
+                    assert isinstance(private_item, support)
                 case _:
                     raise ValueError(
                         "Expected 'Laplace' or 'Gaussian', "
@@ -146,6 +145,7 @@ def test_split_lazyframe(scenario: SplitScenario, backend_name: str):
                     )
 
             measurement = make(*input_space, scale=kwargs["scale"])
+            assert measurement.output_measure == output_measure
 
             dp_result = scenario.assert_error_or_return_value(
                 "opendp_errors",
