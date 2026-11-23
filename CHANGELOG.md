@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## v0.4.0
+
+SQL coverage:
+
+- Towards DISTINCT ON [#202](https://github.com/opendp/polars-to-ibis/pull/202)
+- Handle casts around row-count aggregations [#195](https://github.com/opendp/polars-to-ibis/pull/195)
+- Towards more cast support [#181](https://github.com/opendp/polars-to-ibis/pull/181)
+
+Testing:
+
+- Test coverage of Polars SQL comparison operators [#204](https://github.com/opendp/polars-to-ibis/pull/204)
+- Test Gaussian split paths over integer and float supports [#209](https://github.com/opendp/polars-to-ibis/pull/209)
+- Get test_split.py running again. [#208](https://github.com/opendp/polars-to-ibis/pull/208)
+- Test native plugin splitting without OpenDP [#194](https://github.com/opendp/polars-to-ibis/pull/194)
+- fix group-by tests [#200](https://github.com/opendp/polars-to-ibis/pull/200)
+- Test coverage for Polars SQL query clauses [#161](https://github.com/opendp/polars-to-ibis/pull/161)
+
+Chores:
+
+- chore: consistent style in table_handlers [#196](https://github.com/opendp/polars-to-ibis/pull/196)
+- Fix docs build, and add a note to explain "hack" [#198](https://github.com/opendp/polars-to-ibis/pull/198)
+- Handle polars version installs correctly [#189](https://github.com/opendp/polars-to-ibis/pull/189)
+- Drop python 3.10 [#184](https://github.com/opendp/polars-to-ibis/pull/184)
+- add typed classifier [#179](https://github.com/opendp/polars-to-ibis/pull/179)
+- Give some examples in the docs [#171](https://github.com/opendp/polars-to-ibis/pull/171)
+- add `disconnect()` [#178](https://github.com/opendp/polars-to-ibis/pull/178)
+- black to ruff [#170](https://github.com/opendp/polars-to-ibis/pull/170)
+- Ignore JSON serialization deprecation warning [#168](https://github.com/opendp/polars-to-ibis/pull/168)
+
+
 ## v0.3.0
 
 Functionality:

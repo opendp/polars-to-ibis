@@ -8,12 +8,14 @@ root_path = Path(__file__).parent.parent
 
 
 def log_until(match):  # pragma: no cover
+    print(f"Collecting git log back to '{match}'...")
     lines = subprocess.check_output(["git", "log", "--oneline"], text=True).splitlines()
     if match is None:
         return lines
     head = []
     for line in lines:
         if match in line:
+            print(f"Stopping on: {line}")
             break
         head.append(line)
     return head
